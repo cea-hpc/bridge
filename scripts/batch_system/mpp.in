@@ -107,6 +107,9 @@ function set_purple_mode {
 	printf "[0;35m"
     fi
 }
+function extract_base_acct {
+    echo ${1%%@*}
+}
 ###################################################################################################################
 
 ###################################################################################################################
@@ -381,11 +384,17 @@ ${stat_cmd} ${stat_args} | tr '?' '-' | sort -t '^' -k 7 -r |\
       fi
 
       if [[ -n ${show_project} ]]
-	  then
+      then
+	  if [[ ${show_project} != *@* ]]; then 
+	      PROJECT=`extract_base_acct $PROJECT`
+	  fi
+	  
 	  if [[ ${PROJECT} != ${show_project} ]]
-	      then
+	  then
 	      continue
 	  fi
+      else
+	  PROJECT=`extract_base_acct $PROJECT`
       fi
 
       ## on surcharge le status par un status raccourci
@@ -518,6 +527,20 @@ printf "\n";
   status=$?
   if [ $status -eq 0 ]
       then
+
+      if [[ -n ${show_project} ]]
+      then
+	  if [[ ${show_project} != *@* ]]; then 
+	      PROJECT=`extract_base_acct $PROJECT`
+	  fi
+	  
+	  if [[ ${PROJECT} != ${show_project} ]]
+	  then
+	      continue
+	  fi
+      else
+	  PROJECT=`extract_base_acct $PROJECT`
+      fi
 
       SLURMSTART=`echo $SLURMSTART | tr T ' '`
       SLURMLIM=`echo $SLURMLIM | tr T ' '`     
