@@ -11,7 +11,7 @@
 #
 ###################################################################################################################
 function check_val {
-    if [ $1 = "-" ] || [ $1 = "?" ]
+    if [ $1 = "-" ] || [ $1 = "?" ] ||  [ $1 = "(null)" ]
 	then
 	return 1
     else
@@ -19,7 +19,7 @@ function check_val {
     fi
 }
 function shrink_name {
-    echo $1 | cut -c 1-10
+    echo $1 | cut -c 1-16
 }
 function shrink_time {
     if [ $1 -eq 0 ]
@@ -100,6 +100,13 @@ function set_blue_mode {
 	printf "[0;34m"
     fi
 }
+function set_purple_mode {
+    is_color_enabled
+    if [ $? -eq 1 ]
+	then
+	printf "[0;35m"
+    fi
+}
 ###################################################################################################################
 
 ###################################################################################################################
@@ -161,7 +168,7 @@ typeset EXIT_STATUS=1
 #------------------------------------------------------------------------------------------------------------------
 typeset USAGE="Usage : ${PROGNAME} [-dvhV] [-p] [-r] [-s] [-q queue] [-u user] [-a account]
 
- ${PROGNAME} is the CCC  jobs visualisation interface.
+ ${PROGNAME} is the CCC jobs visualisation interface.
 
  -h          : print this message
  -d          : increase debug level
@@ -178,10 +185,15 @@ typeset USAGE="Usage : ${PROGNAME} [-dvhV] [-p] [-r] [-s] [-q queue] [-u user] [
 
  -n          : print results without colors
  -H          : don't print header
+
+ Please note that the expected start time of a job is an estimation based on 
+ the current state of the job queue. Your job may in fact start sooner, 
+ if an other job completes earlier than expected, or may be delayed further, 
+ if a higher priority job is submitted in the meantime.
 "
 #------------------------------------------------------------------------------------------------------------------
 typeset stat_cmd=bsstat_cmd
-typeset stat_args="-s ^ -ouser,project,batchid,parcpunblim,parcpunb,queue,priority,state,partimelim,partimeused,suspendtime,subtime,rmid,parnodeslist,reason,name"
+typeset stat_args="-s ^ -ouser,project,batchid,parcpunblim,parcpunb,queue,priority,state,starttime,partimelim,partimeused,suspendtime,subtime,rmid,parnodeslist,reason,name"
 #------------------------------------------------------------------------------------------------------------------
 typeset show_running=0
 typeset show_suspended=0
@@ -307,9 +319,9 @@ if [[ ${show_with_header} == "yes" ]]
     set_bold_mode
     if [[ ${BRIDGE_BINDING} != "rmid" ]]
 	then
-	print "USER        ACCOUNT    BATCHID  NCPU   QUEUE      PRIORITY   STATE   RLIM   RUN  SUSP   OLD  NAME       NODES"
+	print "USER        ACCOUNT    BATCHID  NCPU   QUEUE      PRIORITY   STATE  RLIM   RUN/START     SUSP   OLD    NAME             NODES"
     else
-	print "USER        ACCOUNT    BATCHID  NCPU   QUEUE      PRIORITY   STATE   RLIM   RUN  SUSP   OLD  NAME       RMID    NODES"
+	print "USER        ACCOUNT    BATCHID  NCPU   QUEUE      PRIORITY   STATE  RLIM   RUN/START     SUSP   OLD    NAME             RMID    NODES"
     fi
     set_standard_mode
 fi
@@ -326,6 +338,7 @@ typeset TIMELIM
 typeset TIMEUSED
 typeset SUSPTIME
 typeset STARTTIME
+typeset SCHEDTIME
 typeset RMID
 typeset NODES
 typeset REASON
@@ -353,7 +366,7 @@ ${stat_cmd} ${stat_args} | tr '?' '-' | sort -t '^' -k 7 -r |\
     while [[ ${end_of_line} -eq 0 ]]
   do
   IFS='^'
-  read USER PROJECT BATCHID NCPUS RCPUS QUEUE PRIORITY STATE TIMELIM TIMEUSED SUSPTIME STARTTIME RMID NODES REASON NAME
+  read USER PROJECT BATCHID NCPUS RCPUS QUEUE PRIORITY STATE SCHEDTIME TIMELIM TIMEUSED SUSPTIME STARTTIME RMID NODES REASON NAME
   status=$?
   unset IFS
   if [ $status -ne 0 ]
@@ -454,19 +467,113 @@ ${stat_cmd} ${stat_args} | tr '?' '-' | sort -t '^' -k 7 -r |\
       ## shrink name
       NAME=$(shrink_name $NAME)
 
+      check_val $SCHEDTIME
+
+      if [ $? -eq 0 ]; then
+	  if [ $STATE == "PEN" ]; then
+	      (( difftime = SCHEDTIME - current_time ))
+	      if [ $difftime -lt 86400 ]; then
+		  TIMEUSED="~`date -d @$SCHEDTIME  '+%Hh%M'`"
+	      else
+		  TIMEUSED="~`date -d @$SCHEDTIME  '+%b%d'`"
+	      fi
+	  fi
+      fi
+
       ## print line
       if [[ ${BRIDGE_BINDING} != "rmid" ]]
 	  then
-	  printf "%-11s %-10s %7s %5s   %-10s %-10s %-6s %6s %5s %5s %5s %-10s " "$USER" "$PROJECT" "$BATCHID" "$NCPUS" \
+	  printf "%-11s %-10s %-8s %-6s %-10s %-10s %-6s %-6s %-13s %-6s %-6s %-16s " "$USER" "$PROJECT" "$BATCHID" "$NCPUS" \
 	      "$QUEUE" "$PRIORITY" "$STATE" "$TIMELIM" "$TIMEUSED" "$SUSPTIME" "$STARTTIME" "$NAME"
       else
-	  printf "%-11s %-10s %7s %5s   %-10s %-10s %-6s %6s %5s %5s %5s %-10s %7s " "$USER" "$PROJECT" "$BATCHID" "$NCPUS" \
+	  printf "%-11s %-10s %-8s %-6s %-10s %-10s %-6s %-6s %-13s %-6s %-6s %-16s %7s " "$USER" "$PROJECT" "$BATCHID" "$NCPUS" \
 	      "$QUEUE" "$PRIORITY" "$STATE" "$TIMELIM" "$TIMEUSED" "$SUSPTIME" "$STARTTIME" "$NAME" "${RMID}"
       fi
       print "$NODES"
       set_standard_mode
   fi
 done
+
+set_purple_mode
+typeset end_of_line=0
+scontrol --details -o show reservation | awk '/ReservationName/{
+match($0,/Users=([\[\]\(\)a-z\-:_@A-Z0-9]+)/,a);
+printf "%s ",a[1]; 
+match($0,/Accounts=([\[\]\(\)a-z\-:_@A-Z0-9]+)/,a);
+printf "%s ",a[1]; 
+match($0,/ReservationName=([\[\]\(\)a-z\-:_@A-Z0-9]+)/,a);
+printf "%s ",a[1]; 
+match($0,/PartitionName=([\[\]\(\)a-z\-:_@A-Z0-9]+)/,a);
+printf "%s ",a[1]; 
+match($0,/StartTime=([\[\]\(\)a-z\-:_@A-Z0-9]+)/,a);
+printf "%s ",a[1]; 
+match($0,/EndTime=([\[\]\(\)a-z\-:_@A-Z0-9]+)/,a);
+printf "%s ",a[1]; 
+match($0,/Nodes=([\[\]\(\)a-z\-:_@A-Z0-9]+)/,a);
+printf "%s ",a[1]; 
+printf "\n";
+}' | while [[ ${end_of_line} -eq 0 ]]
+  do
+  read USER PROJECT NAME QUEUE SLURMSTART SLURMLIM NODES
+  status=$?
+  if [ $status -eq 0 ]
+      then
+
+      SLURMSTART=`echo $SLURMSTART | tr T ' '`
+      SLURMLIM=`echo $SLURMLIM | tr T ' '`     
+
+      UNIXSTART=`date -d "$SLURMSTART" '+%s'`
+      UNIXEND=`date -d "$SLURMLIM" '+%s'`
+
+      TIMELIM=`shrink_time $((UNIXEND - UNIXSTART))`
+
+      (( difftime = $UNIXSTART - current_time ))
+      if [ $difftime -gt 0 ]; then
+	  STATE="PEN"
+	  if [ $difftime -lt 86400 ]; then
+	      TIMESTART="`TZ=GMT date -d "$SLURMSTART" '+%Hh%M'`"
+	  else
+	      TIMESTART="`TZ=GMT date -d "$SLURMSTART" '+%b%d'`"
+	  fi
+      else
+	  STATE="RUN"
+	  (( TIMESTART = - $difftime ))
+	  TIMESTART=$(shrink_time $TIMESTART)
+      fi
+
+      check_val $USER
+      if [ $? -ne 0 ]; then
+	  USER="-"
+      fi
+
+      check_val $QUEUE
+      if [ $? -ne 0 ]; then
+	  QUEUE="-"
+      fi
+
+      check_val $PROJECT
+      if [ $? -ne 0 ]; then
+	  PROJECT="-"
+      fi
+
+      NCPUS=`sinfo -n $NODES -h -o %C  | cut -d '/' -f 4`
+      NAME=`shrink_name $NAME`
+
+      if [[ ${BRIDGE_BINDING} != "rmid" ]]
+      then
+	  printf "%-11s %-10s %-8s %-6s %-10s %-10s %-6s %-6s %-13s %-6s %-6s %-16s " "$USER" "$PROJECT" "RESV" "$NCPUS" \
+	      "$QUEUE" "-" "$STATE" "$TIMELIM" "$TIMESTART" "-" "-" "$NAME"
+      else
+	  printf "%-11s %-10s %-8s %-6s %-10s %-10s %-6s %-6s %-13s %-6s %-6s %-16s %7s " "$USER" "$PROJECT" "RESV" "$NCPUS" \
+	      "$QUEUE" "-" "$STATE" "$TIMELIM" "$TIMESTART" "-" "-" "$NAME" "${RMID}"
+      fi
+      print "$NODES"
+  else
+      end_of_line=1
+  fi
+done
+set_standard_mode
+
 
 EXIT_STATUS=0
 ###################################################################################################################
