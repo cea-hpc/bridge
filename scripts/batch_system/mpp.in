@@ -90,7 +90,7 @@ function set_red_mode {
     is_color_enabled
     if [ $? -eq 1 ]
 	then
-	printf "[0;33m"
+	printf "[0;31m"
     fi
 }
 function set_blue_mode {
@@ -107,7 +107,13 @@ function set_purple_mode {
 	printf "[0;35m"
     fi
 }
-
+function set_orange_mode {
+    is_color_enabled
+    if [ $? -eq 1 ]
+        then
+	printf "[0;33m"
+    fi
+}
 function extract_base_acct {
     echo ${1%%@*}
 }
@@ -418,8 +424,13 @@ ${stat_cmd} ${stat_args} | tr '?' '-' | sort -n -t '^' -k 7 -r |\
 		  then
 		  continue
 	      fi
-	      set_green_mode
-	      STATE=RUN
+	      if [[ $REASON == "R00" ]]; then
+		  set_orange_mode
+		  STATE=CG
+	      else
+		  set_green_mode
+		  STATE=RUN
+	      fi
 	      ;;
 	  pending)
 	      if [[ ${stateful_show} -eq 1 ]] && [[ ${show_pending} -ne 1 ]]
