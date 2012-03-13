@@ -40,7 +40,7 @@ function bridge_addon_msub_getopt {
     ## on fixe le message d'aide a afficher si demande
     typeset USAGE="\
 \t*) QOS
-\t\t -Q normal|nonreg|debug : enable QOS using provided SLA\n"
+\t\t -Q sla : enable QOS using provided SLA\n"
     
     ## on fixe le status de sortie par defaut
     typeset exit_status=0
@@ -106,15 +106,19 @@ function bridge_addon_msub_alteropt {
     ## on active la QOS
     if [[ -n ${BRIDGE_MSUB_ADDON_QOS} ]]
     then
-	case ${BRIDGE_MSUB_ADDON_QOS} in
-            normal|nonreg|debug|kms|special)
+	if [[ -n ${BRIDGE_MSUB_ADDON_QOS_ALLOWED_QOS} ]]
+	then
+	    echo ${BRIDGE_MSUB_ADDON_QOS} | egrep -qw "${BRIDGE_MSUB_ADDON_QOS_ALLOWED_QOS}"
+	    if [[ $? -eq 0 ]]
+	    then
 		${LOGGER} "SLA is now ${BRIDGE_MSUB_ADDON_QOS}"
-		;;
-            *)
-		${ERROR} "unknown SLA ${BRIDGE_MSUB_ADDON_QOS}, usable SLA are normal, nonreg, debug. skipping QOS"
+	    else
+		${ERROR} "unknown SLA ${BRIDGE_MSUB_ADDON_QOS}, usable SLA are \"${BRIDGE_MSUB_ADDON_QOS_ALLOWED_QOS}\". skipping QOS"
 		BRIDGE_MSUB_ADDON_QOS=
-		;;
-	esac
+	    fi
+	else
+	    ${LOGGER} "SLA is now ${BRIDGE_MSUB_ADDON_QOS}"
+	fi
     fi
     if [[ -n ${BRIDGE_MSUB_ADDON_QOS} ]]
     then
@@ -181,7 +185,7 @@ function bridge_addon_mprun_getopt {
     ## on fixe le message d'aide a afficher si demande
     typeset USAGE="\
 \t*) QOS
-\t\t -Q normal|nonreg|debug : enable QOS using provided SLA\n"
+\t\t -Q sla : enable QOS using provided SLA\n"
     
     ## on fixe le status de sortie par defaut
     typeset exit_status=0
@@ -198,14 +202,19 @@ function bridge_addon_mprun_getopt {
 
 	  Q)
 	      BRIDGE_MPRUN_ADDON_QOS=${OPTARG}
-	      case ${BRIDGE_MPRUN_ADDON_QOS} in
-		  normal|nonreg|debug|kms|special)
+	      if [[ -n ${BRIDGE_MPRUN_ADDON_QOS_ALLOWED_QOS} ]]
+	      then
+		  echo ${BRIDGE_MPRUN_ADDON_QOS} | egrep -qw "${BRIDGE_MPRUN_ADDON_QOS_ALLOWED_QOS}"
+		  if [[ $? -eq 0 ]]
+		  then
 		      ${LOGGER} "SLA is now ${BRIDGE_MPRUN_ADDON_QOS}"
-		      ;;
-		  *)
-		      ${ERROR} "unknown SLA ${BRIDGE_MPRUN_ADDON_QOS}, usable SLA are normal, nonreg, debug. skipping QOS"
+		  else
+		      ${ERROR} "unknown SLA ${BRIDGE_MPRUN_ADDON_QOS}, usable SLA are \"${BRIDGE_MPRUN_ADDON_QOS_ALLOWED_QOS}\". skipping QOS"
 		      BRIDGE_MPRUN_ADDON_QOS=
-	      esac
+		  fi
+	      else
+		  ${LOGGER} "SLA is now ${BRIDGE_MPRUN_ADDON_QOS}"
+	      fi
 	      ;;
 	  
 	  *)
