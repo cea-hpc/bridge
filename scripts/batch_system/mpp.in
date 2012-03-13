@@ -371,7 +371,7 @@ fi
 # le tr est necessaire car les ? renvoyes par stat_cmd
 # sont transformes en nom de fichier a 1 caractere par
 # le shell ce qui provoque des comportements etranges
-${stat_cmd} ${stat_args} | tr '?' '-' | sort -t '^' -k 7 -r |\
+${stat_cmd} ${stat_args} | tr '?' '-' | sort -n -t '^' -k 7 -r |\
     while [[ ${end_of_line} -eq 0 ]]
   do
   IFS='^'
