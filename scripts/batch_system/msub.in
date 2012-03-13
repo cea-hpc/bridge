@@ -261,7 +261,7 @@ do
       L) ARGEXP1="$ARGEXP1""OPTION_L=\"$OPTARG\"; ";;
       q) ARGEXP1="$ARGEXP1""OPTION_q=$OPTARG; ";;
       P) ARGEXP1="$ARGEXP1""OPTION_P=$OPTARG; ";;
-      E) ARGEXP1="$ARGEXP1""OPTION_E=\"$OPTARG\"; ";;
+      E) ARGEXP1="$ARGEXP1""OPTION_E+=\"$OPTARG \"; ";;
       @) ARGEXP1="$ARGEXP1""OPTION_at=\"$OPTARG\"; ";;
       x) ARGEXP1="$ARGEXP1""OPTION_x=yes; ";;
       *)
@@ -575,11 +575,12 @@ AWKSCRIPT='
                         opt=1
                 }
                 else if ($i=="-E") {
-                        printf("OPTION_E=")
+                        printf("OPTION_E+=")
                         i++
                         for ( j=i ; j<=NF ; j++ )
                           printf("%s ", $j)
                         printf(" ")
+                        printf("OPTION_E+=\" \" ")
                         opt=1
                 }
                 else if ($i=="-q") {
