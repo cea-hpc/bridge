@@ -1,0 +1,191 @@
+## Common
+
+function get_slurm_default_acct {
+    echo `sacctmgr -Pn  show user $1 | cut -d '|' -f 2`
+}
+
+function get_slurm_suitable_acct {
+    echo `sacctmgr -nP list assoc where user=$1 partition=$2 | grep \|$3@ | cut -f 2 -d '|'  2>/dev/null | head -n 1`
+}
+
+function extract_base_acct {
+    echo `echo $1 | cut -d '@' -f 1`
+}
+
+## MSUB
+function bridge_addon_msub_setopt {
+    return 0
+}
+
+function bridge_addon_msub_getopt {
+    return 0
+}
+
+
+function bridge_addon_msub_alteropt {
+
+    ## on se place en mode debug si souhaite
+    typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+	then
+	set -x
+    fi
+
+    ## on incremente le niveau de log
+    typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+
+    ## on ajoute une entete a la log
+    typeset LOGGER="${LOGGER} DAM AutoAccount Addon :"
+
+    typeset defacct=`get_slurm_default_acct "$USER"`
+
+    if [[ -n ${BRIDGE_MSUB_QUEUE} ]]; then
+    	if [[ -z ${BRIDGE_MSUB_PROJECT} ]]; then
+    	    typeset origacct=`extract_base_acct $defacct`
+    	else
+    	    if [[ ${BRIDGE_MSUB_PROJECT} == *@* ]]; then
+    	       ## User specifed his subaccount, hopefully he knows what he is doing
+    		${LOGGER} "Sub account ${BRIDGE_MSUB_PROJECT} is already set, skipping"
+    		return 0
+    	    elif [[ ${BRIDGE_MSUB_PROJECT} == "root" ]]; then
+    	    	## Root has no subaccount
+    	    	${LOGGER} "Root account used, skipping"
+    	    	return 0
+    	    else
+    	    	typeset origacct=${BRIDGE_MSUB_PROJECT}
+    	    fi
+    	fi
+
+	typeset newacct=`get_slurm_suitable_acct "${USER}" "${BRIDGE_MSUB_QUEUE}" "${origacct}"`
+    else
+	if [[ -z ${BRIDGE_MSUB_PROJECT} ]]; then
+    	    ${LOGGER} "No partition or account selected, skipping'"
+	    return 0
+    	else
+    	    if [[ ${BRIDGE_MSUB_PROJECT} == *@* ]]; then
+    	       ## User specifed his subaccount, hopefully he knows what he is doing
+    		${LOGGER} "Sub account ${BRIDGE_MSUB_PROJECT} is already set, skipping"
+    		return 0
+    	    elif [[ ${BRIDGE_MSUB_PROJECT} == "root" ]]; then
+    	    	## Root has no subaccount
+    	    	${LOGGER} "Root account used, skipping"
+    	    	return 0
+    	    else
+    	    	typeset origacct=${BRIDGE_MSUB_PROJECT}
+    	    fi
+    	fi
+	typeset newacct=`get_slurm_suitable_acct "${USER}" "${BRIDGE_MSUB_DEFAULT_QUEUE}" "${origacct}"`
+    fi
+
+    if [[ -z ${newacct} ]]; then
+	${LOGGER} "Unable to auto select a suitable account'"
+    else
+    	BRIDGE_MSUB_PROJECT=${newacct}
+    	${LOGGER} "Account is now '${BRIDGE_MSUB_PROJECT}'"
+    fi
+
+    return 0
+}
+
+function bridge_addon_msub_alterscript {
+    return 0
+}
+
+
+
+##MPRUN
+function bridge_addon_mprun_setopt {
+    return 0
+}
+
+function bridge_addon_mprun_getopt {
+    return 0
+}
+
+function bridge_addon_mprun_alteropt {
+    ## on se place en mode debug si souhaite
+    typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+    	then
+    	set -x
+    fi
+
+    ## on incremente le niveau de log
+    typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+
+    ## on ajoute une entete a la log
+    typeset LOGGER="${LOGGER} Bridge AutoAccount Addon :"
+
+    if [[ "${BRIDGE_MPRUN_ALLOCATION}" == yes ]] then
+        ${LOGGER} "wrapping allocation detected: skipping"
+    	return 0
+    fi
+
+    typeset defacct=`get_slurm_default_acct "$USER"`
+
+    if [[ -n ${bridge_mprun_partition} ]]; then
+    	if [[ -z ${bridge_mprun_project} ]]; then
+    	    typeset origacct=`extract_base_acct $defacct`
+    	else
+    	    if [[ ${bridge_mprun_project} == *@* ]]; then
+    	       ## User specifed his subaccount, hopefully he knows what he is doing
+    		${LOGGER} "Sub account ${bridge_mprun_project} is already set, skipping"
+    		return 0
+    	    elif [[ ${bridge_mprun_project} == "root" ]]; then
+    	    	## Root has no subaccount
+    	    	${LOGGER} "Root account used, skipping"
+    	    	return 0
+    	    else
+    	    	typeset origacct=${bridge_mprun_project}
+    	    fi
+    	fi
+
+	typeset newacct=`get_slurm_suitable_acct ${USER} ${bridge_mprun_partition} ${origacct}`
+
+    else
+	if [[ -z ${bridge_mprun_project} ]]; then
+    	    ${LOGGER} "No partition or account selected, skipping'"
+	    return 0
+    	else
+    	    if [[ ${bridge_mprun_project} == *@* ]]; then
+    	       ## User specifed his subaccount, hopefully he knows what he is doing
+    		${LOGGER} "Sub account ${bridge_mprun_project} is already set, skipping"
+    		return 0
+    	    elif [[ ${bridge_mprun_project} == "root" ]]; then
+    	    	## Root has no subaccount
+    	    	${LOGGER} "Root account used, skipping"
+    	    	return 0
+    	    else
+    	    	typeset origacct=${bridge_mprun_project}
+    	    fi
+    	fi
+	typeset newacct=`get_slurm_suitable_acct "${USER}" "${BRIDGE_MPRUN_DEFAULT_PARTITION}" "${origacct}"`
+    fi
+
+    if [[ -z ${newacct} ]]; then
+	${LOGGER} "Unable to auto select a suitable account'"
+    else
+    	bridge_mprun_project=${newacct}
+    	${LOGGER} "Account is now '${bridge_mprun_project}'"
+    fi
+    
+    return 0
+}
+
+function bridge_addon_mprun_spmd_pre_allocate {
+    return 0
+}
+
+
+function bridge_addon_mprun_spmd_post_allocate {
+    return 0
+}
+
+
+function bridge_addon_mprun_spmd_pre_run {
+    return 0
+}
+
+function bridge_addon_mprun_spmd_post_run {
+    return 0
+}

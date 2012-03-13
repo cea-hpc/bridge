@@ -8,6 +8,7 @@ dist_addonscripts_DATA		=	autoexclusive.ad \
 					autopacking.ad \
 					autoqueue.ad \
 					autodefmem.ad \
+					autoaccount.ad \
 					bcast.ad \
 					bridge-profile.ad \
 					bullmpi-slurm.ad \

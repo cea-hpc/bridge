@@ -222,6 +222,7 @@ dist_addonscripts_DATA = autoexclusive.ad \
 					autopacking.ad \
 					autoqueue.ad \
 					autodefmem.ad \
+					autoaccount.ad \
 					bcast.ad \
 					bullmpi-slurm.ad \
 					bullmpi-slurm-direct.ad \
