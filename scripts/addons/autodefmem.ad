@@ -1,0 +1,116 @@
+ # This addon is meant as a workaround to the slurm limitation that only a single DefMemPerCPU and MaxMemPerCPU can be set across the whole cluster. It simulates a value of DefMemPerCPU equal to the amount of memory available per CPU in the requested partition.
+
+# Note: for this to work in all cases, BRIDGE_*_DEFAULT_MAXMEM and BRIDGE_*_DEFAULT_QUEUE/PARTIION must be set to sensible values. 
+
+
+##MSUB
+function bridge_addon_msub_setopt {
+    return 0
+}
+
+function bridge_addon_msub_getopt {
+    return 0
+}
+
+function bridge_addon_msub_alteropt {
+
+    ## on se place en mode debug si souhaite
+    typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+	then
+	set -x
+    fi
+
+    ## on incremente le niveau de log
+    typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+
+    ## on ajoute une entete a la log
+    typeset LOGGER="${LOGGER} Bridge AutoDefMem Addon :"
+
+    ## do auto-selection only if max_mem is not already set and the user specifies a partition
+    if [[ -z ${BRIDGE_MSUB_MAXMEM} && -n ${BRIDGE_MSUB_QUEUE} ]]
+	then
+	BRIDGE_MSUB_MAXMEM=`sinfo -p ${BRIDGE_MSUB_QUEUE}  -heo %c,%m | awk -F ',' '{v=$2/$1; if(min==0 || min>v) min=v  } END {print int(v)}'`
+
+	### display auto-mem result
+	if [[ -n ${BRIDGE_MSUB_MAXMEM} ]]
+	    then
+	    ${LOGGER} "max mem is now '${BRIDGE_MSUB_MAXMEM}'"
+	else
+	    ${LOGGER} "unable to auto select max mem"
+	fi
+    else
+	${LOGGER} "max mem is already set, skipping"
+    fi
+
+    return 0
+}
+
+function bridge_addon_msub_alterscript {
+    return 0
+}
+
+##MPRUN
+function bridge_addon_mprun_setopt {
+    return 0
+}
+
+function bridge_addon_mprun_getopt {
+    return 0
+}
+
+function bridge_addon_mprun_alteropt {
+    ## on se place en mode debug si souhaite
+    typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+	then
+	set -x
+    fi
+
+    ## on incremente le niveau de log
+    typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+
+    ## on ajoute une entete a la log
+    typeset LOGGER="${LOGGER} Bridge AutoDefMem Addon :"
+
+    if [[ "${BRIDGE_MPRUN_ALLOCATION}" == yes ]] then
+        ${LOGGER} "wrapping allocation detected: skipping"
+	return 0
+    fi    
+
+    ## do auto-selection only if max_mem is not already set and the user specifies a partition
+    if [[ -z ${bridge_mprun_maxmem} && -n ${bridge_mprun_partition} ]]
+	then
+
+	bridge_mprun_maxmem=`sinfo -p ${bridge_mprun_partition}  -heo %c,%m | awk -F ',' '{v=$2/$1; if(min==0 || min>v) min=v  } END {print int(v)}'`
+
+	if [[ -n ${bridge_mprun_maxmem} ]]
+	    then
+	    ${LOGGER} "max mem is now '${bridge_mprun_maxmem}'"
+	else
+	    ${LOGGER} "unable to auto select max mem"
+	fi
+    else
+	${LOGGER} "default partition requested or max mem already set, skipping"
+    fi
+
+    return 0
+}
+
+function bridge_addon_mprun_spmd_pre_allocate {
+    return 0
+}
+
+
+function bridge_addon_mprun_spmd_post_allocate {
+    return 0
+}
+
+
+function bridge_addon_mprun_spmd_pre_run {
+    return 0
+}
+
+function bridge_addon_mprun_spmd_post_run {
+    return 0
+}
