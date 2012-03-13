@@ -1,0 +1,1 @@
+SUBDIRS		=	bridge bridged bridgedc

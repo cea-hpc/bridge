@@ -1,0 +1,278 @@
+
+# MSUB
+
+function _slurm_resize_mem {
+
+    typeset xmem=$1
+    typeset xfactor
+
+    # le facteur de warning sur la taille 
+    # memoire est actuellement defini dans le 
+    # /etc/sysconfig/slurm, on le cherche
+    # sinon on prend 
+    xfactor=$(egrep "JOBACCTGATHER_MEM_LIMIT_WARNING_PERCENT=" /etc/sysconfig/slurm 2>/dev/null | \
+	sed 's/.*JOBACCTGATHER_MEM_LIMIT_WARNING_PERCENT=//')
+    if [[ -z ${xfactor} ]]
+	then
+	xfactor=100
+    else
+	(( xfactor = xfactor + 100 ))
+    fi
+
+
+    if [[ $# -ne 1 ]]
+	then
+	echo 0
+	return 1
+    else
+	if [[ ${xfactor} -ne 100 ]]
+	    then
+	    (( xmem = xmem * 100 / xfactor ))
+	fi
+	echo $xmem
+	return 0
+    fi
+
+}
+
+function bridge_addon_msub_setopt {
+    return 0
+}
+
+function bridge_addon_msub_getopt {
+    return 0
+}
+
+
+function bridge_addon_msub_alteropt {
+
+    typeset valid_queue
+
+    ## on se place en mode debug si souhaite
+    typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+	then
+	set -x
+    fi
+    
+    ## on incremente le niveau de log
+    typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+    
+    ## on ajoute une entete a la log
+    typeset LOGGER="${LOGGER} DAM Auto-memory Addon :"
+
+    if [[ ${BRIDGE_AUTOMEM_MODE} == 0 ]]
+    then
+	${LOGGER} "disabled by env variable"
+	return 0
+    fi
+
+    ## on recupere la valeur requise par coeur de calcul
+    typeset defmempercpu=$(cat /etc/slurm/slurm.conf | egrep "^DefMemPerCPU=" | sed 's/.*=//')
+    if [[ -n ${BRIDGE_MSUB_MAXMEM} ]]
+    then
+	typeset mempercpu=${BRIDGE_MSUB_MAXMEM}
+    else
+	if [[ -z ${defmempercpu} ]]
+	then
+	    ${LOGGER} "unable to get slurm DefMemPerCpu value, skipping this addon"
+	    return 0
+	fi
+	typeset mempercpu=${defmempercpu}
+    fi
+
+    ## si la taille n'a pas encore ete retouchee (necessite le patch limite memoire soft/hard dans SLURM)
+    ## on le fait
+    if [[ ${BRIDGE_MSUB_MAXMEM_RESIZED} -ne 1 ]]
+	then
+	export BRIDGE_MSUB_MAXMEM_RESIZED=1
+	export BRIDGE_MSUB_MAXMEM=$(_slurm_resize_mem ${mempercpu})
+	${LOGGER} "requested mem modified from ${mempercpu} to ${BRIDGE_MSUB_MAXMEM} Mo"
+    fi
+
+    ## on regarde si la parition demandee est compatible avec la demande.
+    ## Si oui on la prend. Si non, on le log et on cherche une autre partition (on pourrait
+    ## etre plus violent et sortir en erreur...
+    if [[ -n ${BRIDGE_MSUB_QUEUE} ]]
+    then
+	valid_queue=$(sinfo -a -h -p ${BRIDGE_MSUB_QUEUE} -o "%P %m %X %Y" | sort -n -k 2 | \
+	    awk -v mem=${mempercpu}  '{if ( mem <= $2 / $3 /$4 ) print $1}' | head -n 1 )
+	if [[ -n ${valid_queue} ]]
+	then
+	    ${LOGGER} "using queue '${valid_queue}' based on validated user requirements (${mempercpu} Mo per core)"
+	    export BRIDGE_MSUB_QUEUE=${valid_queue}
+	    return 0
+	else
+	    ${LOGGER} "not using queue '${BRIDGE_MSUB_QUEUE}' as it does not comply with ${mempercpu} Mo per core"
+	fi
+    fi
+
+    ## on cherche les partitions compatibles avec ce type de demande et on prend la 
+    ## premiere (celle dont la quantite est la plus faible)
+    valid_queue=$(sinfo -a -h -o "%P %m %X %Y" | sort -n -k 2 | egrep -w "${BRIDGE_MSUB_QUEUE}|bigmem" | \
+	awk -v mem=${mempercpu}  '{if ( mem <= $2 / $3 /$4 ) print $1}' | head -n 1 )
+    if [[ -n ${valid_queue} ]]
+    then
+	${LOGGER} "now using queue '${valid_queue}' due to memory requirement of ${mempercpu} Mo per core"
+	export BRIDGE_MSUB_QUEUE=${valid_queue}
+	return 0
+    fi
+
+    ## on est dans le cas ou la demande est superieure aux valeurs autorisees par coeur sur les partitions
+    ## on regarde donc sur quelle partition on peut lancer l'application pour respecter la quantite requise 
+    ## par tache
+    mempertask=$(( ${mempercpu} * ${BRIDGE_MSUB_NCORE:-1} ))
+    valid_queue=$(sinfo -a -h -o "%P %m" | sort -n -k 2 | egrep -w "${BRIDGE_MSUB_QUEUE}|bigmem" | \
+	awk -v mem=${mempertask}  '{if ( mem <= $2 ) print $1}' | head -n 1 )
+    if [[ -n ${valid_queue} ]]
+    then
+	${LOGGER} "now using queue '${valid_queue}' due to memory requirement of ${mempertask} Mo per task"
+	export BRIDGE_MSUB_QUEUE=${valid_queue}
+    fi
+
+    return 0
+}
+
+
+function bridge_addon_msub_alterscript {
+    return 0
+}
+
+# MPRUN
+
+function bridge_addon_mprun_setopt {
+    return 0
+}
+
+function bridge_addon_mprun_getopt {
+    return 0
+}
+
+function bridge_addon_mprun_alteropt {
+
+    ## on se place en mode debug si souhaite
+    typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+	then
+	set -x
+    fi
+    
+    ## on incremente le niveau de log
+    typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+    
+    ## on ajoute une entete a la log
+    typeset LOGGER="${LOGGER} DAM Auto-memory Addon :"
+
+    ## on rend la main si on est deja dans une allocation
+    if [[ ${BRIDGE_MPRUN_ALLOCATION} == "yes" ]]
+    then
+	${LOGGER} "wrapping allocation detected, skipping"
+	return 0
+    fi
+
+    if [[ ${BRIDGE_AUTOMEM_MODE} == 0 ]]
+    then
+	${LOGGER} "disabled by env variable"
+	return 0
+    fi
+
+    ## on recupere la valeur requise par coeur de calcul
+    typeset defmempercpu=$(cat /etc/slurm/slurm.conf | egrep "^DefMemPerCPU=" | sed 's/.*=//')
+    if [[ -n ${bridge_mprun_maxmem} ]]
+    then
+	typeset mempercpu=${bridge_mprun_maxmem}
+    else
+	if [[ -z ${defmempercpu} ]]
+	then
+	    ${LOGGER} "unable to get slurm DefMemPerCpu value, skipping this addon"
+	    return 0
+	fi
+	typeset mempercpu=${defmempercpu}
+    fi
+
+    ## si la taille n'a pas encore ete retouchee (necessite le patch limite memoire soft/hard dans SLURM)
+    ## on le fait
+    if [[ ${BRIDGE_MPRUN_MAXMEM_RESIZED} -ne 1 ]]
+	then
+	export BRIDGE_MPRUN_MAXMEM_RESIZED=1
+	export bridge_mprun_maxmem=$(_slurm_resize_mem ${mempercpu})
+	${LOGGER} "requested mem modified from ${mempercpu} to ${bridge_mprun_maxmem} Mo"
+    fi
+
+    ## on regarde si la parition demandee est compatible avec la demande.
+    ## Si oui on la prend. Si non, on le log et on cherche une autre partition (on pourrait
+    ## etre plus violent et sortir en erreur...
+    typeset valid_queue
+    if [[ -n ${bridge_mprun_partition} ]]
+    then
+	valid_queue=$(sinfo -a -h -p ${bridge_mprun_partition} -o "%P %m %X %Y" | sort -n -k 2 | \
+	    awk -v mem=${mempercpu}  '{if ( mem <= $2 / $3 /$4 ) print $1}' | head -n 1 )
+	if [[ -n ${valid_queue} ]]
+	then
+	    ${LOGGER} "using partition '${valid_queue}' based on validated user requirements (${mempercpu} Mo per core)"
+	    export BRIDGE_MPRUN_PARTITION=${valid_queue}
+	    export bridge_mprun_partition=${valid_queue}
+	    return 0
+	else
+	    ${LOGGER} "not using partition '${bridge_mprun_partition}' as it does not comply with ${mempercpu} Mo per core"
+	fi
+    fi
+    ## on cherche les partitions compatibles avec ce type de demande et on prend la 
+    ## premiere (celle dont la quantite est la plus faible)
+    if [[ -n ${bridge_mprun_partition} ]]
+    then  
+	valid_queue=$(sinfo -a -h -o "%P %m %X %Y" | sort -n -k 2 | egrep -w "bigmem|${bridge_mprun_partition}" | \
+	    awk -v mem=${mempercpu}  '{if ( mem <= $2 / $3 /$4 ) print $1}' | head -n 1 )
+    else
+	valid_queue=$(sinfo -a -h -o "%P %m %X %Y" | sort -n -k 2 | egrep -w "parallele|bigmem" | \
+	    awk -v mem=${mempercpu}  '{if ( mem <= $2 / $3 /$4 ) print $1}' | head -n 1 )
+    fi
+    if [[ -n ${valid_queue} ]]
+    then
+	${LOGGER} "now using partition '${valid_queue}' due to memory requirement of ${mempercpu} Mo per core"
+	export BRIDGE_MPRUN_PARTITION=${valid_queue}
+	export bridge_mprun_partition=${valid_queue}
+	return 0
+    fi
+
+    ## on est dans le cas ou la demande est superieure aux valeurs autorisees par coeur sur les partitions
+    ## on regarde donc sur quelle partition on peut lancer l'application pour respecter la quantite requise 
+    ## par tache
+    mempertask=$(( ${mempercpu} * ${bridge_mprun_ncore:-1} ))
+    if [[ -n ${bridge_mprun_partition} ]]
+    then
+	valid_queue=$(sinfo -a -h -o "%P %m" | sort -n -k 2 | egrep -w "bigmem|${bridge_mprun_partition}" | \
+	    awk -v mem=${mempertask}  '{if ( mem <= $2 ) print $1}' | head -n 1 )
+    else
+	valid_queue=$(sinfo -a -h -o "%P %m" | sort -n -k 2 | egrep -w "parallele|bigmem" | \
+	    awk -v mem=${mempertask}  '{if ( mem <= $2 ) print $1}' | head -n 1 )
+    fi
+    if [[ -n ${valid_queue} ]]
+    then
+	${LOGGER} "now using queue '${valid_queue}' due to memory requirement of ${mempertask} Mo per task"
+	export BRIDGE_MPRUN_PARTITION=${valid_queue}
+	export bridge_mprun_partition=${valid_queue}
+    else
+	${LOGGER} "no queue can be used to serve your request of ${mempertask} Mo per task"
+    fi
+
+    return 0
+}
+
+function bridge_addon_mprun_spmd_pre_allocate {
+    return 0
+}
+
+
+function bridge_addon_mprun_spmd_post_allocate {
+    return 0
+}
+
+
+function bridge_addon_mprun_spmd_pre_run {
+    return 0
+}
+
+function bridge_addon_mprun_spmd_post_run {
+    return 0
+}

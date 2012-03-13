@@ -1,0 +1,45 @@
+function bridge_addon_msub_setopt {
+
+    return 0
+
+}
+
+function bridge_addon_msub_getopt {
+    
+    return ${exit_status}
+}
+
+
+function bridge_addon_msub_alteropt {
+
+    ## on se place en mode debug si souhaite
+    typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+	then
+	set -x
+    fi
+    
+    ## on incremente le niveau de log
+    typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+    
+    ## on ajoute une entete a la log
+    typeset LOGGER="${LOGGER} DAM compat Addon :"
+
+    ## compatibilite DAM ('-N' si pas de '-n', equivaut a '-n')
+    if [[ -n ${BRIDGE_MSUB_NNODE} ]] && [[ -z ${BRIDGE_MSUB_NPROC} ]]
+	then
+	BRIDGE_MSUB_NPROC=${BRIDGE_MSUB_NNODE}
+	BRIDGE_MSUB_NNODE=
+	${LOGGER} "swapping -N ${BRIDGE_MSUB_NPROC} with -n ${BRIDGE_MSUB_NPROC}"
+    fi
+
+    return 0
+
+}
+
+
+function bridge_addon_msub_alterscript {
+
+    return 0
+
+}

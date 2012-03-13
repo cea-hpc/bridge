@@ -1,0 +1,55 @@
+#------------------------------------------------------------------------------#
+# @PACKAGE@ library configuration file
+# (Generated using autotools)
+#------------------------------------------------------------------------------#
+
+#------------------------------------------------------------------------------#
+# Global Informations
+#------------------------------------------------------------------------------#
+global {
+#	plugins_dir = @prefix@/lib ;
+	bs_rm_binding = @BRIDGE_BINDING@ ; # one of batchid | rmid | none
+
+	logfile = /dev/stdout ;
+	loglevel = 0 ;
+	debugfile = /dev/stdout ;
+	debuglevel = 0;
+}
+#------------------------------------------------------------------------------#
+
+#------------------------------------------------------------------------------#
+# Batch system informations
+#------------------------------------------------------------------------------#
+batch_system {
+    name = @BRIDGE_BATCH_SYSTEM@ ;
+    plugin = @BRIDGE_BATCH_PLUGIN@ ;
+}
+#------------------------------------------------------------------------------#
+
+#------------------------------------------------------------------------------#
+# Resource manager informations (required if bs_rm_binding differs from none)
+#------------------------------------------------------------------------------#
+rm_system {
+	name = @BRIDGE_RM_SYSTEM@ ;
+	plugin = @BRIDGE_RM_PLUGIN@ ;
+}
+#------------------------------------------------------------------------------#
+
+#------------------------------------------------------------------------------#
+# Bridged Stats Daemon - Client API configuration
+#------------------------------------------------------------------------------#
+bridgedapi {
+        primary_address         =       "localhost" ;
+        primary_port            =       12346 ;
+
+        secondary_address       =       "localhost" ;
+        secondary_port          =       12346 ;
+
+        timeout                 =       10 ;
+
+        logfile                 =       "/tmp/bridgeapi.log" ;
+        loglevel                =       0 ;
+        debugfile               =       "/tmp/bridgeapi.log" ;
+        debuglevel              =       0 ;
+}
+#------------------------------------------------------------------------------#

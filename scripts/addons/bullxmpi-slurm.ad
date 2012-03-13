@@ -1,0 +1,178 @@
+#################################################################################
+#
+# Addon for BullXMPI support in Bridge with Slurm
+#
+# 2 environment variables can be used to externally configure 
+# openmpi launcher and args :
+#
+# BRIDGE_SLURM_OMPI_CMD mpirun by default
+# BRIDGE_SLURM_OMPI_CMD_OPTIONS empty by default
+# 
+#################################################################################
+
+function bridge_addon_mprun_setopt {
+
+    typeset MYGETOPTOPTION="e:r:"
+
+    echo "${BRIDGE_MPRUN_GETOPT_OPTIONS}" | grep -q ${MYGETOPTOPTION}
+
+    if [ $? -ne 0 ]
+	then
+	BRIDGE_MPRUN_GETOPT_OPTIONS="${BRIDGE_MPRUN_GETOPT_OPTIONS}e:r:"
+    fi
+
+    return 0
+
+}
+
+function bridge_addon_mprun_getopt {
+    
+    ## on se place en mode debug si souhaite
+    typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+	then
+	set -x
+    fi
+    
+    ## on incremente le niveau de log
+    typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+    
+    ## on ajoute une entete a la log
+    typeset LOGGER="${LOGGER} BullXMPI Addon :"
+
+    ## on fixe le message d'aide a afficher si demande
+    typeset USAGE="\
+\t*) BullXMPI
+\t\t -e options : additional parameters to pass to mpirun command\n\
+\t\t -r id      : start job relative to given node ID in the allocation (starting from 0)\n\
+"
+    
+    ## on fixe le status de sortie par defaut
+    typeset exit_status=0
+    
+    ## on parse les arguments
+    while getopts ${BRIDGE_MPRUN_GETOPT_OPTIONS} option
+      do
+      case ${option} in
+	  
+	  h)
+	      echo -e "${USAGE}" >&2
+	      return 0
+	      ;;
+
+	  e)
+	      echo ${BRIDGE_SLURM_OMPI_CMD_OPTIONS} | grep -q -- "${OPTARG}"
+	      if [[ $? -ne 0 ]]
+	      then
+		  export BRIDGE_SLURM_OMPI_CMD_OPTIONS="${BRIDGE_SLURM_OMPI_CMD_OPTIONS} ${OPTARG}"
+	      fi
+	      ${LOGGER} "mpirun options are now \"${BRIDGE_SLURM_OMPI_CMD_OPTIONS}\""
+	      ;;
+
+	  r)
+	      export BRIDGE_SLURM_OMPI_RELATIVE_ID=${OPTARG}
+	      ;;
+
+	  *)
+	      ;;
+      esac
+    done
+
+    return 0
+
+}
+
+function bridge_addon_mprun_alteropt {
+
+    ## on se place en mode debug si souhaite
+    typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+	then
+	set -x
+    fi
+    
+    ## on incremente le niveau de log
+    typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+    
+    ## on ajoute une entete a la log
+    typeset LOGGER="${LOGGER} BullXMPI Addon :"
+
+    echo $(which mpicc 2>/dev/null) | grep -q bullxmpi
+    if [ $? -ne 0 ]
+	then
+	return 0
+    fi
+    ${LOGGER} "BullXMPI mpicc is the first in the PATH"
+
+    ## force allocation
+    if [[ ${BRIDGE_MPRUN_ALLOCATION} != yes ]]
+	then
+	bridge_mprun_force_allocation=yes
+	### on utilise le nom du prog a executer comme nom de job
+	if [[ -n ${bridge_mprun_args} ]]
+	then
+	    bridge_mprun_options="${bridge_mprun_options} -r $(basename ${bridge_mprun_args%% *})"
+	fi
+    else	
+	export spmd_run_cmd=${BRIDGE_SLURM_OMPI_CMD:-mpirun}
+	if [[ -n ${BRIDGE_SLURM_OMPI_CMD_OPTIONS} ]]
+	then
+	    export spmd_run_options="${spmd_run_options} ${BRIDGE_SLURM_OMPI_CMD_OPTIONS}"
+	fi
+	${LOGGER} "BullXMPI mode is now enabled"
+    fi
+
+    return 0
+
+}
+
+function bridge_addon_mprun_spmd_pre_allocate {
+
+    return 0
+
+}
+
+function bridge_addon_mprun_spmd_post_allocate {
+
+    return 0
+
+}
+
+function bridge_addon_mprun_spmd_pre_run {
+
+    echo $(which mpicc 2>/dev/null) | grep -q bullxmpi
+    if [ $? -ne 0 ]
+    then
+	return 0
+    fi
+
+    if [[ -n ${BRIDGE_SLURM_OMPI_RELATIVE_ID} ]]
+    then
+	(( rid = BRIDGE_SLURM_OMPI_RELATIVE_ID + 1 ))
+	nodelist=$(nodeset -e ${SLURM_NODELIST} | cut -d ' ' -f ${rid}- 2>/dev/null | tr ' ' ',')
+	if [[ -z ${nodelist} ]]
+	then
+	    ${LOGGER} "unable to respect relative ID constraint"
+	else
+	    export spmd_run_options="${spmd_run_options} --host ${nodelist}"
+	fi
+    # No longer needed at TGCC, remove it as the mpi layer must now be aware
+    # of slurm allocation with -c parameters > 1
+    # else
+    # 	# we have to loadbalance process if multiple nodes will potentially be used
+    # 	if [[ ${spmd_run_nnode} -ne 1 ]]
+    # 	then  
+    #         if [ "$NO_PROCS_LOAD_BALANCED" != 1 ] ; then
+    # 	       export spmd_run_options="--loadbalance ${spmd_run_options}"
+    #         fi
+    # 	fi
+    fi
+
+    return 0
+}
+
+function bridge_addon_mprun_spmd_post_run {
+
+    return 0
+    
+}

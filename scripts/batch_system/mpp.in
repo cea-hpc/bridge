@@ -1,0 +1,479 @@
+#!/bin/ksh
+#------------------------------------------------------------------------------------------------------------------
+# wrapper permettant l'obtention d'informations concernant les sessions batch actives ou non
+#------------------------------------------------------------------------------------------------------------------
+
+###################################################################################################################
+#
+# FONCTIONS INTERNES FONCTIONS INTERNES FONCTIONS INTERNES FONCTIONS INTERNES FONCTIONS INTERNES FONCTIONS INTERNES 
+#
+# FONCTIONS INTERNES FONCTIONS INTERNES FONCTIONS INTERNES FONCTIONS INTERNES FONCTIONS INTERNES FONCTIONS INTERNES 
+#
+###################################################################################################################
+function check_val {
+    if [ $1 = "-" ] || [ $1 = "?" ]
+	then
+	return 1
+    else
+	return 0
+    fi
+}
+function shrink_name {
+    echo $1 | cut -c 1-10
+}
+function shrink_time {
+    if [ $1 -eq 0 ]
+	then
+	echo "-"
+	return 0
+    fi
+
+    typeset divi
+    typeset output=
+    typeset value=$1
+
+    if [ $value -ge 360000  ]
+	then
+	(( divi = value / 86400 )) 
+	(( value = value % 86400 ))
+	(( value = value * 10 / 86400 ))
+	output="${divi}.${value}j"
+    elif [ $value -ge 3600 ]
+	then
+	(( divi = value / 3600 )) 
+	(( value = value % 3600 ))
+	(( value = value * 10 / 3600 ))  
+	output="${divi}.${value}h"
+    elif [ $value -ge 60 ]
+	then
+	(( divi = value / 60 )) 
+	(( value = value % 60 ))
+	(( value = value * 10 / 60 ))  
+	output="${divi}.${value}m"
+    else
+	output="${value}.0s"
+	value=0
+    fi
+
+    echo $output
+}
+function is_color_enabled {
+    if [[ ${show_with_color} = yes ]]
+	then
+	return 1
+    else
+	return 0
+    fi
+}
+function set_standard_mode {
+    is_color_enabled
+    if [ $? -eq 1 ]
+	then
+	printf "[0;39m"
+    fi
+}
+function set_bold_mode {
+    is_color_enabled
+    if [ $? -eq 1 ]
+	then
+	printf "[1;27m"
+    fi
+}
+function set_green_mode {
+    is_color_enabled
+    if [ $? -eq 1 ]
+	then
+	printf "[0;32m"
+    fi
+}
+function set_red_mode {
+    is_color_enabled
+    if [ $? -eq 1 ]
+	then
+	printf "[0;33m"
+    fi
+}
+function set_blue_mode {
+    is_color_enabled
+    if [ $? -eq 1 ]
+	then
+	printf "[0;34m"
+    fi
+}
+###################################################################################################################
+
+###################################################################################################################
+#
+# PROGRAMME PRINCIPAL PROGRAMME PRINCIPAL PROGRAMME PRINCIPAL PROGRAMME PRINCIPAL PROGRAMME PRINCIPAL
+#
+# PROGRAMME PRINCIPAL PROGRAMME PRINCIPAL PROGRAMME PRINCIPAL PROGRAMME PRINCIPAL PROGRAMME PRINCIPAL
+#
+###################################################################################################################
+
+
+###################################################################################################################
+# Initialisation des parametres de base
+#------------------------------------------------------------------------------------------------------------------
+typeset BRIDGE_VERSION="@PACKAGE_NAME@-@PACKAGE_VERSION@"
+typeset PROG_VERSION="1.0.0"
+#------------------------------------------------------------------------------------------------------------------
+# le repertoire de base est fixe lors de l'installation du produit (via ./configure)
+# si il n'est pas coherent, c'est a dire qu'il ne correspond pas a un repertoire
+# on fixe un repere dans le systeme de fichier en utilisant le chemin d acces a l executable
+#------------------------------------------------------------------------------------------------------------------
+typeset BASE_DIR=`dirname $0`
+typeset PROGNAME=`basename $0`
+#------------------------------------------------------------------------------------------------------------------
+typeset BRIDGE_BASEDIR=@prefix@
+if [[ ! -d ${BRIDGE_BASEDIR} ]]
+    then
+    BRIDGE_BASEDIR=${BRIDGE_BASEDIR:-${BASE_DIR}/../}
+fi
+#------------------------------------------------------------------------------------------------------------------
+typeset BRIDGE_BINDIR=${BRIDGE_BASEDIR}/bin
+typeset BRIDGE_SCRIPTSDIR=${BRIDGE_BASEDIR}/share/scripts
+typeset BRIDGE_BATCH_SYSTEM_PLUGINDIR=${BRIDGE_BASEDIR}/share/scripts/batch_system/plugins
+#------------------------------------------------------------------------------------------------------------------
+typeset BRIDGE_CONFDIR=${BRIDGE_BASEDIR}/etc
+if [[ ! -d ${BRIDGE_CONFDIR} ]]
+    then
+    BRIDGE_CONFDIR=/etc
+fi
+#------------------------------------------------------------------------------------------------------------------
+typeset BRIDGE_HOSTNAME=$(hostname 2>/dev/null)
+#------------------------------------------------------------------------------------------------------------------
+# on fixe les categories auquelles ce programme appartient (les categories determinent les fichiers de conf
+# a sourcer lors de la lecture de la configuration (bridge_readconf)
+#------------------------------------------------------------------------------------------------------------------
+typeset BRIDGE_CATEGORIES="bridge_bs"
+#------------------------------------------------------------------------------------------------------------------
+# on fixe les variables liees a la log
+#------------------------------------------------------------------------------------------------------------------
+typeset BRIDGE_DEBUG_MODE=no
+typeset BRIDGE_CHECK_ONLY=no
+typeset BRIDGE_VERBOSE_MODE=no
+typeset BRIDGE_VERBOSE_LEVEL=1
+typeset BRIDGE_VERBOSE_MAXLEVEL=0
+typeset BRIDGE_LOGFILE=""
+typeset EXIT_STATUS=1
+#------------------------------------------------------------------------------------------------------------------
+# on fixe l'usage de la commande et le code retour par defaut
+#------------------------------------------------------------------------------------------------------------------
+typeset USAGE="Usage : ${PROGNAME} [-dvhV] [-p] [-r] [-s] [-q queue] [-u user] [-a account]
+
+ ${PROGNAME} is the CCC  jobs visualisation interface.
+
+ -h          : print this message
+ -d          : increase debug level
+ -v          : increase verbosity
+ -V          : print application version
+
+ -r          : print 'running' jobs
+ -s          : print 'suspended' jobs
+ -p          : print 'pending' jobs
+
+ -q queue    : requested queue
+ -u user     : requested user
+ -a account  : requested account
+
+ -n          : print results without colors
+ -H          : don't print header
+"
+#------------------------------------------------------------------------------------------------------------------
+typeset stat_cmd=bsstat_cmd
+typeset stat_args="-s ^ -ouser,project,batchid,parcpunblim,parcpunb,queue,priority,state,partimelim,partimeused,suspendtime,subtime,rmid,parnodeslist,reason,name"
+#------------------------------------------------------------------------------------------------------------------
+typeset show_running=0
+typeset show_suspended=0
+typeset show_pending=0
+typeset show_project
+typeset show_with_color=yes
+typeset show_with_header=yes
+#------------------------------------------------------------------------------------------------------------------
+###################################################################################################################
+# Analyse des options de la ligne de commande (priorite 1)
+# Sauvegarde du nom du script
+#------------------------------------------------------------------------------------------------------------------
+while getopts dvhVrspq:u:a:nH option
+do
+  case $option
+      in
+      d)
+	  BRIDGE_DEBUG_MODE=yes;
+	  ((BRIDGE_DEBUG_MAXLEVEL = BRIDGE_DEBUG_MAXLEVEL + 1 ))
+	  ;;
+      v)
+	  BRIDGE_VERBOSE_MODE=yes;
+	  ((BRIDGE_VERBOSE_MAXLEVEL = BRIDGE_VERBOSE_MAXLEVEL + 1 ))
+	  ;;
+      h) 
+	  echo "$USAGE"  >& 2 ;
+	  exit 0
+	  ;;
+      V) 
+	  echo "${PROGNAME}-${PROG_VERSION} (${BRIDGE_VERSION:-?})"
+	  exit 0
+	  ;;
+      r)
+	  stateful_show=1
+	  show_running=1
+	  ;;
+      s)
+	  stateful_show=1
+	  show_suspended=1
+	  ;;
+      p)
+	  stateful_show=1
+	  show_pending=1
+	  ;;
+      q)
+	  stat_args="${stat_args} -q ${OPTARG}"
+	  ;;
+      u)
+	  stat_args="${stat_args} -u ${OPTARG}"
+	  ;;
+      a)
+	  show_project=${OPTARG}
+	  ;;
+      n)
+	  show_with_color=no
+	  ;;
+      H)
+	  show_with_header=no
+	  ;;
+      *) echo "$USAGE"  >& 2 ;exit 1 ;;
+  esac
+done
+OPTIND2=`expr $OPTIND - 1`
+shift ${OPTIND2}
+###################################################################################################################
+
+
+###################################################################################################################
+# On se place en mode debug si necessaire
+#------------------------------------------------------------------------------------------------------------------
+if [[ "${BRIDGE_DEBUG_MODE}" = "yes" ]]
+    then
+    set -x
+fi
+###################################################################################################################
+
+
+###################################################################################################################
+# On source les librairies communes utiles et on fixe les variables de log
+#------------------------------------------------------------------------------------------------------------------
+. ${BRIDGE_SCRIPTSDIR}/common/bridge_command
+. ${BRIDGE_SCRIPTSDIR}/common/bridge_printer
+. ${BRIDGE_SCRIPTSDIR}/common/bridge_readconf
+typeset LOGGER="bridge_printer ${DEFAULT_PRINTER_OPTIONS} -t verbose"
+typeset ERROR="bridge_printer ${DEFAULT_PRINTER_OPTIONS} -ft error"
+###################################################################################################################
+
+
+###################################################################################################################
+# On lit la configuration du programme et des categories qu'il utilise
+# on commence par charger le plugin par defaut
+# puis on charge le plugin detecte et on verifie que la fonction de soumission
+# existe
+#------------------------------------------------------------------------------------------------------------------
+bridge_readconf
+for BATCH_SYSTEM in generic ${BATCH_SYSTEM}
+  do
+  typeset batch_system_plugin_file=${BRIDGE_BATCH_SYSTEM_PLUGINDIR}/${BATCH_SYSTEM}
+  if [[ ! -r ${batch_system_plugin_file} ]]
+      then
+      ${ERROR} "Batch system plugin '${BATCH_SYSTEM}' : pas de fichier ${batch_system_plugin_file}"
+      return 254
+  fi
+  . ${batch_system_plugin_file}
+done
+typeset stat_cmd_version
+stat_cmd_version=$(${stat_cmd} -V 2>/dev/null)
+if [[ $? -ne 0 ]]
+    then
+    ${ERROR} "Batch system plugin '${BATCH_SYSTEM}' : impossible d'obtenir la version de ${stat_cmd}"
+    return 253
+else
+    ${LOGGER} "Batch system plugin '${BATCH_SYSTEM}' : ${stat_cmd} version ${stat_cmd_version} "
+fi
+###################################################################################################################
+
+
+###################################################################################################################
+# Execution de la fonction
+#------------------------------------------------------------------------------------------------------------------
+if [[ ${show_with_header} == "yes" ]]
+    then
+    set_bold_mode
+    if [[ ${BRIDGE_BINDING} != "rmid" ]]
+	then
+	print "USER        ACCOUNT    BATCHID  NCPU   QUEUE      PRIORITY   STATE   RLIM   RUN  SUSP   OLD  NAME       NODES"
+    else
+	print "USER        ACCOUNT    BATCHID  NCPU   QUEUE      PRIORITY   STATE   RLIM   RUN  SUSP   OLD  NAME       RMID    NODES"
+    fi
+    set_standard_mode
+fi
+
+typeset USER
+typeset PROJECT
+typeset BATCHID
+typeset NCPUS
+typeset RCPUS
+typeset QUEUE
+typeset PRIORITY
+typeset STATE
+typeset TIMELIM
+typeset TIMEUSED
+typeset SUSPTIME
+typeset STARTTIME
+typeset RMID
+typeset NODES
+typeset REASON
+typeset NAME
+
+typeset current_time=$(date +%s)
+typeset line_id=0
+typeset end_of_line=0
+
+# difficile de detecter dans la boucle d'affichage si la commande
+# de stat se comporte bien...
+# du coup, on l'execute une premiere fois avec redirection dans /dev/null
+# et si le code d'erreur est ok, on passe a la suite...
+${stat_cmd} -o batchid >/dev/null
+EXIT_STATUS=$?
+if [[ ${EXIT_STATUS} -ne 0 ]]
+    then
+    exit ${EXIT_STATUS}
+fi 
+
+# le tr est necessaire car les ? renvoyes par stat_cmd
+# sont transformes en nom de fichier a 1 caractere par
+# le shell ce qui provoque des comportements etranges
+${stat_cmd} ${stat_args} | tr '?' '-' | sort -t '^' -k 7 -r |\
+    while [[ ${end_of_line} -eq 0 ]]
+  do
+  IFS='^'
+  read USER PROJECT BATCHID NCPUS RCPUS QUEUE PRIORITY STATE TIMELIM TIMEUSED SUSPTIME STARTTIME RMID NODES REASON NAME
+  status=$?
+  unset IFS
+  if [ $status -ne 0 ]
+      then
+      end_of_line=1
+  else
+      ## on surcharge le groupe si il est invalide
+      check_val ${PROJECT}
+      if [ $? -ne 0 ]
+	  then
+	  PROJECT=$(id -ng ${USER} 2>/dev/null)
+      fi
+
+      if [[ -n ${show_project} ]]
+	  then
+	  if [[ ${PROJECT} != ${show_project} ]]
+	      then
+	      continue
+	  fi
+      fi
+
+      ## on surcharge le status par un status raccourci
+      case $STATE in
+	  suspended)
+	      if [[ ${stateful_show} -eq 1 ]] && [[ ${show_suspended} -ne 1 ]]
+		  then
+		  continue
+	      fi
+	      set_red_mode
+	      STATE=SUSP
+	      ;;
+	  running)
+	      if [[ ${stateful_show} -eq 1 ]] && [[ ${show_running} -ne 1 ]]
+		  then
+		  continue
+	      fi
+	      set_green_mode
+	      STATE=RUN
+	      ;;
+	  pending)
+	      if [[ ${stateful_show} -eq 1 ]] && [[ ${show_pending} -ne 1 ]]
+		  then
+		  continue
+	      fi
+	      set_standard_mode
+	      STATE=PEN
+	      if [[ ${RCPUS} -gt 0 ]]
+		  then
+		  NODES="Reserved cpus : ${RCPUS}/${NCPUS}"
+	      else
+		  NODES="${REASON}"
+	      fi
+	      ;;
+	  *)
+	      if [[ ${stateful_show} -eq 1 ]]
+		  then
+		  continue
+	      fi
+	      set_blue_mode
+	      STATE=UNK
+	      ;;
+      esac
+
+      ## set time limit
+      check_val $TIMELIM
+      if [ $? -ne 0 ]
+	  then
+	  TIMELIM=0
+      fi
+      TIMELIM=$(shrink_time $TIMELIM)
+
+      ## set used time
+      check_val $TIMEUSED
+      if [ $? -ne 0 ]
+	  then
+	  TIMEUSED=0
+      fi
+      TIMEUSED=$(shrink_time $TIMEUSED)
+
+      ## set suspend time
+      check_val $SUSPTIME
+      if [ $? -ne 0 ]
+	  then
+	  SUSPTIME=0
+      fi
+      SUSPTIME=$(shrink_time $SUSPTIME)
+
+      ## set old time
+      check_val $STARTTIME
+      if [ $? -ne 0 ]
+	  then
+	  STARTTIME=0
+      else
+	  (( STARTTIME = current_time - STARTTIME ))
+      fi
+      STARTTIME=$(shrink_time $STARTTIME)
+
+      ## shrink name
+      NAME=$(shrink_name $NAME)
+
+      ## print line
+      if [[ ${BRIDGE_BINDING} != "rmid" ]]
+	  then
+	  printf "%-11s %-10s %7s %5s   %-10s %-10s %-6s %6s %5s %5s %5s %-10s " "$USER" "$PROJECT" "$BATCHID" "$NCPUS" \
+	      "$QUEUE" "$PRIORITY" "$STATE" "$TIMELIM" "$TIMEUSED" "$SUSPTIME" "$STARTTIME" "$NAME"
+      else
+	  printf "%-11s %-10s %7s %5s   %-10s %-10s %-6s %6s %5s %5s %5s %-10s %7s " "$USER" "$PROJECT" "$BATCHID" "$NCPUS" \
+	      "$QUEUE" "$PRIORITY" "$STATE" "$TIMELIM" "$TIMEUSED" "$SUSPTIME" "$STARTTIME" "$NAME" "${RMID}"
+      fi
+      print "$NODES"
+      set_standard_mode
+  fi
+done
+
+EXIT_STATUS=0
+###################################################################################################################
+
+
+###################################################################################################################
+# Sortie
+#------------------------------------------------------------------------------------------------------------------
+exit ${EXIT_STATUS}
+###################################################################################################################

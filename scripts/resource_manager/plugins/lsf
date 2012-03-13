@@ -1,0 +1,322 @@
+
+function spmd_allocate_cmd {
+
+    ## on se place en mode debug si souhaite
+    typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+	then
+	set -x
+    fi
+
+    ## on incremente le niveau de log
+    typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+
+    ## on indique le profile associe au plugin
+    export BRIDGE_MPRUN_PROFILE=${BRIDGE_PROFILE_DIR}/lsf.sh
+
+    ## on ajoute une entete a la log
+    typeset LOGGER="${LOGGER} allocate: "
+
+    typeset VERSION="LSF-1.0"
+    typeset exit_status=0
+
+    spmd_allocate_cmd=${spmd_allocate_cmd:-qsub}
+    spmd_allocate_options="${spmd_allocate_options} -I"
+    spmd_allocate_args=
+
+    spmd_allocate_ncore=
+    spmd_allocate_nproc=
+    spmd_allocate_nnode=
+    spmd_allocate_partition=
+    spmd_allocate_project=
+    spmd_allocate_extra_parameters=
+    spmd_allocate_maxmem=
+    spmd_allocate_maxtime=
+
+    spmd_allocate_exclusive=no
+
+    while getopts Vc:n:N:p:A:M:T:E:T:e option
+      do
+      case ${option} in
+	  
+	  V)
+	      echo ${VERSION}
+	      return 0
+	      ;;
+
+	  c)
+	      spmd_allocate_ncore=${OPTARG}
+	      ;;
+
+	  n)
+	      spmd_allocate_nproc=${OPTARG}
+	      ;;
+
+	  N)
+	      spmd_allocate_nnode=${OPTARG}
+	      ;;
+
+	  p)
+	      spmd_allocate_partition=${OPTARG}
+	      ;;
+
+	  A)
+	      spmd_allocate_project=${OPTARG}
+	      ;;
+
+	  E)
+	      if [[ -n ${OPTARG} ]]
+		  then
+		  spmd_allocate_extra_parameters=${OPTARG}
+	      fi
+	      ;;
+
+	  M)
+	      spmd_allocate_maxmem=${OPTARG}
+	      ;;
+
+	  T)
+	      spmd_allocate_maxtime=${OPTARG}
+	      ;;
+
+	  e)
+	      spmd_allocate_exclusive=yes
+	      ;;
+
+	  *)
+	      exit_status=255
+	      break
+	      ;;
+      esac
+    done
+    shift ${OPTIND}-1 2>/dev/null
+    spmd_allocate_args=$@
+
+    # on log un message si on est au sein d'une allocation
+    if [[ ${BRIDGE_MPRUN_ALLOCATION} == yes ]]
+	then
+        ${LOGGER} "wrapping allocation detected, skipping this one"
+        ${spmd_allocate_args}
+        exit_status=$?
+        ${LOGGER} "exiting with status ${exit_status}"
+        return ${exit_status}
+    fi
+
+    # on appelle les addons eventuels en phase spmd_pre_allocate
+    bridge_addons_call_function bridge_addon_mprun_spmd_pre_allocate ${spmd_allocate_args}
+    
+    ## si le code de retour de la stack des addons est 0
+    ## alors le job n'a pas ete lance par un des addons
+    ## donc on le lance, sinon, un des addons s'en est charge
+    ## on passe au post run
+    if [ $? -eq 0 ]
+	then
+
+        ## on export quelques variables d'environnement dont une indiquant que l'on 
+	## a deja fait une allocation afin d'eviter les boucles
+	export BRIDGE_MPRUN_ALLOCATION=yes
+
+	${ERROR} "allocation mode not supported with LSF"
+	${ERROR} "launch batch jobs using '$(basename ${BRIDGE_MSUB_CMD})' instead"
+	false
+	exit_status=$?
+
+    fi
+
+    # on appelle les addons eventuels en phase spmd_post_allocate
+    bridge_addons_call_function bridge_addon_mprun_spmd_post_allocate ${spmd_allocate_args}
+
+    ${LOGGER} "exiting with status ${exit_status}"
+    return ${exit_status}
+}
+
+
+
+function spmd_run_cmd {
+
+    ## on se place en mode debug si souhaite
+    typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+	then
+	set -x
+    fi
+
+    ## on incremente le niveau de log
+    typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+
+    ## on indique le profile associe au plugin
+    export BRIDGE_MPRUN_PROFILE=${BRIDGE_PROFILE_DIR}/lsf.sh
+
+    ## on ajoute une entete a la log
+    typeset LOGGER="${LOGGER} run: "
+
+    typeset VERSION="LSF-1.0"
+    typeset exit_status=0
+
+    spmd_run_ncore=
+    spmd_run_nproc=
+    spmd_run_nnode=
+    spmd_run_partition=
+    spmd_run_project=
+    spmd_run_extra_parameters=
+    spmd_run_maxmem=
+    spmd_run_maxtime=
+
+    ## LSF ne fournit pas de lanceur MPI
+    ## on utilise une syntax a la mpirun
+    ## la couche sous-jacente devant le comprendre
+    spmd_run_cmd=${spmd_run_cmd:-mpirun}
+    spmd_run_options=${spmd_run_options}
+    spmd_run_args=
+
+    while getopts Vc:n:N:p:A:M:T:E: option
+      do
+      case ${option} in
+	  
+	  V)
+	      echo ${VERSION}
+	      return 0
+	      ;;
+
+	  c)
+	      spmd_run_ncore=${OPTARG}
+	      ;;
+
+	  n)
+	      spmd_run_nproc=${OPTARG}
+	      ;;
+
+	  N)
+	      spmd_run_nnode=${OPTARG}
+	      ;;
+
+	  p)
+	      spmd_run_partition=${OPTARG}
+	      ;;
+
+	  A)
+	      spmd_run_project=${OPTARG}
+	      ;;
+
+	  E)
+	      if [[ -n ${OPTARG} ]]
+		  then
+		  spmd_run_extra_parameters=${OPTARG}
+	      fi
+	      ;;
+
+	  M)
+	      spmd_run_maxmem=${OPTARG}
+	      ;;
+
+	  T)
+	      spmd_run_maxtime=${OPTARG}
+	      ;;
+
+	  *)
+	      exit_status=255
+	      break
+	      ;;
+      esac
+    done
+    shift ${OPTIND}-1 2>/dev/null
+    spmd_run_args=$@
+
+    # on log un message si on est au sein d'une allocation
+    if [[ ${BRIDGE_MPRUN_ALLOCATION} == yes ]]
+	then
+	${LOGGER} "wrapping allocation detected"
+    fi
+
+    # on appelle les addons eventuels en phase spmd_pre_run
+    bridge_addons_call_function bridge_addon_mprun_spmd_pre_run $@
+
+    ## si le code de retour de la stack des addons est 0
+    ## alors le job n'a pas ete lance par un des addons
+    ## donc on le lance, sinon, un des addons s'en est charge
+    ## on passe au post run
+    if [ $? -eq 0 ]
+	then
+
+	# build options
+ 	if [[ -n ${spmd_run_ncore} ]] && [[ -n ${LSB_MCPU_HOSTS} ]]
+ 	    then
+# 	    !! pour openmpi ## mpirun ne supporte pas l'option -c pour specifier le nombre de core par processus
+# 	    ## du coup, il est preferable de distribuer les processus sur les noeuds afin de 
+# 	    ## garantir que l'utilisation de -c dans msub ayant entraine l'allocation de plus 
+# 	    ## de cores que de processus soit bien prise en compte
+# 	    spmd_run_options="${spmd_run_options} -bynode"
+#	    ${LOGGER} "LSF plugin doesn't support the ${PROGNAME} -c option"
+
+	    ## on recalcule la liste des noeuds a utiliser. Cela peut etre utile lorsque 
+	    ## l'on souhaite utiliser un nombre de core par processus different de 1 
+	    ## ce qui n'ai pas bien supporte par LSF7.0
+	    ## on trie les noeuds par ordre decroissant d'importance en terme de cores
+	    ## alloues afin de laisser les noeuds les moins alloues en fin de liste
+	    unset LSB_MCPU_HOSTS
+	    unset LSB_HOSTS
+	    typeset nproc=${spmd_run_nproc}
+	    typeset nhost=$(cat ${LSB_DJOB_HOSTFILE} | sort | uniq -c | sort -rn | awk '{print $2}' | wc -l)
+	    while [[ ${nproc} -gt 0 ]]
+	      do
+	      if [[ ${nhost} -lt ${nproc} ]]
+		  then
+		  LSB_HOSTS="${LSB_HOSTS}$(cat ${LSB_DJOB_HOSTFILE} | uniq -c | sort -rn | awk '{print $2}' | tr '\n' ' ') "
+		  (( nproc = nproc - nhost ))
+	      else
+		  LSB_HOSTS="${LSB_HOSTS}$(cat ${LSB_DJOB_HOSTFILE} | uniq -c | sort -rn | awk '{print $2}' | tr '\n' ' ' | cut -d ' ' -f 1-${nproc})"
+		  nproc=0
+	      fi
+	    done
+	    export LSB_HOSTS
+	    ${LOGGER} "setting LSB_HOSTS to \"${LSB_HOSTS}\""
+	    LSB_MCPU_HOSTS=$(echo ${LSB_HOSTS} | tr ' ' '\n' | sort -n | uniq -c | awk '{print $2" "$1}' | tr '\n' ' ')
+	    export LSB_MCPU_HOSTS
+	    ${LOGGER} "setting LSB_MCPU_HOSTS to \"${LSB_MCPU_HOSTS}\""
+	fi
+	if [[ -n ${spmd_run_nproc} ]]
+	    then
+	    spmd_run_options="${spmd_run_options} -np ${spmd_run_nproc}"
+	fi
+	if [[ -n ${spmd_run_nnode} ]]
+	    then
+	    # non supporte dans mpirun
+	    ${LOGGER} "LSF plugin doesn't support the ${PROGNAME} -N option"
+	    true
+	fi
+	if [[ -n ${spmd_run_partition} ]]
+	    then
+	    # non supporte dans mpirun
+	    ${LOGGER} "LSF plugin doesn't support the ${PROGNAME} -p option"
+	    true
+	fi
+	if [[ -n ${spmd_run_project} ]]
+	    then
+	    # non supporte dans mpirun
+	    ${LOGGER} "LSF plugin doesn't support the ${PROGNAME} -A option"
+	    true
+	fi
+	if [[ -n ${spmd_run_maxmem} ]]
+	    then
+	    # non supporte dans mpirun
+	    ${LOGGER} "LSF plugin doesn't support the ${PROGNAME} -M option"
+	    true
+	fi
+	if [[ -n ${spmd_run_maxtime} ]]
+	    then
+	    # non supporte dans mpirun
+	    ${LOGGER} "LSF plugin doesn't support the ${PROGNAME} -T option"
+	    true
+	fi
+
+	${LOGGER} "${spmd_run_cmd} ${spmd_run_options} ${spmd_run_extra_parameters} -- ${spmd_run_args}"
+	eval ${spmd_run_cmd} ${spmd_run_options} ${spmd_run_extra_parameters} -- ${spmd_run_args}
+	exit_status=$?
+    fi
+
+    # on appelle les addons eventuels en phase spmd_post_run
+    bridge_addons_call_function bridge_addon_mprun_spmd_post_run ${spmd_run_args}
+    
+    ${LOGGER} "exiting with status ${exit_status}"
+    return ${exit_status}
+}

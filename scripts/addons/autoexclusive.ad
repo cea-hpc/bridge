@@ -1,0 +1,162 @@
+################################################################################
+#
+# This addon enables to automatically switch to exclusive allocation when 
+# requested cores number goes beyond the specified threshold.
+# It also enables to deny access to resources when requested cores number goes
+# beyond a specified threshold too.
+#
+# The exclusive threshold is configured using the value of the 
+# BRIDGE_ADDON_AUTOEXCLUSIVE_CORES_THRESHOLD env variable
+# 
+# The deny threshold is configured using the value of the 
+# BRIDGE_ADDON_AUTODENY_CORES_THRESHOLD env variable
+# 
+################################################################################
+
+
+################################################################################
+#
+# MSUB RELATED FUNCTIONS MSUB RELATED FUNCTIONS MSUB RELATED FUNCTIONS
+#
+################################################################################
+
+function bridge_addon_msub_setopt {
+    return 0
+}
+
+function bridge_addon_msub_getopt {
+    return 0
+}
+
+
+function bridge_addon_msub_alteropt {
+
+    ## on se place en mode debug si souhaite
+    typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+	then
+	set -x
+    fi
+    
+    ## on incremente le niveau de log
+    typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+    
+    ## on ajoute une entete a la log
+    typeset LOGGER="${LOGGER} DAM Auto-Exclusive Addon :"
+
+    ## do autoexclusive check
+    if  [[ -n ${BRIDGE_MSUB_NPROC} ]] && \
+	[[ -n ${BRIDGE_ADDON_AUTOEXCLUSIVE_CORES_THRESHOLD} ]]
+    then
+	typeset total_cores=$(( ${BRIDGE_MSUB_NPROC} * ${BRIDGE_MSUB_NCORE:-1} ))
+	if [[ ${total_cores} -ge ${BRIDGE_ADDON_AUTOEXCLUSIVE_CORES_THRESHOLD} ]]
+	then
+	    ${LOGGER} "setting exclusive mode as requested cores nb ${total_cores} >= threshold " \
+		"${BRIDGE_ADDON_AUTOEXCLUSIVE_CORES_THRESHOLD}"
+	    export BRIDGE_MSUB_EXCLUSIVE=yes
+	fi
+    fi
+
+    ## do autodeny check
+    if  [[ -n ${BRIDGE_MSUB_NPROC} ]] && \
+	[[ -n ${BRIDGE_ADDON_AUTODENY_CORES_THRESHOLD} ]] && [[ ${BRIDGE_MPRUN_ADDON_QOS} != "special" ]]
+    then
+	typeset total_cores=$(( ${BRIDGE_MSUB_NPROC} * ${BRIDGE_MSUB_NCORE:-1} ))
+	if [[ ${total_cores} -ge ${BRIDGE_ADDON_AUTODENY_CORES_THRESHOLD} ]]
+	then
+	    ${LOGGER} "denying access to resources as requested cores nb ${total_cores} >= threshold " \
+		"${BRIDGE_ADDON_AUTODENY_CORES_THRESHOLD}"
+	    ${ERROR} "requested cores ${total_cores} >= max ${BRIDGE_ADDON_AUTODENY_CORES_THRESHOLD} : you are not allowed to use this amount on this cluster"
+	    exit 255
+	fi
+    fi
+
+    return 0
+
+}
+
+
+function bridge_addon_msub_alterscript {
+    return 0
+}
+
+
+################################################################################
+#
+# MPRUN RELATED FUNCTIONS MPRUN RELATED FUNCTIONS MPRUN RELATED FUNCTIONS
+#
+################################################################################
+
+function bridge_addon_mprun_setopt {
+    return 0
+}
+
+function bridge_addon_mprun_getopt {
+    return 0
+}
+
+
+function bridge_addon_mprun_alteropt {
+
+    ## on se place en mode debug si souhaite
+    typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+	then
+	set -x
+    fi
+    
+    ## on incremente le niveau de log
+    typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+    
+    ## on ajoute une entete a la log
+    typeset LOGGER="${LOGGER} DAM Auto-Exclusive Addon :"
+
+    ## do autoexclusive check
+    if  [[ "${BRIDGE_MPRUN_ALLOCATION}" != yes ]] && \
+	[[ -n ${bridge_mprun_nproc} ]] && \
+	[[ -n ${BRIDGE_ADDON_AUTOEXCLUSIVE_CORES_THRESHOLD} ]]
+    then
+	typeset total_cores=$(( ${bridge_mprun_nproc} * ${bridge_mprun_ncore:-1} ))
+	if [[ ${total_cores} -ge ${BRIDGE_ADDON_AUTOEXCLUSIVE_CORES_THRESHOLD} ]]
+	then
+	    ${LOGGER} "setting exclusive mode as requested cores nb ${total_cores} >= threshold " \
+		"(${BRIDGE_ADDON_AUTOEXCLUSIVE_CORES_THRESHOLD})"
+	    export exclusive=yes
+	fi
+    fi
+
+    ## do autodeny check
+    if  [[ "${BRIDGE_MPRUN_ALLOCATION}" != yes ]] && \
+	[[ -n ${bridge_mprun_nproc} ]] && \
+	[[ -n ${BRIDGE_ADDON_AUTODENY_CORES_THRESHOLD} ]] && [[ ${BRIDGE_MPRUN_ADDON_QOS} != "special" ]]
+    then
+	typeset total_cores=$(( ${bridge_mprun_nproc} * ${bridge_mprun_ncore:-1} ))
+	if [[ ${total_cores} -ge ${BRIDGE_ADDON_AUTODENY_CORES_THRESHOLD} ]]
+	then
+	    ${LOGGER} "denying access to resources as requested cores nb ${total_cores} >= threshold " \
+		"(${BRIDGE_ADDON_AUTODENY_CORES_THRESHOLD})"
+	    ${ERROR} "requested cores ${total_cores} >= max ${BRIDGE_ADDON_AUTODENY_CORES_THRESHOLD} : you are not allowed to use this amount on this cluster"
+	    exit 255
+	fi
+    fi
+
+    return 0
+}
+
+function bridge_addon_mprun_spmd_pre_allocate {
+    return 0
+}
+
+
+function bridge_addon_mprun_spmd_post_allocate {
+    return 0
+}
+
+
+function bridge_addon_mprun_spmd_pre_run {
+    return 0
+}
+
+function bridge_addon_mprun_spmd_post_run {
+    return 0
+}

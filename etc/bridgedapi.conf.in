@@ -1,0 +1,24 @@
+#------------------------------------------------------------------------------#
+# @PACKAGE@ bridged API configuration file
+# (Generated using autotools)
+#------------------------------------------------------------------------------#
+
+#------------------------------------------------------------------------------#
+# Bridged Stats Daemon - Client API configuration
+#------------------------------------------------------------------------------#
+bridgedapi {
+        primary_address         =       "localhost" ;
+        primary_port            =       12346 ;
+
+        secondary_address       =       "localhost" ;
+        secondary_port          =       12346 ;
+
+        timeout                 =       10 ;
+
+        logfile                 =       "/tmp/bridgeapi.log" ;
+        loglevel                =       0 ;
+        debugfile               =       "/tmp/bridgeapi.log" ;
+        debuglevel              =       0 ;
+}
+#------------------------------------------------------------------------------#
+

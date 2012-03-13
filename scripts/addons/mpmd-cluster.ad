@@ -1,0 +1,179 @@
+#!/bin/ksh
+#
+#/********************************************************************************************************************\
+#
+# Cet addon msub permet de se placer en mode MPMD en environnement cluster
+# 
+#\********************************************************************************************************************/
+
+function bridge_addon_mprun_setopt {
+
+    typeset MYGETOPTOPTION="f:"
+
+    echo "${BRIDGE_MPRUN_GETOPT_OPTIONS}" | grep -q ${MYGETOPTOPTION}
+
+    if [ $? -ne 0 ]
+	then
+	BRIDGE_MPRUN_GETOPT_OPTIONS="${BRIDGE_MPRUN_GETOPT_OPTIONS}${MYGETOPTOPTION}"
+    fi
+
+    return 0
+
+}
+
+function bridge_addon_mprun_getopt {
+    
+    ## on se place en mode debug si souhaite
+    typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+	then
+	set -x
+    fi
+    
+    ## on incremente le niveau de log
+    typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+    
+    ## on ajoute une entete a la log
+    typeset LOGGER="${LOGGER} MPMD Addon :"
+
+    ## par defaut, on desactive le mode MPMD
+    if [[ -z ${BRIDGE_MPRUN_ADDON_MPMD} ]]
+	then
+	BRIDGE_MPRUN_ADDON_MPMD=
+    fi
+
+    ## on fixe le message d'aide a afficher si demande
+    typeset USAGE="\
+\t*) MPMD (Multiple Programs Multiple Data)
+\t\t -f descfile : activate MPMD mode using tasks description file 'descfile'\n"
+    
+    ## on fixe le status de sortie par defaut
+    typeset exit_status=0
+    
+    ## on parse les arguments
+    while getopts ${BRIDGE_MPRUN_GETOPT_OPTIONS} option
+      do
+      case ${option} in
+	  
+	  h)
+	      echo -e "${USAGE}" >&2
+	      return 0
+	      ;;
+
+	  f)
+	      BRIDGE_MPRUN_ADDON_MPMD=${OPTARG}
+	      ;;
+
+	  *)
+	      ;;
+      esac
+    done
+    export BRIDGE_MPRUN_ADDON_MPMD
+    
+    return ${exit_status}
+}
+
+
+function bridge_addon_mprun_alteropt {
+
+    ## on se place en mode debug si souhaite
+    typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+	then
+	set -x
+    fi
+    
+    ## on incremente le niveau de log
+    typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+    
+    ## on ajoute une entete a la log
+    typeset LOGGER="${LOGGER} MPMD Addon :"
+    
+    if [[ -n ${BRIDGE_MPRUN_ADDON_MPMD} ]]
+	then
+	
+	if [[ ! -r ${BRIDGE_MPRUN_ADDON_MPMD} ]]
+	    then
+	    ${ERROR} "MPMD Addon : invalid task file ${BRIDGE_MPRUN_ADDON_MPMD}"
+	else
+	    ${LOGGER} "using tasks file ${BRIDGE_MPRUN_ADDON_MPMD}"
+	    
+	    typeset temporary_file=
+	    temporary_file=$(bridge_tmpfile ${BRIDGE_MPRUN_ADDON_MPMD})
+	    
+	    if [[ -z ${temporary_file} ]]
+		then
+		${ERROR} "MPMD Addon : unable to build temporary file ${temporary_file}"
+	    else
+		if [[ $(basename ${temporary_file}) == ${temporary_file} ]]
+		    then
+		    temporary_file=${PWD}/${temporary_file}
+		fi
+		chmod +x ${temporary_file}
+		#### on cree le fichier spmd temporaire qui permettra de lancer 
+		#### l'appli mpmd
+		typeset NBTASK_CUMUL=0
+		typeset NBTASK
+		typeset CMD
+		echo "#!/bin/ksh" > ${temporary_file}
+		echo "if [[ -n \${BRIDGE_MPRUN_ADDON_MPMD} ]]" >> ${temporary_file}
+		echo "  then" >> ${temporary_file}
+		echo "  export BRIDGE_MPRUN_ADDON_MPMD=" >> ${temporary_file}
+		echo "  ${BRIDGE_MPRUN_CMD} ${temporary_file}" >> ${temporary_file}
+		echo "  rm -f ${temporary_file}" >> ${temporary_file}
+		echo "  exit \$?" >> ${temporary_file}
+		echo "fi" >> ${temporary_file}
+		echo ". \${BRIDGE_MPRUN_PROFILE} 2>/dev/null" >> ${temporary_file}
+		while read NBTASK CMD
+		  do
+		  (( NBTASK_CUMUL = NBTASK_CUMUL + NBTASK ))
+		  cat >> ${temporary_file} <<EOF
+if [[ \${BRIDGE_MPRUN_RANKID} -lt ${NBTASK_CUMUL} ]]
+then
+echo "task=\${BRIDGE_MPRUN_RANKID} , cmd = ${CMD}"
+${CMD}
+exit \$?
+fi
+EOF
+		done < ${BRIDGE_MPRUN_ADDON_MPMD}
+		
+		## on force maintenant l'allocation
+		bridge_mprun_allocation=yes
+		${LOGGER} "allocation mode is now enforced"
+
+		## on met a jour le nombre de tache
+		bridge_mprun_nproc=${NBTASK_CUMUL}
+		${LOGGER} "task count is now ${bridge_mprun_nproc}"
+		
+		## et on demande d'executer notre script temporaire
+		bridge_mprun_args=${temporary_file}
+		${LOGGER} "progname is now previously generated file ${temporary_file}"
+		
+	    fi
+	fi
+	
+    fi
+    
+    return 0
+}
+
+function bridge_addon_mprun_spmd_pre_allocate {
+    return 0
+}
+
+function bridge_addon_mprun_spmd_post_allocate {
+    return 0
+}
+
+function bridge_addon_mprun_spmd_pre_run {
+    return 0
+}
+
+function bridge_addon_mprun_spmd_post_run {
+    return 0
+}
+
+function bridge_addon_msub_alterscript {
+    return 0
+}
+

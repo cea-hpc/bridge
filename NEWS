@@ -1,0 +1,273 @@
+* Changes in bridge-1.4.12
+==========================
+	-- IntelMPI addon : now use direct srun execution when I_MPI_PMI_LIBRARY
+	   is defined
+	-- AutoExclusive addon : prevent from denying acces to special QoS
+	-- QoS addon: add special qos to the list of allowed QoS
+
+* Changes in bridge-1.4.11
+==========================
+	-- mstat: add MSTAT_FORMAT=new support and filters modifications 
+	   including showing jobs that go over their limits
+	-- mpp: correct minor bugs (one related to ksh internals)
+	-- bsstat: modify new classic displays (to better handle QOS addition)
+	-- addon: add bridge-profile addon to help display bridge env variables
+	   after allocation is made
+	-- libbridge/bsstat/plugins: add qos field and get it in slurm plugin
+	-- wrapper-DAM.ad: add a new variable to specify queues that are 
+	   excluded from the mechanism
+	   (BRIDGE_ADDON_DAM_WRAPPER_EXCLUDED_QUEUES)
+	-- msub: correct a bug resulting in -n value being increased to -N
+	   value instead of the contrary when lower
+	-- automem addons: better manage externally requested partitions
+	-- batch_system/slurm: modify the format of jobs history info
+	-- rm/slurm: now manage steps in -t option of mpstat
+	-- bsstat: add a new display method accessible using the -D option
+
+* Changes in bridge-1.4.10
+==========================
+	-- mpstat: add new options to get aditional informations concerning 
+	   allocations (characteristics, steps) and the associated helper 
+	   script get_task_info for slurm (F.Belot)
+	-- addon: add a new addon to print statistics using spank-stats add the
+	   end of a mprun job (spank-stats.ad)
+	-- plugins/rm/slurm: corerct a bug preventing to get an rm_allocation
+	   given its id (rmastat -r ...)
+	-- tagoutput.ad: use SLURM_LABELIO env var instead of adding a command
+	   line parameter (-l)
+	-- plugins batch slurm: correct a bug in singleton mode management
+	-- bcast.ad: set BRIDGE_BROADCAST_ORIGINAL_CMD env variable to the
+	   path of the original binary when broadcasted. An empty variable
+	   means that the broadcasted was not done.
+
+* Changes in bridge-1.4.9
+=========================
+	-- rm/slurm: now look for padb in PATH instead of using /usr/bin/padb
+	-- autoexclusive addon: add a new cores threshold to automatically deny
+	   access to resources
+	-- addons/qos: ensure that -Q can be use with both command line or #MSUB
+	   (fix from F.Diakhate)
+	-- msub: ensure that error message of underlying batch systems are not
+	   lost due to some version of the shell interpreter
+	   (fix from F.Diakhate)
+	-- addons/*mpi-slurm* remove --loadbalance option of mpirun launches
+	   as it is problematic at TGCC and no longer necessary on TERA with
+	   recent MPI (fix from F.Diakhate)
+	-- msub/mprun: now use -A to specify the project/account. Using -p for
+	   that purpose with msub is deprecated but kept for compatibility
+	   (adapted fix from F.Diakhate)
+	-- mpp: fix job project display/usage  (fix from F.Diakhate)
+	-- mpp: add job priority to mpp display (fix from F.Diakhate)
+	-- mpp: fix help message (fix from F.Diakhate)
+	-- batch/generic: ensure that excluded partitions are treated in summary
+	   mode of bsstat
+	-- batch/slurm: show interactive jobs as well as batch jobs in bsstat
+	   (fix from F.Diakhate)
+	-- msub: fix a bug preventing selection of a default singleton mode 
+	   (fix from F.Diakhate)
+	-- bsstat: now display priority instead of jobid
+	-- rm/slurm : do not count drained/draining nodes as active nodes
+	-- broadcast addon: add task pid to the name of the remote binaries to 
+	   cope with multiple simultaneous steps
+        -- correct bugs in automem-slurm-resize and autopacking addons
+	-- ensure that autopacking addons correctly handle inherited ncore param
+	   when used in batch or allocation mode
+	-- modify mprun to ensure that BRIDGE_MPRUN_* variables are not purged 
+	   in case of wrapping allocation when params are not redefined
+	-- modify mprun to ensure that max execution time is set to a default
+	   or env var defined value only if the run is not encapsulated in a
+	   wrapping allocation or batch job (helps to allow exec time increase
+	   at later times for jobs)
+* Changes in bridge-1.4.8
+=========================
+	-- modify bridge.spec to automatically build Tera style RPM packages
+	   (use --define "tgcc 1" for TGCC style or --define "tera 0" for basic)
+	-- automem-slurm-resize : add this new addon to leverage soft/hard mem
+	   limits CEA local patch (still experimental)
+	-- autopacking.ad : add this new addon to compute the best number of
+	   nodes to request for when necessary (still experimental)
+	-- slurm batch plugin : enhance node and queue states management
+	-- slurm rm plugin : enhance partition states management and reintroduce
+	   used cores nb for partition
+	-- automem-slurm.ad : add sorting of partition based on provided memory
+	   to ensure that the best partition is chosen not the first one
+	-- autoexclusive.ad : add this new addon to automatically do exclusive 
+	   allocation when requested cores number goes beyond a specified
+	   threshold
+	-- totalview: add BRIDGE_SLURM_OMPI_BASIC=1 in totalview addon to help 
+	   use salloc/mpirun in basic mode
+
+* Changes in bridge-1.4.7
+=========================
+	-- add bullxmpi-slurm-direct addon for automatic usage of slurm direct
+	   execution of bullxmpi applications (srun --resv-ports instead of 
+	   salloc/mpirun)
+	-- correct a bug in msub that prevent from setting queue using an env
+	   variable
+	-- correct a bug in mdel to ensure that only one batchid is managed
+	   to respect the usage
+	-- correct a bug in mdelete and slurm for pending jobs
+	-- add a verbosity message to say that #MSUB [-c|-n|-N|-x] primitives
+	   are disabled when one is set on the msub command line
+	-- enhance broadcast addon adding a way to disable it as well as new 
+	   env variables to configure the executable patch to include or exclude
+	   of the mechanism
+	-- fix openmpi related addons to support multiple -e '' options on the 
+	   cmd line
+	-- fix bullmpi-slurm-pin.ad to correcly handle
+	   BRIDGE_SLURM_OMPI_CMD_OPTIONS variables (default value was 
+	   overrided before)
+	-- remove loadbalance of tasks in bullmpi-slurm-pin.ad to cope with 
+	   bullmpi-0.18.1 limitations and rmaps_base_loadbalance 0 mandatory
+	   option (mantis 434)
+	-- fix bullmpi-slurm-direct addon to correctly handle --resv-ports 
+	   option addition
+	-- enhance bullmpi-slurm-direct addon to add a way to disable task 
+	   binding (BRIDGE_CPUS_BINDING=no)
+	-- fix qos addon to correctly output selected SLA in verbose mode
+	-- switch to salloc+mpirun in totalview addon and slurm-direct mode
+	   (srun --resv-ports) due to a deadlock in bullmpi with the former
+	   mechanism (if BRIDGE_MPRUN_TOTALVIEW_MODE is set to 'basic') 
+	-- modify totalview addon to disable mprun extra parameters when 
+	   salloc+mpirun is used
+        -- add -l option to cea_mpinfo 
+	-- add -r support for relative step placement with bullmpi-slurm-direct
+	   addon
+
+* Changes in bridge-1.4.6
+=========================
+	-- ddt addon : -E "" mprun parameters are now passed to mpirun args in DDT
+	-- bug fix : add -c support with SLURM and mpirun
+	-- fix bug : display addons usage messages in msub when -h is called
+	-- add QOS addon for SLURM QOS support
+	-- disable -N/-n/-c/-x options with #MSUB when one of first three 
+	parameters is requested on the msub command line
+
+* Changes in bridge-1.4.5
+=========================
+	-- no longer bind cpus with totalview addon
+	-- add relative host selection with openmpi based mpi addons
+	-- add dirige support
+	-- export SLURM queue and account in BRIDGE env var
+	-- add new addons
+
+* Changes in bridge-1.4.4
+=========================
+	-- enhance mpinfo support with slurm
+	-- modify spec file to no longer replace variant conf files
+	-- correct a bug in slurm batch system plugin with start time
+	parameter management
+	-- correct a bug in msub that prevent to fail to launch scripts
+	that do not belong to users
+	-- add an addon for cpu binding using an helper script
+	-- add an addon to provide X11 support with slurm when possible
+	-- no longer compatible with slurm version prior to 2.2
+
+* Changes in bridge-1.4.3
+==========================
+	-- correct a bug in Slurm plugin than can cause more nodes
+	than requested to be allocated
+	-- add a -x option to mprun that enables to request for 
+	exclusive nodes (if supported by the underlying resource manager)
+	-- add a -x option to msub that enables to request for 
+	exclusive nodes (if supported by the underlying batch system)
+	-- add BRIDGE_MSUB_QUEUE in slurm batch profile
+	-- correct a bug in mprun and exclusive mode options management
+	-- enhance totalview addon to support both direct slurm support
+	and bridge support
+	-- enhance openmpi based MPI plugins to automatically add app name
+	when used with allocation + mpirun
+	-- remove version from config files
+
+* Changes in bridge-1.4.2
+==========================
+	-- add -K options to sulrm resource manager plugin allocation
+	default options
+	-- correct a bug in slurm batch system mdel operation
+	-- correct  a bug in default extra parameters management 
+	in batch system
+	-- modify totalview plugin to force allocation mode when 
+	totalview support is requested
+
+* Changes in bridge-1.4.1
+==========================
+	-- enhance Totalview addon for Slurm environment
+	-- add queue filtering support in mstat/mpstat
+	-- add -t|-n|-r for mpstat with slurm
+	-- Add a set of new bridge addons
+	-- enhance slurm batch plugins and support
+	-- update slurm resource manager profile to be compatible 
+	with slurm+openmpi
+	-- update slurm plugins to be compatible with slurm-2.1 API
+
+* Changes in bridge-1.3.24
+==========================
+	-- correct a bug in slurm resource_manager plugin that
+	prevent from well using -M mprun option with version of slurm
+	greater or equal to 2.x
+
+* Changes in bridge-1.3.23
+==========================
+	-- ensure that mpirun works well when using less cores
+	than allocated in mprun
+	-- force mpirun to use a good -np value in all cases
+	(required for openMPI in exclusive node allocation)
+	-- Modify openMPI-slurm addon to let users give additional
+	option for underlying mpirun (-e parameter when the addon
+	is active)
+	-- Translates addons in english
+	-- add mpstat and mpinfo commands
+	-- add Quiet mode to slurm allocation
+
+* Changes in bridge-1.3.22
+==========================
+	-- Add -H option to mpp to remove headers when requested
+	-- Fix a bug in 1.3.21 that prevents the good treatment
+	of extra parameters options in mprun
+	-- correct a bug in slurm batch plugins that prevent from having
+	a valid display in bsstat (no reason specified)
+	-- correct bsstat classical displays (now 10 columns for batch 
+	queue names)
+	-- Enables Torque resource manager plugin to work with openmpi
+	in incomplete Torque Job environment (just PBS_NODEFILE set)
+
+* Changes in bridge-1.3.21
+==========================
+	-- Add -N, -n and -c support to msub with LSF plugin
+	Note: LSF doesn't support -c nor -N options. -c support will
+	require to use bridge mprun. 
+	BRIDGE_MSUB_MAX_NCORE should be set in bridge_bs.conf to help
+	spreading applications accross allocated nodes with incomplete
+	cores and nodes specification
+	ex : -n16 -c3 is incomplete we have to know the max number of
+	cores per node to guess how many tasks must be launched per node
+	when BRIDGE_MSUB_MAX_NCORE is set to auto, it tries to guess max
+	core per node using cpuinfo file of submiting node
+	-- Fix a bug in mpp preventing bad display of nodes list when
+	current directory contains matching nodename pattern files/dirs
+	-- Remove RMID from mpp display when it is not meaningful and 
+	switch from LSFID to BATCHID
+	-- add support for PBS options in bacth script file for torque
+
+* Changes in bridge-1.3.20
+==========================
+	-- Improve mpp stats capture error handling
+	-- Fix a bug preventing from correct handling of LSF batch script 
+	options  #BSUB -J ..., #BSUB -G ..., #BSUB -e ... and #BSUB -o ...
+	and the equivalent NSQII options
+	-- Fix a bug in LSF plugin preventing from correct mdel behavior
+	
+* Changes in bridge-1.3.19
+==========================
+	-- remove default msub option -a mpich2 of LSF batch system plugin
+	-- add configurable parameter bridge_msub_args for setting msub
+	default parameters in bridge_bs.conf of addons
+
+* Changes in bridge-1.3.18
+==========================
+	-- first implementation of a batch plugin for LSF-7.0
+
+* Changes in bridge-1.3.17
+==========================
+	-- experimental implementation of a batch plugin for slurm
+	(still in alpha version)

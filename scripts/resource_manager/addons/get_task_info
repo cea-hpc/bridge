@@ -1,0 +1,96 @@
+#! /bin/bash
+
+HOST=$(/bin/hostname)
+TASK_SELECTION=MPI_TASKS_ONLY
+SHOW=TASK_USAGE
+
+while getopts aM: option
+do
+      case ${option} in
+
+          a) TASK_SELECTION=ALL_TASKS
+              ;;
+
+          M) SHOW=MEM_USAGE
+             MEMLIM=${OPTARG}
+              ;;
+          
+          *)
+              break
+              ;;
+      esac
+done
+shift $(($OPTIND - 1)) 
+JOBID=$1 
+if [ "$JOBID" = "" ] ;then
+   echo "$0 :  jobid non specifie" >&2
+   exit 1
+fi
+
+LASTREC=
+NBTASKS=
+
+typeset -i Task_Count=0
+typeset -i VmPeak=
+typeset -i VmSize=
+typeset -i VmRSS=
+typeset -i Total_VmSize=
+typeset -i Total_VmRSS=
+
+
+if [ "$TASK_SELECTION" = "MPI_TASKS_ONLY" ] ;then
+  echo "MPI_RK LOC_RK  PID   VmPEAK VmSIZE  VmRSS  ST  CPUs"
+  echo "------ ------  ----- ------ ------  -----  --  ----"
+fi
+
+scontrol listpids $JOBID | sed '1d' | sort | while [ "$LASTREC" != 1 ] 
+do
+    read PID JOBID STEPID LOCALID GLOBALID
+    if [ $? != 0 ] ; then
+        if [ "$TASK_SELECTION" = "ALL_TASKS" -a "$SHOW" = "MEM_USAGE" ] ;then
+          printf "%-12s %7d %7d %7d\n" $HOST $MEMLIM $Total_VmRSS $(expr $MEMLIM - $Total_VmRSS) 
+        fi
+        LASTREC=1
+        continue
+    fi
+    eval $(cat /proc/$PID/environ 2>/dev/null | tr -s "\0" "\n" | egrep "OMPI_COMM|SLURM_PROCID|SLURM_LOCALID|SLURM_CPUS_ON_NODE" | tr -s "\n" ";" )
+    if [ "$OMPI_COMM_WORLD_RANK" != "" ] ;then  # lancement  salloc + mpirun 
+        printf "%6s   %4s %6s " $OMPI_COMM_WORLD_RANK $OMPI_COMM_WORLD_LOCAL_RANK $PID 
+        NBTASKS=
+    else # lancement srun
+      if [ "$TASK_SELECTION" = "MPI_TASKS_ONLY" ] ;then
+        if [ "$LOCALID"  = "-" ] ;then
+          continue
+        fi
+        if [ "$LOCALID" = "0"  -a "$STEPID" = "4294967294" ]  ; then
+          continue
+        fi 
+        case "$(readlink /proc/$PID/exe)" in
+        *auks | /bin/bash* | /bin/ksh* | orterun | mpirun | srun | ""  )
+              continue ;;  # pour skipper auks
+        */orted )
+              continue ;;
+        esac
+        printf "%6s   %4s %6s " $SLURM_PROCID $SLURM_LOCALID $PID
+        NBTASKS=$SLURM_CPUS_ON_NODE
+      fi
+    fi
+
+    eval $(cat /proc/$PID/status | egrep "VmPeak:|State:|VmSize:|VmRSS:|Cpus_allowed_list:" | awk '{print $1,$2}' | tr -d " " | tr  -s ":" "=")
+    VmPeak=$VmPeak/1000
+    VmSize=$VmSize/1000
+    VmRSS=$VmRSS/1000
+    Total_VmSize=$Total_VmSize+$VmSize
+    Total_VmRSS=$Total_VmRSS+$VmRSS
+    if [ "$SHOW" =  "TASK_USAGE" ] ; then
+      printf "%6d %6d %6d %3s  %s\n" $VmPeak $VmSize $VmRSS $State $Cpus_allowed_list
+    fi
+    Task_Count=$Task_Count+1
+    if [ "$TASK_SELECTION" = "MPI_TASKS_ONLY" ] ;then
+      if [ "$NBTASKS" = "$Task_Count" ] ;then
+        echo "                            ------ ------  "
+        printf "Total                       %6d %6d \n" $Total_VmSize $Total_VmRSS 
+        LASTREC=1
+      fi
+    fi  
+done

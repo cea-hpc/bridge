@@ -1,0 +1,306 @@
+
+function spmd_allocate_cmd {
+
+    ## on se place en mode debug si souhaite
+    typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+	then
+	set -x
+    fi
+
+    ## on incremente le niveau de log
+    typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+
+    ## on indique le profile associe au plugin
+    export BRIDGE_MPRUN_PROFILE=${BRIDGE_PROFILE_DIR}/torque.sh
+
+    ## on ajoute une entete a la log
+    typeset LOGGER="${LOGGER} allocate: "
+
+    typeset VERSION="torque-1.0"
+    typeset exit_status=0
+
+    spmd_allocate_cmd=${spmd_allocate_cmd:-qsub}
+    spmd_allocate_options="${spmd_allocate_options} -I"
+    spmd_allocate_args=
+
+    spmd_allocate_ncore=
+    spmd_allocate_nproc=
+    spmd_allocate_nnode=
+    spmd_allocate_partition=
+    spmd_allocate_project=
+    spmd_allocate_extra_parameters=
+    spmd_allocate_maxmem=
+    spmd_allocate_maxtime=
+
+    spmd_allocate_exclusive=no
+
+    while getopts Vc:n:N:p:A:M:T:E:T:e option
+      do
+      case ${option} in
+	  
+	  V)
+	      echo ${VERSION}
+	      return 0
+	      ;;
+
+	  c)
+	      spmd_allocate_ncore=${OPTARG}
+	      ;;
+
+	  n)
+	      spmd_allocate_nproc=${OPTARG}
+	      ;;
+
+	  N)
+	      spmd_allocate_nnode=${OPTARG}
+	      ;;
+
+	  p)
+	      spmd_allocate_partition=${OPTARG}
+	      ;;
+
+	  A)
+	      spmd_allocate_project=${OPTARG}
+	      ;;
+
+	  E)
+	      if [[ -n ${OPTARG} ]]
+		  then
+		  spmd_allocate_extra_parameters=${OPTARG}
+	      fi
+	      ;;
+
+	  M)
+	      spmd_allocate_maxmem=${OPTARG}
+	      ;;
+
+	  T)
+	      spmd_allocate_maxtime=${OPTARG}
+	      ;;
+
+	  e)
+	      spmd_allocate_exclusive=yes
+	      ;;
+
+	  *)
+	      exit_status=255
+	      break
+	      ;;
+      esac
+    done
+    shift ${OPTIND}-1 2>/dev/null
+    spmd_allocate_args=$@
+
+    # on log un message si on est au sein d'une allocation
+    if [[ ${BRIDGE_MPRUN_ALLOCATION} == yes ]]
+	then
+        ${LOGGER} "wrapping allocation detected, skipping this one"
+        ${spmd_allocate_args}
+        exit_status=$?
+        ${LOGGER} "exiting with status ${exit_status}"
+        return ${exit_status}
+    fi
+
+    # on appelle les addons eventuels en phase spmd_pre_allocate
+    bridge_addons_call_function bridge_addon_mprun_spmd_pre_allocate ${spmd_allocate_args}
+    
+    ## si le code de retour de la stack des addons est 0
+    ## alors le job n'a pas ete lance par un des addons
+    ## donc on le lance, sinon, un des addons s'en est charge
+    ## on passe au post run
+    if [ $? -eq 0 ]
+	then
+
+        ## on export quelques variables d'environnement dont une indiquant que l'on 
+	## a deja fait une allocation afin d'eviter les boucles
+	export BRIDGE_MPRUN_ALLOCATION=yes
+
+	${ERROR} "allocation mode not supported with Torque"
+	${ERROR} "launch batch jobs using '$(basename ${BRIDGE_MSUB_CMD})' instead"
+	false
+	exit_status=$?
+
+    fi
+
+    # on appelle les addons eventuels en phase spmd_post_allocate
+    bridge_addons_call_function bridge_addon_mprun_spmd_post_allocate ${spmd_allocate_args}
+
+    ${LOGGER} "exiting with status ${exit_status}"
+    return ${exit_status}
+}
+
+
+
+function spmd_run_cmd {
+
+    ## on se place en mode debug si souhaite
+    typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+	then
+	set -x
+    fi
+
+    ## on incremente le niveau de log
+    typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+
+    ## on indique le profile associe au plugin
+    export BRIDGE_MPRUN_PROFILE=${BRIDGE_PROFILE_DIR}/torque.sh
+
+    ## on ajoute une entete a la log
+    typeset LOGGER="${LOGGER} run: "
+
+    typeset VERSION="Torque-1.0"
+    typeset exit_status=0
+
+    spmd_run_ncore=
+    spmd_run_nproc=
+    spmd_run_nnode=
+    spmd_run_partition=
+    spmd_run_project=
+    spmd_run_extra_parameters=
+    spmd_run_maxmem=
+    spmd_run_maxtime=
+
+    ## Torque ne fournit pas de lanceur MPI
+    ## on utilise une syntax a la mpirun
+    ## la couche sous-jacente devant le comprendre
+    spmd_run_cmd=${spmd_run_cmd:-mpirun}
+    spmd_run_options=${spmd_run_options}
+    spmd_run_args=
+
+    while getopts Vc:n:N:p:A:M:T:E: option
+      do
+      case ${option} in
+	  
+	  V)
+	      echo ${VERSION}
+	      return 0
+	      ;;
+
+	  c)
+	      spmd_run_ncore=${OPTARG}
+	      ;;
+
+	  n)
+	      spmd_run_nproc=${OPTARG}
+	      ;;
+
+	  N)
+	      spmd_run_nnode=${OPTARG}
+	      ;;
+
+	  p)
+	      spmd_run_partition=${OPTARG}
+	      ;;
+
+	  A)
+	      spmd_run_project=${OPTARG}
+	      ;;
+
+	  E)
+	      if [[ -n ${OPTARG} ]]
+		  then
+		  spmd_run_extra_parameters=${OPTARG}
+	      fi
+	      ;;
+
+	  M)
+	      spmd_run_maxmem=${OPTARG}
+	      ;;
+
+	  T)
+	      spmd_run_maxtime=${OPTARG}
+	      ;;
+
+	  *)
+	      exit_status=255
+	      break
+	      ;;
+      esac
+    done
+    shift ${OPTIND}-1 2>/dev/null
+    spmd_run_args=$@
+
+    # on log un message si on est au sein d'une allocation
+    if [[ ${BRIDGE_MPRUN_ALLOCATION} == yes ]]
+	then
+	${LOGGER} "wrapping allocation detected"
+    fi
+
+    # on appelle les addons eventuels en phase spmd_pre_run
+    bridge_addons_call_function bridge_addon_mprun_spmd_pre_run $@
+
+    ## si le code de retour de la stack des addons est 0
+    ## alors le job n'a pas ete lance par un des addons
+    ## donc on le lance, sinon, un des addons s'en est charge
+    ## on passe au post run
+    if [ $? -eq 0 ]
+	then
+
+	# build options
+	if [[ -n ${spmd_run_ncore} ]]
+	    then
+	    ## mpirun ne supporte pas l'option -c pour specifier le nombre de core par processus
+	    ## du coup, il est preferable de distribuer les processus sur les noeuds afin de 
+	    ## garantir que l'utilisation de -c dans msub ayant entraine l'allocation de plus 
+	    ## de cores que de processus soit bien prise en compte
+	    spmd_run_options="${spmd_run_options} -bynode"
+	fi
+	if [[ -n ${spmd_run_nproc} ]]
+	    then
+	    spmd_run_options="${spmd_run_options} -np ${spmd_run_nproc}"
+	fi
+	if [[ -n ${spmd_run_nnode} ]]
+	    then
+	    # non supporte dans mpirun
+	    ${LOGGER} "Torque plugin doesn't support the nodes number option"
+	    true
+	fi
+	if [[ -n ${spmd_run_partition} ]]
+	    then
+	    # non supporte dans mpirun
+	    true
+	fi
+	if [[ -n ${spmd_run_project} ]]
+	    then
+	    # non supporte dans mpirun
+	    true
+	fi
+	if [[ -n ${spmd_run_maxmem} ]]
+	    then
+	    # non supporte dans mpirun
+	    true
+	fi
+	if [[ -n ${spmd_run_maxtime} ]]
+	    then
+	    # non supporte dans mpirun
+	    true
+	fi
+
+	## Torque place les noms des noeuds alloues dans un fichier $PBS_NODEFILE
+	## si ce fichier n'est pas defini, on est pas dans torque, on lance un mpirun
+	## local utilisant au plus la shared memory
+       	if [[ -z ${PBS_NODEFILE} ]]
+	    then	
+	    spmd_run_options="${spmd_run_options} --mca btl sm,self"
+	else
+	    ## if we are in VisuPortal Env and PBS_JOBID is not defined
+	    ## build the host list based on VisuPortal machine file
+	    if [[ -z ${PBS_JOBID} ]] && [[ "${DESKTOP_SESSION}" == "visuportal" ]]
+		then
+		VISU_HOST=`awk '{print $1}' ${PBS_NODEFILE} | tr '\012' ','`
+		spmd_run_options="${spmd_run_options} --host ${VISU_HOST}"
+	    fi
+	fi
+	${LOGGER} "${spmd_run_cmd} ${spmd_run_options} ${spmd_run_extra_parameters} -- ${spmd_run_args}"
+	eval ${spmd_run_cmd} ${spmd_run_options} ${spmd_run_extra_parameters} -- ${spmd_run_args}
+	exit_status=$?
+    fi
+
+    # on appelle les addons eventuels en phase spmd_post_run
+    bridge_addons_call_function bridge_addon_mprun_spmd_post_run ${spmd_run_args}
+    
+    ${LOGGER} "exiting with status ${exit_status}"
+    return ${exit_status}
+}

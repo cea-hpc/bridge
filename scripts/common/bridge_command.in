@@ -1,0 +1,49 @@
+#
+# Ce script permet de fixer dans l'environnement les commandes
+# fournies par le produit
+# Elle transforme les noms par defaut si la configuration du produit l'a 
+# specifie (--program-prefix,...)
+#
+
+function bridge_command_enhance {
+
+    typeset OUTPUT=""
+
+    if [ $# -eq 0 ]
+	then
+	return 0
+    else
+
+	typeset program_transform_prefix="@program_transform_name@"
+	if [[ -z ${program_transform_prefix} ]]
+	    then
+	    program_transform_prefix="s,^,,"
+	fi
+
+	for command in $@
+	  do
+	  OUTPUT="${OUTPUT} $(echo ${command} | sed  ${program_transform_prefix})"
+	done
+
+	echo ${OUTPUT}
+	return 0
+    fi
+
+}
+
+BRIDGE_BMSTAT_CMD=${BRIDGE_BINDIR}/$(bridge_command_enhance "bmstat")
+BRIDGE_BNSTAT_CMD=${BRIDGE_BINDIR}/$(bridge_command_enhance "bnstat")
+BRIDGE_BQSTAT_CMD=${BRIDGE_BINDIR}/$(bridge_command_enhance "bqstat")
+BRIDGE_BSSTAT_CMD=${BRIDGE_BINDIR}/$(bridge_command_enhance "bsstat")
+
+BRIDGE_MSUB_CMD=${BRIDGE_BINDIR}/$(bridge_command_enhance "msub")
+BRIDGE_MSTAT_CMD=${BRIDGE_BINDIR}/$(bridge_command_enhance "mstat")
+BRIDGE_MDEL_CMD=${BRIDGE_BINDIR}/$(bridge_command_enhance "mdel")
+
+BRIDGE_RMMSTAT_CMD=${BRIDGE_BINDIR}/$(bridge_command_enhance "rmmstat")
+BRIDGE_RMPSTAT_CMD=${BRIDGE_BINDIR}/$(bridge_command_enhance "rmpstat")
+BRIDGE_RMASTAT_CMD=${BRIDGE_BINDIR}/$(bridge_command_enhance "rmastat")
+
+BRIDGE_MPRUN_CMD=${BRIDGE_BINDIR}/$(bridge_command_enhance "mprun")
+BRIDGE_MPSTAT_CMD=${BRIDGE_BINDIR}/$(bridge_command_enhance "mpstat")
+BRIDGE_MPDEL_CMD=${BRIDGE_BINDIR}/$(bridge_command_enhance "mpdel")

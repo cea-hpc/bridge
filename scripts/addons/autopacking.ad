@@ -1,0 +1,294 @@
+################################################################################
+#
+# This addon enables to automatically request for cores packed on the minimum
+# amount of nodes in a given requested cores range.
+# The thresholds are configured using the values of
+# BRIDGE_ADDON_AUTOPACKING_LOW_THRESHOLD
+# BRIDGE_ADDON_AUTOPACKING_HIGH_THRESHOLD
+#
+# BRIDGE_ADDON_AUTOPACKING_DISABLE can be set to avoid using the autopacking 
+# mechanism (default value 0 means use it)
+################################################################################
+
+
+################################################################################
+#
+# MSUB RELATED FUNCTIONS MSUB RELATED FUNCTIONS MSUB RELATED FUNCTIONS
+#
+################################################################################
+
+function bridge_addon_msub_setopt {
+    return 0
+}
+
+function bridge_addon_msub_getopt {
+    return 0
+}
+
+
+function bridge_addon_msub_alteropt {
+
+    typeset high_t
+    typeset low_t
+    typeset cpn
+    typeset cpt
+    typeset scpn
+    typeset tpn
+    typeset coe
+    typeset res
+
+    ## on se place en mode debug si souhaite
+    typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+    then
+	set -x
+    fi
+    
+    ## on incremente le niveau de log
+    typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+    
+    ## on ajoute une entete a la log
+    typeset LOGGER="${LOGGER} DAM Auto-Packing Addon :"
+
+    ## on verifie si on doit vraiment faire quelquechose
+    if [[ ${BRIDGE_ADDON_AUTOPACKING_DISABLE} -eq 1 ]]
+    then
+	${LOGGER} "disabled by env var"
+	return 0
+    fi
+
+    ## do auto-selection only if necessary
+    low_t=${BRIDGE_ADDON_AUTOPACKING_LOW_THRESHOLD}
+    high_t=${BRIDGE_ADDON_AUTOPACKING_HIGH_THRESHOLD}
+    if [[ -z ${low_t} ]] && [[ ${high_t} -gt 0 ]]
+    then
+	low_t=0
+    fi
+    if [[ -z ${high_t} ]] && [[ ${low_t} -ge 0 ]]
+    then
+	high_t=0
+    fi
+    # only proceed if requested nodes # not explicitely defined
+    if  [[ -n ${BRIDGE_MSUB_NPROC} ]] && \
+	[[ -z ${BRIDGE_MSUB_NNODE} ]] && [[ -n ${low_t} ]]
+    then
+	typeset total_cores=$(( ${BRIDGE_MSUB_NPROC} * ${BRIDGE_MSUB_NCORE:-1} ))
+	if [[ ${total_cores} -ge ${low_t} ]]
+	then
+	    if [[ ${high_t} -eq 0 ]] || [[ ${total_cores} -le ${high_t} ]]
+	    then
+		${LOGGER} "enabling autopack (low=${low_t} < req=${total_cores} < high=${high_t})"
+
+		## on detecte le nombre de cores par noeud de calcul
+		## si plusieurs valeur possibles, on prend la plus petite
+		if [[ -n ${BRIDGE_MSUB_QUEUE} ]]
+		then
+		    cpn=$(sinfo -ho "%c" -p ${BRIDGE_MSUB_QUEUE} 2>/dev/null | sort -n | head -n 1)
+		else
+		    cpn=$(sinfo -ho "%c" 2>/dev/null | sort -n | head -n 1)
+		fi
+		if [[ -z ${cpn} ]]
+		then
+		    ${LOGGER} "unable to detected max nb of cores per node, skipping"
+		    return 0
+		else
+		    ${LOGGER} "detected nb of cores per node is ${cpn}"
+		fi
+
+		# on calcul le nombre de cores max par noeud pour le job 
+		# en prenant en compte le nombre de cores par tache demande
+		cpt=${BRIDGE_MSUB_NCORE:-1}
+		(( tpn = cpn / cpt ))
+		(( cpn = tpn * cpt ))
+		if [[ ${cpt} -gt 1 ]]
+		then
+		    ${LOGGER} "detected nb of usable cores per node is ${cpn}"
+		fi
+		
+		# si le nombre de coeurs utilisable par noeud est nul, on return
+		# il y a un probleme avec la specification de ressources, on laisse
+		# le gestionnaire de ressources voir si il s'en sort
+		if [[ ${cpn} -eq 0 ]]
+		then  
+		    return 0
+		fi
+
+		# on en deduit le nombre de noeud
+		(( coe = total_cores / cpn ))
+		(( res = total_cores % cpn ))
+		scpn=${coe}
+		if [[ ${res} -gt 0 ]]
+		then
+		    (( scpn = scpn + 1 ))
+		fi
+		export BRIDGE_MSUB_NNODE=${scpn}
+		${LOGGER} "requested nodes nb is now ${scpn}"
+
+		# disable autopacking to avoid recursive call
+		export BRIDGE_ADDON_AUTOPACKING_DISABLE=1
+	    fi
+	fi
+    fi
+
+    return 0
+
+}
+
+
+function bridge_addon_msub_alterscript {
+    return 0
+}
+
+
+################################################################################
+#
+# MPRUN RELATED FUNCTIONS MPRUN RELATED FUNCTIONS MPRUN RELATED FUNCTIONS
+#
+################################################################################
+
+function bridge_addon_mprun_setopt {
+    return 0
+}
+
+function bridge_addon_mprun_getopt {
+    return 0
+}
+
+
+function bridge_addon_mprun_alteropt {
+
+    typeset high_t
+    typeset low_t
+    typeset cpn
+    typeset cpt
+    typeset scpn
+    typeset tpn
+    typeset coe
+    typeset res
+
+    ## on se place en mode debug si souhaite
+    typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+    then
+	set -x
+    fi
+    
+    ## on incremente le niveau de log
+    typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+    
+    ## on ajoute une entete a la log
+    typeset LOGGER="${LOGGER} DAM Auto-Packing Addon :"
+
+    ## on verifie si on doit vraiment faire quelquechose
+    if [[ ${BRIDGE_ADDON_AUTOPACKING_DISABLE} -eq 1 ]]
+    then
+	${LOGGER} "disabled by env var"
+	return 0
+    fi
+
+    ## do auto-selection only if necessary
+    low_t=${BRIDGE_ADDON_AUTOPACKING_LOW_THRESHOLD}
+    high_t=${BRIDGE_ADDON_AUTOPACKING_HIGH_THRESHOLD}
+    if [[ -z ${low_t} ]] && [[ ${high_t} -gt 0 ]]
+    then
+	low_t=0
+    fi
+    if [[ -z ${high_t} ]] && [[ ${low_t} -ge 0 ]]
+    then
+	high_t=0
+    fi
+    # only proceed if requested nodes # not explicitely defined
+    if  [[ -n ${bridge_mprun_nproc} ]] && \
+	[[ -z ${bridge_mprun_nnode} ]] && [[ -n ${low_t} ]]
+    then
+        if [[ -z ${bridge_mprun_ncore} ]]
+	then
+	    if [[ -n ${BRIDGE_MPRUN_NCORE} ]]
+	    then
+		bridge_mprun_ncore=${BRIDGE_MPRUN_NCORE}
+	    elif [[ -n ${BRIDGE_MSUB_NCORE} ]]
+	    then
+		bridge_mprun_ncore=${BRIDGE_MSUB_NCORE}
+	    else
+		bridge_mprun_ncore=1
+	    fi
+	fi
+	typeset total_cores=$(( ${bridge_mprun_nproc} * ${bridge_mprun_ncore:-1} ))
+	if [[ ${total_cores} -ge ${low_t} ]]
+	then
+	    if [[ ${high_t} -eq 0 ]] || [[ ${total_cores} -le ${high_t} ]]
+	    then
+		${LOGGER} "enabling autopack (low=${low_t} < req=${total_cores} < high=${high_t})"
+
+		## on detecte le nombre de cores par noeud de calcul
+		## si plusieurs valeur possibles, on prend la plus petite
+		if [[ -n ${BRIDGE_MPRUN_PARTITION} ]]
+		then
+		    cpn=$(sinfo -ho "%c" -p ${BRIDGE_MPRUN_PARTITION} 2>/dev/null | sort -n | head -n 1)
+		else
+		    cpn=$(sinfo -ho "%c" 2>/dev/null | sort -n | head -n 1)
+		fi
+		if [[ -z ${cpn} ]]
+		then
+		    ${LOGGER} "unable to detected max nb of cores per node, skipping"
+		    return 0
+		else
+		    ${LOGGER} "detected nb of cores per node is ${cpn}"
+		fi
+
+		# on calcul le nombre de cores max par noeud pour le job 
+		# en prenant en compte le nombre de cores par tache demande
+		cpt=${bridge_mprun_ncore:-1}
+		(( tpn = cpn / cpt ))
+		(( cpn = tpn * cpt ))
+		if [[ ${cpt} -gt 1 ]]
+		then
+		    ${LOGGER} "detected nb of usable cores per node is ${cpn}"
+		fi
+
+		# si le nombre de coeurs utilisable par noeud est nul, on return
+		# il y a un probleme avec la specification de ressources, on laisse
+		# le gestionnaire de ressources voir si il s'en sort
+		if [[ ${cpn} -eq 0 ]]
+		then  
+		    return 0
+		fi
+
+		# on en deduit le nombre de noeud
+		(( coe = total_cores / cpn ))
+		(( res = total_cores % cpn ))
+		scpn=${coe}
+		if [[ ${res} -gt 0 ]]
+		then
+		    (( scpn = scpn + 1 ))
+		fi
+		export bridge_mprun_nnode=${scpn}
+		${LOGGER} "requested nodes nb is now ${scpn}"
+
+		# disable autopacking to avoid recursive call
+		export BRIDGE_ADDON_AUTOPACKING_DISABLE=1
+	    fi
+	fi
+    fi
+
+    return 0
+
+}
+
+function bridge_addon_mprun_spmd_pre_allocate {
+    return 0
+}
+
+
+function bridge_addon_mprun_spmd_post_allocate {
+    return 0
+}
+
+
+function bridge_addon_mprun_spmd_pre_run {
+    return 0
+}
+
+function bridge_addon_mprun_spmd_post_run {
+    return 0
+}

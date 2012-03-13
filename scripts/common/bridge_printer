@@ -1,0 +1,203 @@
+# Arguments :
+#
+# -r        : rotation du fichier de log en fonction du quantiem du mois
+# -t type   : type du message a logger
+# -s        : ajoute un timestamp (nombre de secondes depuis EPOCH) a la ligne
+# -g        : active le mode greedy (log l'entree standard)
+# -f        : mode force, affiche quelque soit les niveaux autorises
+#
+function bridge_printer {
+
+    typeset LOCAL_LOGFILE
+    typeset TOMORROW_LOGFILE
+
+    typeset MSG_HEAD=
+
+    typeset CMD_HEAD=echo
+    typeset CMD_TAIL
+
+    typeset BRIDGE_PRINTER_TYPE=""
+    typeset ROTATION_MODE=no
+
+    typeset HOSTINFO=no
+    typeset PROCESSINFO=no
+
+    typeset TIMEINFO=no
+    typeset TIMESTAMP=no
+
+    typeset greedy_mode=no
+
+    typeset FORCE_MODE=no
+
+    while getopts :t:rsghpTf c
+      do
+      case $c in
+	  g)
+	      greedy_mode=yes
+	      ;;
+	  t)
+	      case ${OPTARG} in
+		  verbose)
+		      BRIDGE_PRINTER_TYPE="[ INFO ]"
+		      ;;
+		  error)
+		      BRIDGE_PRINTER_TYPE="[ERROR ]"
+		      ;;
+		  check|dry|dryrun)
+		      BRIDGE_PRINTER_TYPE="[DRYRUN]"
+		      ;;
+		  debug)
+		      BRIDGE_PRINTER_TYPE="[DEBUG ]"
+		      ;;
+		  warning)
+		      BRIDGE_PRINTER_TYPE="[WARNIN]"
+		      ;;
+		  critical)
+		      BRIDGE_PRINTER_TYPE="[CRITIC]"
+		      ;;
+		  alerte)
+		      BRIDGE_PRINTER_TYPE="[ALERTE]"
+		      ;;
+		  acct)
+		      BRIDGE_PRINTER_TYPE="[ ACCT ]"
+		      ;;
+	      esac
+	      ;;
+	  r)
+	      ROTATION_MODE=yes
+	      ;;
+	  s)
+	      TIMESTAMP=yes
+	      ;;
+	  T)
+	      TIMEINFO=yes
+	      ;;
+	  h)
+	      HOSTINFO=yes
+	      ;;
+	  p)
+	      PROCESSINFO=yes
+	      ;;
+	  f)
+	      FORCE_MODE=yes
+	      ;;
+	  *)
+	      return 2
+	      ;;
+      esac
+    done
+    shift `expr $OPTIND - 1`
+
+    ## check verbosity mode
+    if [ "${BRIDGE_VERBOSE_MODE}" = "yes" ] || [ "${FORCE_MODE}" = "yes" ]
+	then
+
+	#### check max log level <= max
+	if [ ${BRIDGE_VERBOSE_LEVEL} -le ${BRIDGE_VERBOSE_MAXLEVEL} ] || [ "${FORCE_MODE}" = "yes" ]
+	    then
+
+	    #### initialise log file
+	    if [ -n "${BRIDGE_LOGFILE}" ]
+		then
+		LOCAL_LOGFILE="${BRIDGE_LOGFILE}"
+		if [[ ${ROTATION_MODE} = "yes" ]]
+		    then
+		    TOMORROW_LOGFILE="${BRIDGE_LOGFILE}.`date -d 'tomorrow' +%d`"
+		    if [[ -f ${TOMORROW_LOGFILE} ]]
+			then
+			rm -f ${TOMORROW_LOGFILE}
+		    fi
+		    LOCAL_LOGFILE="${BRIDGE_LOGFILE}.`date +%d`"
+		fi
+	        ##### log file doesn't exist, try to create it
+		if [ ! -f "${LOCAL_LOGFILE}" ]
+		    then
+		    BRIDGE_ERROR=$(touch ${LOCAL_LOGFILE} >/dev/null)
+		    if [ $? -ne 0 ]
+			then
+			return 1
+		    fi
+		fi
+	    fi
+
+	    #### set greedy mode if required
+	    if [[ $1 = "-" ]]
+		then
+		greedy_mode=yes
+	    fi
+
+	    #### add time info to header if required
+	    if [[ ${TIMEINFO} = "yes" ]]
+		then
+		if [[ ${TIMESTAMP} = "yes" ]]
+		    then
+		    MSG_HEAD=$(date "+%d/%m/%Y %T [%s]")
+		else
+		    MSG_HEAD=$(date "+%d/%m/%Y %T")
+		fi
+	    fi
+
+	    #### add hostinfo to header if required
+	    if [[ ${HOSTINFO} = "yes" ]]
+		then
+		MSG_HEAD="${MSG_HEAD} [${BRIDGE_HOSTNAME}]"
+	    fi
+
+	    #### add process info to header if required
+	    if [[ ${PROCESSINFO} = "yes" ]]
+		then
+		MSG_HEAD="${MSG_HEAD} [${PROGNAME}:$$]"
+	    fi
+
+	    #### add header if it exists
+	    if [[ -n ${MSG_HEAD} ]]
+		then
+		MSG_HEAD="${MSG_HEAD} ${BRIDGE_PRINTER_TYPE}"
+	    else
+		MSG_HEAD="${BRIDGE_PRINTER_TYPE}"
+	    fi
+
+	    #### do some work
+	    if [[ ${greedy_mode} = "yes" ]]
+		then
+		##### greedy mode
+		##### log input lines		
+		if [[ -n "$@" ]]
+		    then
+		    MSG_HEAD="${MSG_HEAD} $@"
+		fi
+		read
+		while  [ $? -eq 0 ]
+		  do
+		  if [[ -n ${REPLY} ]]
+		      then
+		      if [ -z "${BRIDGE_LOGFILE}" ]
+			  then
+			  ${CMD_HEAD} "${MSG_HEAD} ${REPLY}" ${CMD_TAIL}
+		      else
+			  ${CMD_HEAD} "${MSG_HEAD} ${REPLY}" ${CMD_TAIL} >> ${LOCAL_LOGFILE}
+		      fi
+		  fi
+		  read
+		done
+	    else
+		##### standard mode
+		##### log args
+		if [ -z "${BRIDGE_LOGFILE}" ]
+		    then
+		    ${CMD_HEAD} "${MSG_HEAD} $@" ${CMD_TAIL}
+		else
+		    ${CMD_HEAD} "${MSG_HEAD} $@" ${CMD_TAIL} >> ${LOCAL_LOGFILE}
+		fi
+	    fi
+
+	    ####
+
+	fi
+
+	###
+    fi
+
+    ##
+    return 0
+}

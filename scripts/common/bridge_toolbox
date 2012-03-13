@@ -1,0 +1,48 @@
+#!/bin/ksh
+#
+#
+#--------------------------------------------------------------------------------
+# bridge_tmpfile : creer et affiche un nom de fichier temporaire unique 
+# a partir de l'argument fournit
+# usage : bridge_tmpfile <prefix>
+# retour : nom du fichier temporaire
+#--------------------------------------------------------------------------------
+function bridge_tmpfile {
+    typeset BRIDGE_OUTPUT
+    typeset template=default
+    if [ $# -ne 0 ]
+	then
+	template=$1
+    fi
+    BRIDGE_OUTPUT=$(mktemp ${template}_XXXXXX 2>&1)
+    if [[ $? -ne 0 ]]
+	then
+	${ERROR} "Impossible de creer le fichier temporaire ${template}_XXXXXX : ${BRIDGE_OUTPUT:--}"
+	return 1
+    else
+	echo ${BRIDGE_OUTPUT}
+	return 0
+    fi
+}
+
+###################################################################################################################
+# bridge_get_memlimit : convertit en Mo le parametre d'entree et affiche la valeur obtenue
+# usage : bridge_get_memlimit quantite
+# retour : quantite en Mo
+#------------------------------------------------------------------------------------------------------------------
+function bridge_get_memlimit {
+  integer VALUE
+  integer MEM
+  VALUE=`echo $1 | tr -d "[a-z][A-Z]"`
+  UNITE=`echo $1 | tr -d "[0-9]"`
+  case "$UNITE" in
+    ko | Ko | kO | KO ) MEM=$VALUE/1024 ;;
+    kw | Kw | kW | KW ) MEM=$VALUE*8/1024 ;;
+    "" | mo | Mo | mO | MO | mb | Mb | MB | mB ) MEM=$VALUE ;;
+    mw | Mw | mW | MW ) MEM=$VALUE*8 ;;
+    go | Go | gO | GO ) MEM=$VALUE*1024 ;;
+    gw | Gw | GW | Gw ) MEM=$VALUE*1024*8 ;;
+    *) MEM=-1 ;;
+  esac
+  echo $MEM
+}

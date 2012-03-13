@@ -1,0 +1,292 @@
+###################################################################################################################
+# Fonction de soumission v 1.0
+#------------------------------------------------------------------------------------------------------------------
+# BRIDGE_MPRUN_DEFAULT_NPROC
+# Arguments :
+#
+#------------------------------------------------------------------------------------------------------------------
+function spmd_allocate_cmd {
+
+    ## on se place en mode debug si souhaite
+    typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+	then
+	set -x
+    fi
+
+    ## on incremente le niveau de log
+    typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+
+    ## on indique le profile associe au plugin
+    export BRIDGE_MPRUN_PROFILE=${BRIDGE_PROFILE_DIR}/ws.sh
+
+    ## on ajoute une entete a la log
+    typeset LOGGER="${LOGGER} allocate: "
+
+    typeset VERSION="ws-1.0"
+    typeset exit_status=0
+
+    max_ncore_per_node=${BRIDGE_MPRUN_MAX_NCORE}
+ 
+    spmd_allocate_cmd="ksh"
+    spmd_allocate_options=""
+    spmd_allocate_args=
+
+    spmd_allocate_ncore=
+    spmd_allocate_nproc=
+    spmd_allocate_nnode=
+    spmd_allocate_partition=
+    spmd_allocate_project=
+    spmd_allocate_extra_parameters=
+    spmd_allocate_maxmem=
+    spmd_allocate_maxtime=
+
+    spmd_allocate_exclusive=no
+
+    sub_cmd=
+
+    while getopts Vc:n:N:p:A:M:T:E:T:e option
+      do
+      case ${option} in
+	  
+	  V)
+	      echo ${VERSION}
+	      return 0
+	      ;;
+
+	  c)
+	      spmd_allocate_ncore=${OPTARG}
+	      ;;
+
+	  n)
+	      spmd_allocate_nproc=${OPTARG}
+	      ;;
+
+	  N)
+	      spmd_allocate_nnode=${OPTARG}
+	      ;;
+
+	  p)
+	      spmd_allocate_partition=${OPTARG}
+	      ;;
+
+	  A)
+	      spmd_allocate_project=${OPTARG}
+	      ;;
+
+	  E)
+	      if [[ -n ${OPTARG} ]]
+		  then
+		  spmd_allocate_extra_parameters=${OPTARG}
+	      fi
+	      ;;
+
+	  M)
+	      spmd_allocate_maxmem=${OPTARG}
+	      ;;
+
+	  T)
+	      spmd_allocate_maxtime=${OPTARG}
+	      ;;
+
+	  e)
+	      spmd_allocate_exclusive=yes
+	      ;;
+
+	  *)
+	      exit_status=255
+	      break
+	      ;;
+      esac
+    done
+    shift ${OPTIND}-1 2>/dev/null
+    spmd_allocate_args=$@
+
+    # on appelle les addons eventuels en phase spmd_pre_allocate
+    bridge_addons_call_function bridge_addon_mprun_spmd_pre_allocate ${spmd_allocate_args}
+    
+    ## si le code de retour de la stack des addons est 0
+    ## alors le job n'a pas ete lance par un des addons
+    ## donc on le lance, sinon, un des addons s'en est charge
+    ## on passe au post run
+    if [ $? -eq 0 ]
+	then
+
+	sub_cmd=${spmd_allocate_args}
+	
+	# build options
+	if [[ -n ${spmd_allocate_maxmem} ]]
+	    then
+	    (( memlim = spmd_allocate_maxmem * 1024 ))
+	    sub_cmd="ulimit -M ${memlim};${sub_cmd}"
+	fi
+	if [[ -n ${spmd_allocate_maxtime} ]]
+	    then
+	    sub_cmd="ulimit -t ${spmd_allocate_maxtime};${sub_cmd}"
+	fi
+
+        ## on export quelques variables d'environnement dont une indiquant que l'on 
+	## a deja fait une allocation afin d'eviter les boucles
+	export BRIDGE_MPRUN_ALLOCATION=yes
+	
+	${LOGGER} "${spmd_allocate_cmd} ${spmd_allocate_options} ${spmd_allocate_extra_parameters} -c \"${sub_cmd}\""
+	${spmd_allocate_cmd} ${spmd_allocate_options} ${spmd_allocate_extra_parameters} -c "${sub_cmd}"
+	exit_status=$?
+    fi
+
+    # on appelle les addons eventuels en phase spmd_post_allocate
+    bridge_addons_call_function bridge_addon_mprun_spmd_post_allocate ${spmd_allocate_args}
+
+    return ${exit_status}
+}
+
+
+
+function spmd_run_cmd {
+
+    ## on se place en mode debug si souhaite
+    typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+	then
+	set -x
+    fi
+    ## on incremente le niveau de log
+    typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+
+    ## on indique le profile associe au plugin
+    export BRIDGE_MPRUN_PROFILE=${BRIDGE_PROFILE_DIR}/ws.sh
+
+    ## on ajoute une entete a la log
+    typeset LOGGER="${LOGGER} run: "
+
+    typeset VERSION="ws-1.0"
+    typeset exit_status=0
+
+    spmd_run_ncore=
+    spmd_run_nproc=
+    spmd_run_nnode=
+    spmd_run_partition=
+    spmd_run_project=
+    spmd_run_extra_parameters=
+    spmd_run_maxmem=
+    spmd_run_maxtime=
+
+    max_ncore_per_node=${BRIDGE_MPRUN_MAX_NCORE}
+    spmd_run_options=
+    spmd_run_cmd=mpirun
+    spmd_run_args=
+
+    while getopts Vc:n:N:p:A:M:T:E: option
+      do
+      case ${option} in
+	  
+	  V)
+	      echo ${VERSION}
+	      return 0
+	      ;;
+
+	  c)
+	      spmd_run_ncore=${OPTARG}
+	      ;;
+
+	  n)
+	      spmd_run_nproc=${OPTARG}
+	      ;;
+
+	  N)
+	      spmd_run_nnode=${OPTARG}
+	      ;;
+
+	  p)
+	      spmd_run_partition=${OPTARG}
+	      ;;
+
+	  A)
+	      spmd_run_project=${OPTARG}
+	      ;;
+
+	  E)
+	      if [[ -n ${OPTARG} ]]
+		  then
+		  spmd_run_extra_parameters=${OPTARG}
+	      fi
+	      ;;
+
+	  M)
+	      spmd_run_maxmem=${OPTARG}
+	      ;;
+
+	  T)
+	      spmd_run_maxtime=${OPTARG}
+	      ;;
+
+	  *)
+	      exit_status=255
+	      break
+	      ;;
+      esac
+    done
+    shift ${OPTIND}-1 2>/dev/null
+    spmd_run_args=$@
+
+    # on log un message si on est au sein d'une allocation
+    if [[ ${BRIDGE_MPRUN_ALLOCATION} == yes ]]
+	then
+	${LOGGER} "wrapping allocation detected"
+    fi
+	
+    # on appelle les addons eventuels en phase spmd_pre_run
+    bridge_addons_call_function bridge_addon_mprun_spmd_pre_run $@
+
+    ## si le code de retour de la stack des addons est 0
+    ## alors le job n'a pas ete lance par un des addons
+    ## donc on le lance, sinon, un des addons s'en est charge
+    ## on passe au post run
+    if [ $? -eq 0 ]
+	then
+
+	# build options
+	if [[ -n ${spmd_run_nproc} ]]
+	    then
+	    spmd_run_options="${spmd_run_options} -np ${spmd_run_nproc}"
+	fi
+	if [[ -n ${spmd_run_partition} ]]
+	    then
+	    spmd_run_options="${spmd_run_options} -p ${spmd_run_partition}"
+	fi
+	
+	if [[ ${BRIDGE_MPRUN_ALLOCATION} == yes ]]
+	    then
+
+	    ${LOGGER} "${spmd_run_cmd} ${spmd_run_options} ${spmd_run_extra_parameters} ${spmd_run_args}"
+	    ${spmd_run_cmd} ${spmd_run_options} ${spmd_run_extra_parameters}  ${spmd_run_args}
+
+	else
+
+	    wrapper_cmd="ksh -c"
+	    sub_cmd=" "
+	    # build options
+	    if [[ -n ${spmd_run_maxmem} ]]
+		then
+		(( memlim = spmd_run_maxmem * 1024 ))
+		sub_cmd="ulimit -M ${memlim};${sub_cmd}"
+	    fi
+	    if [[ -n ${spmd_run_maxtime} ]]
+		then
+		sub_cmd="ulimit -t ${spmd_run_maxtime};${sub_cmd}"
+	    fi
+	    
+	    ${LOGGER} "${wrapper_cmd} \"${sub_cmd}${spmd_run_cmd} ${spmd_run_options} ${spmd_run_extra_parameters} ${spmd_run_args}\""
+	    ${wrapper_cmd} "${sub_cmd}${spmd_run_cmd} ${spmd_run_options} ${spmd_run_extra_parameters}  ${spmd_run_args}"
+
+	fi
+
+	exit_status=$?
+    fi
+
+    # on appelle les addons eventuels en phase spmd_post_run
+    bridge_addons_call_function bridge_addon_mprun_spmd_post_run ${spmd_run_args}
+
+    ${LOGGER} "exiting with status ${exit_status}"    
+    return ${exit_status}
+}

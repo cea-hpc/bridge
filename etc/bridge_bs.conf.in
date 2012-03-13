@@ -1,0 +1,27 @@
+#------------------------------------------------------------------------------#
+# @PACKAGE@ batch system related scripts configuration file
+# (Generated using autotools)
+#------------------------------------------------------------------------------#
+BATCH_SYSTEM=@BRIDGE_BATCH_SYSTEM@
+BRIDGE_BINDING=@BRIDGE_BINDING@
+
+BRIDGE_MSTAT_EXCLUDED_QUEUES=
+
+BRIDGE_MSUB_DEFAULT_NNODE=
+BRIDGE_MSUB_DEFAULT_NPROC=
+BRIDGE_MSUB_DEFAULT_NCORE=
+BRIDGE_MSUB_DEFAULT_QUEUE=
+BRIDGE_MSUB_DEFAULT_MAXSTIME=
+BRIDGE_MSUB_DEFAULT_MAXSMEM=
+BRIDGE_MSUB_DEFAULT_MAXMEM=
+BRIDGE_MSUB_DEFAULT_MAXTIME=
+BRIDGE_MSUB_DEFAULT_EXTRA_PARAMETERS=
+
+# on homogeneous clusters, can be set to 
+# let msub guess the max number of process per
+# node when -c option is used
+# "auto" means try to guess from local cpuinfo file
+BRIDGE_MSUB_MAX_NCORE=auto
+
+# addons
+BRIDGE_ADDONS=

@@ -1,0 +1,10 @@
+/var/log/bridged.log {
+	missingok
+	nomail
+	nocompress
+	rotate 7
+	size=10M
+	postrotate
+		[ -x /etc/init.d/bridged ] && /etc/init.d/bridged reload
+	endscript
+}

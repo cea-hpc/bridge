@@ -1,0 +1,198 @@
+#################################################################################
+#
+# Addon for X11 support in Bridge for both msub and mprun
+# 
+#################################################################################
+
+#################################################################################
+# MSUB X11 support
+#--------------------------------------------------------------------------------
+function bridge_addon_msub_setopt {
+
+    typeset MYGETOPTOPTION="X"
+
+    echo "${BRIDGE_MSUB_GETOPT_OPTIONS}" | grep -q ${MYGETOPTOPTION}
+
+    if [ $? -ne 0 ]
+	then
+	BRIDGE_MSUB_GETOPT_OPTIONS="${BRIDGE_MSUB_GETOPT_OPTIONS}X"
+    fi
+
+    return 0
+}
+
+function bridge_addon_msub_getopt {
+
+    ## on se place en mode debug si souhaite
+    typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+	then
+	set -x
+    fi
+    
+    ## on incremente le niveau de log
+    typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+    
+    ## on ajoute une entete a la log
+    typeset LOGGER="${LOGGER} X11 Addon :"
+    typeset ERROR="${ERROR} X11 Addon :"
+
+    ## on fixe le message d'aide a afficher si demande
+    typeset USAGE="\
+\t*) export X11
+\t\t -X : enable X11 forwarding on the batch script execution node\n"
+    
+    ## on fixe le status de sortie par defaut
+    typeset exit_status=0
+    
+    ## on parse les arguments
+    while getopts ${BRIDGE_MSUB_GETOPT_OPTIONS} option
+      do
+      case ${option} in
+	  
+	  h)
+	      echo -e "${USAGE}" >&2
+	      return 0
+	      ;;
+
+	  X)
+	      BRIDGE_MSUB_ADDON_X11=1
+	      BRIDGE_MSUB_ADDON_X11_MODE=batch
+	      ${LOGGER} "export enabled with mode=batch"
+	      case ${BATCH_SYSTEM} in
+		  slurm)
+		      if [[ ${SLURM_SPANK_X11} != "done" ]] || [[ -z ${SLURM_SPANK_X11} ]]
+		      then
+			  export SLURM_SPANK_X11=${BRIDGE_MSUB_ADDON_X11_MODE}	
+		      fi
+		      ;;
+	      esac
+	      ;;
+	  
+	  *)
+	      ;;
+      esac
+    done
+
+    return ${exit_status:-1}
+}
+
+function bridge_addon_msub_alteropt {
+    return 0
+}
+
+function bridge_addon_msub_alterscript {
+    return 0
+}
+#################################################################################
+
+
+#################################################################################
+# MPRUN X11 support
+#--------------------------------------------------------------------------------
+function bridge_addon_mprun_setopt {
+
+    typeset MYGETOPTOPTION="X:"
+
+    echo "${BRIDGE_MPRUN_GETOPT_OPTIONS}" | grep -q ${MYGETOPTOPTION}
+
+    if [ $? -ne 0 ]
+	then
+	BRIDGE_MPRUN_GETOPT_OPTIONS="${BRIDGE_MPRUN_GETOPT_OPTIONS}X:"
+    fi
+
+    return 0
+
+}
+
+function bridge_addon_mprun_getopt {
+    
+    ## on se place en mode debug si souhaite
+    typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+	then
+	set -x
+    fi
+    
+    ## on incremente le niveau de log
+    typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+    
+    ## on ajoute une entete a la log
+    typeset LOGGER="${LOGGER} X11 Addon :"
+
+    ## par defaut, on desactive le mode X11
+    if [[ -z ${BRIDGE_MPRUN_ADDON_X11} ]]
+	then
+	BRIDGE_MPRUN_ADDON_X11=0
+    fi
+
+    ## on fixe le message d'aide a afficher si demande
+    typeset USAGE="\
+\t*) export X11
+\t\t -X first|last : enable X11 forwarding on the first|last allocated node\n"
+    
+    ## on fixe le status de sortie par defaut
+    typeset exit_status=0
+    
+    ## on parse les arguments
+    while getopts ${BRIDGE_MPRUN_GETOPT_OPTIONS} option
+      do
+      case ${option} in
+	  
+	  h)
+	      echo -e "${USAGE}" >&2
+	      return 0
+	      ;;
+
+	  X)
+	      BRIDGE_MPRUN_ADDON_X11=1
+	      BRIDGE_MPRUN_ADDON_X11_MODE=${OPTARG}
+	      ${LOGGER} "export enabled with mode=${OPTARG}"
+	      case ${RESOURCE_MANAGER} in
+		  slurm)
+		      if [[ ${SLURM_SPANK_X11} != "done" ]] || [[ -z ${SLURM_SPANK_X11} ]]
+			  then
+			  export SLURM_SPANK_X11=${BRIDGE_MPRUN_ADDON_X11_MODE}	
+		      fi
+		      ;;
+	      esac
+	      ;;
+
+	  *)
+	      ;;
+      esac
+    done
+
+    return ${exit_status:-1}
+}
+
+function bridge_addon_mprun_alteropt {
+
+    return 0
+
+}
+
+function bridge_addon_mprun_spmd_pre_allocate {
+
+    return 0
+
+}
+
+function bridge_addon_mprun_spmd_post_allocate {
+
+    return 0
+
+}
+
+function bridge_addon_mprun_spmd_pre_run {
+
+    return 0
+
+}
+
+function bridge_addon_mprun_spmd_post_run {
+
+    return 0
+    
+}
+#################################################################################

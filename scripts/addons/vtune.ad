@@ -1,0 +1,178 @@
+function bridge_addon_mprun_setopt {
+
+    typeset MYGETOPTOPTION="d:R:o:O:"
+
+    echo "${BRIDGE_MPRUN_GETOPT_OPTIONS}" | grep -q ${MYGETOPTOPTION}
+
+    if [ $? -ne 0 ]
+	then
+	BRIDGE_MPRUN_GETOPT_OPTIONS="${BRIDGE_MPRUN_GETOPT_OPTIONS}${MYGETOPTOPTION}"
+    fi
+
+    return 0
+}
+
+function bridge_addon_mprun_getopt {
+    
+    ## on se place en mode debug si souhaite
+    typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+	then
+	set -x
+    fi
+    
+    ## on incremente le niveau de log
+    typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+    
+    ## on ajoute une entete a la log
+    typeset LOGGER="${LOGGER} Vtune Addon :"
+
+    ## par defaut, on desactive le mode Vtune
+    ## et on fixe les options de base
+    if [[ -z ${BRIDGE_MPRUN_ADDON_VTUNE} ]]
+	then
+	BRIDGE_MPRUN_ADDON_VTUNE=0
+    fi
+    BRIDGE_MPRUN_ADDON_VTUNE_PACKAGE_DIR=${BRIDGE_MPRUN_ADDON_VTUNE_PACKAGE_DIR:-}
+    BRIDGE_MPRUN_ADDON_VTUNE_ACTIVITY_OPTIONS=${BRIDGE_MPRUN_ADDON_VTUNE_ACTIVITY_OPTIONS:-}
+    BRIDGE_MPRUN_ADDON_VTUNE_PROCESS_RANK=${BRIDGE_MPRUN_ADDON_VTUNE_PROCESS_RANK:-all}
+    
+    ## on fixe le message d'aide a afficher si demande
+    typeset USAGE="\
+\t*) Vtune
+
+\t -d vtune : execution de l application en mode profiling avec Vtune
+\t            Les packages peuvent etre post-traites a l aide de l outil
+\t            cea_vtlec
+\t -o dir   : repertoire de stockage du ou des packages vtune a generer
+\t            par defaut le repertoire courant est utilise
+\t            les packages sont de la forme project_RESID_nodeID
+\t -O \"..\"  : options a passer a vtune. le mode par defaut est equivalent
+\t            a -O \"-c sampling\"
+\t -R rank  : rank du process sur lequel accrocher vtune (0<=rank<nprocs)
+\t            par defaut, l ensemble des processus est collecte sur chaque
+\t            noeud (equivalent a rank=all)
+\t            En mode callgraph, il est necessaire de preciser un processus
+\t            particulier
+\t
+\t Les variables d'environnement suivantes peuvent aussi etre utilisees pour
+\t parametrer le profiling:
+\t
+\t BRIDGE_MPRUN_ADDON_VTUNE : une valeur de 1 active le profiling
+\t BRIDGE_MPRUN_ADDON_VTUNE_PACKAGE_DIR
+\t BRIDGE_MPRUN_ADDON_VTUNE_ACTIVITY_OPTIONS
+\t BRIDGE_MPRUN_ADDON_VTUNE_PROCESS_RANK
+\n"
+    
+    ## on fixe le status de sortie par defaut
+    typeset exit_status=0
+    
+    ## on parse les arguments
+    while getopts ${BRIDGE_MPRUN_GETOPT_OPTIONS} option	
+      do
+      case ${option} in
+	  
+	  h)
+	      echo -e "${USAGE}" >&2
+	      return 0
+	      ;;
+
+	  d)
+	      if [[ ${OPTARG} == vtune ]]
+		  then
+		  BRIDGE_MPRUN_ADDON_VTUNE=1
+		  ${LOGGER} "profiling with Vtune is now enabled"
+	      fi
+	      ;;
+
+	  R)
+	      BRIDGE_MPRUN_ADDON_VTUNE_PROCESS_RANK="${OPTARG}"
+	      ;;
+
+	  o)
+	      BRIDGE_MPRUN_ADDON_VTUNE_PACKAGE_DIR="${OPTARG}"
+	      ;;
+
+	  O)
+	      BRIDGE_MPRUN_ADDON_VTUNE_ACTIVITY_OPTIONS="${OPTARG}"
+	      ;;
+
+	  *)
+	      ;;
+      esac
+    done
+    export BRIDGE_MPRUN_ADDON_VTUNE
+    export BRIDGE_MPRUN_ADDON_VTUNE_PACKAGE_DIR
+    export BRIDGE_MPRUN_ADDON_VTUNE_ACTIVITY_OPTIONS
+    export BRIDGE_MPRUN_ADDON_VTUNE_PROCESS_RANK
+
+    return ${exit_status}
+}
+
+function bridge_addon_mprun_alteropt {
+
+    return 0
+
+}
+
+function bridge_addon_mprun_spmd_pre_allocate {
+
+    return 0
+
+}
+
+
+function bridge_addon_mprun_spmd_post_allocate {
+
+    return 0
+
+}
+
+
+function bridge_addon_mprun_spmd_pre_run {
+
+    if [[ ${BRIDGE_MPRUN_ADDON_VTUNE} -eq 1 ]]
+	then
+
+	## on se place en mode debug si souhaite
+	typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+	if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+	    then
+	    set -x
+	fi
+    
+	## on incremente le niveau de log
+	typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+    
+	## on ajoute une entete a la log
+	typeset vtune_wrapper=${BRIDGE_ADDON_SCRIPTSDIR}/$(bridge_command_enhance vtune.sh)
+	if [[ -n ${BRIDGE_MPRUN_ADDON_VTUNE_PACKAGE_DIR} ]] 
+	    then
+	    vtune_wrapper_args="${vtune_wrapper_args} -o ${BRIDGE_MPRUN_ADDON_VTUNE_PACKAGE_DIR}"
+	fi
+	if [[ -n ${BRIDGE_MPRUN_ADDON_VTUNE_ACTIVITY_OPTIONS} ]] 
+	    then
+	    vtune_wrapper_args="${vtune_wrapper_args} -O \"${BRIDGE_MPRUN_ADDON_VTUNE_ACTIVITY_OPTIONS}\""
+	fi
+	if [[ -n ${BRIDGE_MPRUN_ADDON_VTUNE_PROCESS_RANK} ]] 
+	    then
+	    vtune_wrapper_args="${vtune_wrapper_args} -R ${BRIDGE_MPRUN_ADDON_VTUNE_PROCESS_RANK}"
+	fi
+	${LOGGER} "Vtune addon : swapping current args '${spmd_run_args}' with '${vtune_wrapper} ${vtune_wrapper_args} -- ${spmd_run_args}'"
+	spmd_run_args="${vtune_wrapper} ${vtune_wrapper_args} -- ${spmd_run_args}"
+	typeset exit_status=0
+
+	## on rend la main a la fonction appelante
+	return 0
+	
+    else
+	return 0
+    fi
+    
+}
+
+function bridge_addon_mprun_spmd_post_run {
+
+    return 0
+    
+}

@@ -1,0 +1,601 @@
+#!/bin/ksh
+#------------------------------------------------------------------------------------------------------------------
+# wrapper permettant la soumission d'applications parallele via un resource manager
+#------------------------------------------------------------------------------------------------------------------
+
+
+###################################################################################################################
+#
+# FONCTIONS INTERNES FONCTIONS INTERNES FONCTIONS INTERNES FONCTIONS INTERNES FONCTIONS INTERNES FONCTIONS INTERNES 
+#
+# FONCTIONS INTERNES FONCTIONS INTERNES FONCTIONS INTERNES FONCTIONS INTERNES FONCTIONS INTERNES FONCTIONS INTERNES 
+#
+###################################################################################################################
+
+###################################################################################################################
+# fonction d'affichage de l'usage
+#------------------------------------------------------------------------------------------------------------------
+function show_usage {
+
+    echo "${USAGE}"  >& 2
+    bridge_addons_call_function bridge_addon_mprun_getopt -h
+
+    return 0
+}
+###################################################################################################################
+
+
+###################################################################################################################
+#
+# PROGRAMME PRINCIPAL PROGRAMME PRINCIPAL PROGRAMME PRINCIPAL PROGRAMME PRINCIPAL PROGRAMME PRINCIPAL
+#
+# PROGRAMME PRINCIPAL PROGRAMME PRINCIPAL PROGRAMME PRINCIPAL PROGRAMME PRINCIPAL PROGRAMME PRINCIPAL
+#
+###################################################################################################################
+
+
+###################################################################################################################
+# Initialisation des parametres de base
+#------------------------------------------------------------------------------------------------------------------
+typeset BRIDGE_VERSION="@PACKAGE_NAME@-@PACKAGE_VERSION@"
+typeset PROG_VERSION="1.0.0"
+#------------------------------------------------------------------------------------------------------------------
+# le repertoire de base est fixe lors de l'installation du produit (via ./configure)
+# si il n'est pas coherent, c'est a dire qu'il ne correspond pas a un repertoire
+# on fixe un repere dans le systeme de fichier en utilisant le chemin d acces a l executable
+#------------------------------------------------------------------------------------------------------------------
+typeset BASE_DIR=`dirname $0`
+typeset PROGNAME=`basename $0`
+#------------------------------------------------------------------------------------------------------------------
+typeset BRIDGE_BASEDIR=@prefix@
+if [[ ! -d ${BRIDGE_BASEDIR} ]]
+    then
+    BRIDGE_BASEDIR=${BRIDGE_BASEDIR:-${BASE_DIR}/../}
+fi
+#------------------------------------------------------------------------------------------------------------------
+typeset BRIDGE_BINDIR=${BRIDGE_BASEDIR}/bin
+typeset BRIDGE_SCRIPTSDIR=${BRIDGE_BASEDIR}/share/scripts
+typeset BRIDGE_RESOURCE_MANAGER_PLUGINDIR=${BRIDGE_BASEDIR}/share/scripts/resource_manager/plugins
+typeset BRIDGE_ADDON_DIR=${BRIDGE_BASEDIR}/share/scripts/addons
+typeset BRIDGE_ADDON_SCRIPTSDIR=${BRIDGE_BASEDIR}/share/scripts/addons
+typeset BRIDGE_PROFILE_DIR=${BRIDGE_BASEDIR}/share/scripts/resource_manager/profiles
+#------------------------------------------------------------------------------------------------------------------
+typeset BRIDGE_CONFDIR=${BRIDGE_BASEDIR}/etc
+if [[ ! -d ${BRIDGE_CONFDIR} ]]
+    then
+    BRIDGE_CONFDIR=/etc
+fi
+#------------------------------------------------------------------------------------------------------------------
+# on fixe les options de base du script, utilisees par les addons pour parser les lignes de commandes
+typeset BRIDGE_MPRUN_GETOPT_OPTIONS="DhvVc:n:N:p:A:M:xT:P:KE:"
+#------------------------------------------------------------------------------------------------------------------
+typeset BRIDGE_HOSTNAME=$(hostname 2>/dev/null)
+#------------------------------------------------------------------------------------------------------------------
+# on fixe les categories auquelles ce programme appartient (les categories determinent les fichiers de conf
+# a sourcer lors de la lecture de la configuration (bridge_readconf)
+#------------------------------------------------------------------------------------------------------------------
+typeset BRIDGE_CATEGORIES="bridge_rm"
+#------------------------------------------------------------------------------------------------------------------
+# on fixe les variables liees a la log
+#------------------------------------------------------------------------------------------------------------------
+typeset BRIDGE_DEBUG_MODE=${BRIDGE_DEBUG_MODE:-no}
+typeset BRIDGE_CHECK_ONLY=${BRIDGE_CHECK_ONLY:-no}
+typeset BRIDGE_VERBOSE_MODE=${BRIDGE_VERBOSE_MODE:-no}
+typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-1}
+typeset BRIDGE_VERBOSE_MAXLEVEL=${BRIDGE_VERBOSE_MAXLEVEL:-0}
+typeset BRIDGE_LOGFILE=""
+typeset EXIT_STATUS=1
+#------------------------------------------------------------------------------------------------------------------
+# on fixe l'usage de la commande et le code retour par defaut
+#------------------------------------------------------------------------------------------------------------------
+typeset USAGE="usage : ${PROGNAME} [-hDvV] [-c ncore] [-n nproc] [-N nnode] [-A projid] [-p partition] \\
+    [-M mem] [-T time] [-K] [program [args...]]
+
+ ${PROGNAME} is the CCC parallel launch interface
+
+ -h            : print this message
+ -D            : increase debug level
+ -v            : increase verbosity
+ -V            : print application version
+
+ -A projid     : project/account name
+
+ -n nproc      : number of tasks to run (default=1)
+ -c ncore      : number of cores per task (default=1)
+ -N nnode      : number of nodes to use (default is undefined)
+
+ -T time_limit       : maximum walltime of the allocation in seconds (default depends of resource mgr conf)
+ -M mem_limit        : required amount of memory per core in Mo (default depends of resource mgr conf)
+
+ -x            : request exclusive usage of allocated nodes
+
+ -E extra      : extra parameters to pass directly to the underlying resource mgr
+
+ -p partition  : required partition (default depends of resource mgr conf)
+
+ -K            : only allocates resources. If a program is defined it will be executed only once. It would
+                 contain ${PROGNAME} calls to launch parallel commands using the allocated resources
+
+ program ...   : command line to execute in parallel mode
+
+Addons :
+ 
+ Following options can be used too :
+
+"
+###################################################################################################################
+# On source les librairies communes utiles et on fixe les variables de log
+#------------------------------------------------------------------------------------------------------------------
+. ${BRIDGE_SCRIPTSDIR}/common/bridge_command
+. ${BRIDGE_SCRIPTSDIR}/common/bridge_printer
+. ${BRIDGE_SCRIPTSDIR}/common/bridge_readconf
+. ${BRIDGE_SCRIPTSDIR}/common/bridge_toolbox
+. ${BRIDGE_SCRIPTSDIR}/common/bridge_addon
+typeset LOGGER="bridge_printer ${DEFAULT_PRINTER_OPTIONS} -t verbose Main :"
+typeset ERROR="bridge_printer ${DEFAULT_PRINTER_OPTIONS} -ft error Main :"
+###################################################################################################################
+
+###################################################################################################################
+# On lit la configuration du programme et des categories qu'il utilise
+#------------------------------------------------------------------------------------------------------------------
+bridge_readconf
+###################################################################################################################
+
+###################################################################################################################
+# On fixe les parametres du script
+#------------------------------------------------------------------------------------------------------------------
+typeset bridge_mprun_cmd=${BRIDGE_MPRUN_CMD}
+typeset bridge_mprun_allocate_cmd=spmd_allocate_cmd
+typeset bridge_mprun_run_cmd=spmd_run_cmd
+typeset bridge_mprun_options=
+#------------------------------------------------------------------------------------------------------------------
+typeset bridge_mprun_mode=${mprun_mode:-spmd}
+#------------------------------------------------------------------------------------------------------------------
+typeset bridge_mprun_force_allocation=no
+typeset bridge_mprun_allocation=no
+typeset bridge_mprun_debug_mode=${BRIDGE_MPRUN_DEBUG_MODE}
+typeset exclusive=${BRIDGE_MPRUN_EXCLUSIVE:-no}
+#------------------------------------------------------------------------------------------------------------------
+typeset bridge_mprun_args=
+#------------------------------------------------------------------------------------------------------------------
+# on incremente le compteur d'appel recursif
+typeset BRIDGE_MPRUN_LOOP=${BRIDGE_MPRUN_LOOP:-0}
+(( BRIDGE_MPRUN_LOOP = BRIDGE_MPRUN_LOOP + 1 ))
+export BRIDGE_MPRUN_LOOP
+#------------------------------------------------------------------------------------------------------------------
+###################################################################################################################
+# on appelle les fonctions mprun_setopt des differents addons afin d'initialiser le format du getopt en prenant en
+# compte leur besoin
+typeset in_args=""
+bridge_addons_call_function bridge_addon_mprun_setopt
+#------------------------------------------------------------------------------------------------------------------
+# Analyse des options de la ligne de commande (priorite 1)
+# Sauvegarde du nom du script
+#------------------------------------------------------------------------------------------------------------------
+typeset addonoption=""
+while getopts ${BRIDGE_MPRUN_GETOPT_OPTIONS} option 2>/dev/null
+do
+  addonoption=""
+  case $option
+      in
+      D)
+	  BRIDGE_DEBUG_MODE=yes;
+	  ((BRIDGE_DEBUG_MAXLEVEL = BRIDGE_DEBUG_MAXLEVEL + 1 ))
+	  ;;
+      v)
+	  BRIDGE_VERBOSE_MODE=yes;
+	  ((BRIDGE_VERBOSE_MAXLEVEL = BRIDGE_VERBOSE_MAXLEVEL + 1 ))
+	  ;;
+      h) 
+	  show_usage
+	  exit 0
+	  ;;
+      V) 
+	  echo "${PROGNAME}-${PROG_VERSION} (${BRIDGE_VERSION:-?})"
+	  exit 0
+	  ;;
+
+      c)
+	  bridge_mprun_ncore=${OPTARG}
+	  ;;
+
+      n)
+	  bridge_mprun_nproc=${OPTARG}
+	  ;;
+
+      N)
+	  bridge_mprun_nnode=${OPTARG}
+	  ;;
+
+      p)
+	  bridge_mprun_partition=${OPTARG}
+	  ;;
+
+      A)
+	  bridge_mprun_project=${OPTARG}
+	  ;;
+
+      x)
+	  exclusive=yes
+	  ;;
+
+      P)
+	  bridge_mprun_extra_parameters="${bridge_mprun_extra_parameters} $(echo ${OPTARG} | tr ',' ' ')"
+	  ;;
+      
+      E)
+	  bridge_mprun_extra_parameters="${bridge_mprun_extra_parameters} ${OPTARG}"
+	  ;;
+      
+      M)
+	  bridge_mprun_maxmem=$(bridge_get_memlimit ${OPTARG})
+	  ;;
+
+      T)
+	  bridge_mprun_maxtime=${OPTARG}
+	  ;;
+
+      K)
+	  bridge_mprun_allocation=yes
+	  ;;
+      
+      *) 
+	  if [[ -n ${OPTARG} ]]
+	      then
+	      addonoption="${option}:"
+	      in_args="${in_args} -${option} \"${OPTARG}\""
+	  else
+	      addonoption=${option}
+	      in_args="${in_args} -${option}"
+	  fi
+	  echo ${BRIDGE_MPRUN_GETOPT_OPTIONS} | grep -q  ${addonoption}
+	  if [[ $? -eq 0 ]]
+	      then
+	      continue
+	  else
+	      show_usage
+	      exit 1
+	  fi
+	  ;;
+  esac
+done
+#------------------------------------------------------------------------------------------------------------------
+# on supprime les options de la ligne courante et on sauvegarde le resultat
+shift `expr $OPTIND - 1`
+bridge_mprun_args="$@"
+#------------------------------------------------------------------------------------------------------------------
+# on appelle les functions mprun_getopt des differents addons avec les arguments d'entree
+bridge_addons_call_function bridge_addon_mprun_getopt ${in_args}
+###################################################################################################################
+
+
+###################################################################################################################
+# On se place en mode debug si necessaire
+#------------------------------------------------------------------------------------------------------------------
+if [[ "${BRIDGE_DEBUG_MODE}" = "yes" ]]
+    then
+    set -x
+fi
+###################################################################################################################
+
+
+###################################################################################################################
+# On charge le plugin detecte et on verifie que les fonctions d'allocation et d'execution existent
+#------------------------------------------------------------------------------------------------------------------
+for resource_manager in generic ${RESOURCE_MANAGER}
+  do
+  typeset resource_manager_plugin_file=${BRIDGE_RESOURCE_MANAGER_PLUGINDIR}/${resource_manager}
+  if [[ ! -r ${resource_manager_plugin_file} ]]
+      then
+      ${ERROR} "Resource Manager plugin '${resource_manager}' : ${resource_manager_plugin_file} : no such file"
+      return 254
+  fi
+  . ${resource_manager_plugin_file}
+done
+typeset allocate_cmd_version
+allocate_cmd_version=$(${bridge_mprun_allocate_cmd} -V 2>/dev/null)
+if [[ $? -ne 0 ]]
+    then
+    ${ERROR} "Resource Manager plugin '${resource_manager}' : unable to get plugin allocate function version"
+    return 253
+else
+    ${LOGGER} "Resource Manager plugin '${resource_manager}' : ${bridge_mprun_allocate_cmd} version ${allocate_cmd_version} "
+fi
+typeset run_cmd_version
+run_cmd_version=$(${bridge_mprun_run_cmd} -V 2>/dev/null)
+if [[ $? -ne 0 ]]
+    then
+    ${ERROR} "Resource Manager plugin '${resource_manager}' : unable to get plugin execution function version"
+    return 253
+else
+    ${LOGGER} "Resource Manager plugin '${resource_manager}' : ${bridge_mprun_run_cmd} version ${run_cmd_version} "
+fi
+###################################################################################################################
+
+
+###################################################################################################################
+# On effectue eventuellement une alteration des options via les addons
+#------------------------------------------------------------------------------------------------------------------
+bridge_addons_call_function bridge_addon_mprun_alteropt
+###################################################################################################################
+
+
+###################################################################################################################
+# On fixe eventuellement des valeurs par defaut si c'est le premier passage
+#------------------------------------------------------------------------------------------------------------------
+if [[ ${BRIDGE_MPRUN_LOOP} -eq 1 ]]
+    then
+
+    ## si aucun parametre ne mentione le nombre de core/proc/node
+    ## sur la ligne de commande, on regarde si des variables
+    ## d'environnement ne nous renseigne pas de ca (heritee de msub)
+    if [[ -z ${bridge_mprun_ncore} ]] &&
+	[[ -z ${bridge_mprun_nproc} ]] &&
+	[[ -z ${bridge_mprun_nnode} ]]
+	then
+	if [[ -n ${BRIDGE_MPRUN_NCORE} ]]
+	    then
+	    bridge_mprun_ncore=${BRIDGE_MPRUN_NCORE}
+	else
+	    export BRIDGE_MPRUN_NCORE
+	fi
+	if [[ -n ${BRIDGE_MPRUN_NPROC} ]]
+	    then
+	    bridge_mprun_nproc=${BRIDGE_MPRUN_NPROC}
+	else
+	    export BRIDGE_MPRUN_NPROC
+	fi
+	if [[ -n ${BRIDGE_MPRUN_NNODE} ]]
+	    then
+	    bridge_mprun_nnode=${BRIDGE_MPRUN_NNODE}
+	else
+	    export BRIDGE_MPRUN_NNODE
+	fi
+    fi
+
+    ## on fixe des valeurs par defaut si ncore/nproc/nnode pas defini
+    if [[ -z ${bridge_mprun_ncore} ]]
+	then
+	bridge_mprun_ncore=${BRIDGE_MPRUN_DEFAULT_NCORE}
+    fi
+    if [[ -z ${bridge_mprun_nproc} ]]
+	then
+	bridge_mprun_nproc=${BRIDGE_MPRUN_DEFAULT_NPROC}
+    fi
+    if [[ -z ${bridge_mprun_nnode} ]]
+	then
+	bridge_mprun_nnode=${BRIDGE_MPRUN_DEFAULT_NNODE}
+    fi
+
+    ## on fixe en fonction de l'environnment
+    if [[ -z ${bridge_mprun_project} ]]
+	then
+	if [[ -n ${BRIDGE_MPRUN_PROJECT} ]]
+	    then
+	    bridge_mprun_project=${BRIDGE_MPRUN_PROJECT}
+	fi
+    fi
+
+    ## on fixe en fonction de l'environnement puis par le defaut
+    if [[ -z ${bridge_mprun_partition} ]]
+	then
+	if [[ -n ${BRIDGE_MPRUN_PARTITION} ]]
+	    then
+	    bridge_mprun_partition=${BRIDGE_MPRUN_PARTITION}
+	else
+	    bridge_mprun_partition=${BRIDGE_MPRUN_DEFAULT_PARTITION}
+	    export BRIDGE_MPRUN_PARTITION
+	fi
+    fi
+    if [[ -z ${bridge_mprun_maxmem} ]]
+	then
+	if [[ -n ${BRIDGE_MPRUN_MAXMEM} ]]
+	    then
+	    bridge_mprun_maxmem=${BRIDGE_MPRUN_MAXMEM}
+	else
+	    bridge_mprun_maxmem=${BRIDGE_MPRUN_DEFAULT_MAXMEM}
+	    export BRIDGE_MPRUN_MAXMEM
+	fi
+    fi
+    # on ne fixe une valeur par defaut qu'a la condition de ne pas
+    # deja etre dans une allocation
+    if [[ -z ${bridge_mprun_maxtime} ]] && [[ ${BRIDGE_MPRUN_ALLOCATION} != yes ]]
+	then
+	if [[ -n ${BRIDGE_MPRUN_MAXTIME} ]]
+	    then
+	    bridge_mprun_maxtime=${BRIDGE_MPRUN_MAXTIME}
+	else
+	    bridge_mprun_maxtime=${BRIDGE_MPRUN_DEFAULT_MAXTIME}
+	    export BRIDGE_MPRUN_MAXTIME
+	fi
+    fi
+    
+    ## on fixe eventuellement le type de MPI par defaut
+    if [[ -z ${bridge_mprun_mpi_type} ]]
+	then
+	bridge_mprun_mpi_type=${BRIDGE_MPRUN_DEFAULT_MPI_TYPE}
+    fi
+
+fi
+###################################################################################################################
+
+
+###################################################################################################################
+# On construit la ligne d'options et on exporte les variables d'environnement
+#------------------------------------------------------------------------------------------------------------------
+if [[ -n ${bridge_mprun_ncore} ]]
+    then
+    bridge_mprun_options="${bridge_mprun_options} -c ${bridge_mprun_ncore}"
+    export BRIDGE_MPRUN_NCORE=${bridge_mprun_ncore}
+fi
+if [[ -n ${bridge_mprun_nproc} ]]
+    then
+    bridge_mprun_options="${bridge_mprun_options} -n ${bridge_mprun_nproc}"
+    export BRIDGE_MPRUN_NPROC=${bridge_mprun_nproc}
+fi
+if [[ -n ${bridge_mprun_nnode} ]]
+    then
+    bridge_mprun_options="${bridge_mprun_options} -N ${bridge_mprun_nnode}"
+    export BRIDGE_MPRUN_NNODE=${bridge_mprun_nnode}
+fi
+if [[ -n ${bridge_mprun_partition} ]]
+    then
+    bridge_mprun_options="${bridge_mprun_options} -p ${bridge_mprun_partition}"
+    export BRIDGE_MPRUN_PARTITION=${bridge_mprun_partition}
+fi
+if [[ -n ${bridge_mprun_project} ]]
+    then
+    bridge_mprun_options="${bridge_mprun_options} -A ${bridge_mprun_project}"
+    export BRIDGE_MPRUN_PROJECT=${bridge_mprun_project}
+fi
+if [[ -n ${bridge_mprun_maxmem} ]]
+    then
+    bridge_mprun_options="${bridge_mprun_options} -M ${bridge_mprun_maxmem}"
+    export BRIDGE_MPRUN_MAXMEM=${bridge_mprun_maxmem}
+fi
+if [[ -n ${bridge_mprun_maxtime} ]]
+    then
+    bridge_mprun_options="${bridge_mprun_options} -T ${bridge_mprun_maxtime}"
+    export BRIDGE_MPRUN_MAXTIME=${bridge_mprun_maxtime}
+fi
+# on fixe les parametres extra par defaut si on est pas deja dans une allocation et
+# qu'aucun autre parametre n'est fixe
+if [[ ${BRIDGE_MPRUN_ALLOCATION} != yes ]]
+then
+    if [[ -z ${bridge_mprun_extra_parameters} ]]
+    then
+	export BRIDGE_MPRUN_EXTRA_PARAMETERS="${BRIDGE_MPRUN_DEFAULT_EXTRA_PARAMETERS}"
+	bridge_mprun_extra_parameters="${BRIDGE_MPRUN_DEFAULT_EXTRA_PARAMETERS}"
+    else
+	export BRIDGE_MPRUN_EXTRA_PARAMETERS="${BRIDGE_MPRUN_DEFAULT_EXTRA_PARAMETERS} ${bridge_mprun_extra_parameters}"
+	bridge_mprun_extra_parameters="${BRIDGE_MPRUN_DEFAULT_EXTRA_PARAMETERS} ${bridge_mprun_extra_parameters}"
+    fi
+else
+    if [[ -n ${bridge_mprun_extra_parameters} ]]
+    then
+	export BRIDGE_MPRUN_EXTRA_PARAMETERS=${bridge_mprun_extra_parameters}
+    fi
+fi
+export BRIDGE_MPRUN_PWD=${PWD}
+if [[ -n ${BRIDGE_VERBOSE_MODE} ]]
+    then
+    export BRIDGE_VERBOSE_MODE
+fi
+if [[ -n ${BRIDGE_VERBOSE_MAXLEVEL} ]]
+    then
+    export BRIDGE_VERBOSE_MAXLEVEL
+fi
+###################################################################################################################
+
+
+###################################################################################################################
+# On travaille
+#------------------------------------------------------------------------------------------------------------------
+# on regarde si le mode exclusif est active et s'applique a notre cas de figure, auquel cas on force l'allocation
+# des executions simples, et on demande a toute allocation d'etre exclusive
+#------------------------------------------------------------------------------------------------------------------
+typeset exclusive_treshold
+if [[ "${exclusive}" == yes ]] && [[ "${BRIDGE_MPRUN_ALLOCATION}" != yes ]]
+    then
+    ## on calcule le seuil de demarrage du mode exclusif
+    if [[ -n ${BRIDGE_MPRUN_EXCLUSIVE_THRESHOLD} ]]
+	then
+	exclusive_treshold=${BRIDGE_MPRUN_EXCLUSIVE_THRESHOLD}
+    else
+	exclusive_treshold=${BRIDGE_MPRUN_MAX_NCORE:-1}
+    fi
+    ## on regarde si on depasse le seuil
+    typeset needed_core_nb=0
+    typeset ncore=${bridge_mprun_ncore:-1}
+    typeset nproc=${bridge_mprun_nproc:-1}
+    (( needed_core_nb = ncore * nproc ))
+    if [[ ${needed_core_nb} -lt ${exclusive_treshold} ]]
+	then
+	exclusive=no
+	${LOGGER} "exclusive allocation inhibited, lower than treshold (${needed_core_nb}<${exclusive_treshold})"
+    else
+	${LOGGER} "exclusive allocation activated (${needed_core_nb} >= ${exclusive_treshold})"
+    fi
+else
+    exclusive=no
+fi
+#------------------------------------------------------------------------------------------------------------------
+# on passe a l'action fort des deductions precedentes
+#------------------------------------------------------------------------------------------------------------------
+export BRIDGE_DEBUG_MODE
+export BRIDGE_CHECK_ONLY
+export BRIDGE_VERBOSE_MODE
+export BRIDGE_VERBOSE_LEVEL
+export BRIDGE_VERBOSE_MAXLEVEL
+export BRIDGE_DEBUG_MODE
+export BRIDGE_DEBUG_LEVEL
+export BRIDGE_DEBUG_MAXLEVEL
+if [[ ${bridge_mprun_allocation} == yes ]]
+    then
+
+    if [[ ${exclusive} == yes ]]
+	then
+	bridge_mprun_options="-e ${bridge_mprun_options}"
+    fi
+
+    ${LOGGER} "${bridge_mprun_allocate_cmd} ${bridge_mprun_options} -- ${bridge_mprun_args}"
+    ${bridge_mprun_allocate_cmd} ${bridge_mprun_options} -- ${bridge_mprun_args}
+
+else
+    if [[ ${bridge_mprun_force_allocation} == yes ]]
+	then
+	    
+	if [[ ${exclusive} == yes ]]
+	    then
+	    bridge_mprun_options="-e ${bridge_mprun_options}"
+	fi
+
+	if [[ -n ${bridge_mprun_args} ]]
+	    then
+	    ${LOGGER} "${bridge_mprun_allocate_cmd} ${bridge_mprun_options} -E \"${bridge_mprun_extra_parameters}\" -- ${bridge_mprun_cmd} ${bridge_mprun_args}"
+	    ${bridge_mprun_allocate_cmd} ${bridge_mprun_options} -E "${bridge_mprun_extra_parameters}" -- ${bridge_mprun_cmd} ${bridge_mprun_args}
+	else
+	    show_usage
+	    exit 1
+	    ${LOGGER} "${bridge_mprun_allocate_cmd} ${bridge_mprun_options} -E \"${bridge_mprun_extra_parameters}\""
+	    ${bridge_mprun_allocate_cmd} ${bridge_mprun_options} -E "${bridge_mprun_extra_parameters}"
+	fi
+
+    elif [[ ${exclusive} == yes ]]
+	then
+	
+	if [[ -n ${bridge_mprun_args} ]]
+	    then
+	    ${LOGGER} "${bridge_mprun_allocate_cmd} -e ${bridge_mprun_options} -E \"${bridge_mprun_extra_parameters}\" -- ${bridge_mprun_cmd} ${bridge_mprun_args}"
+	    ${bridge_mprun_allocate_cmd} -e ${bridge_mprun_options} -E "${bridge_mprun_extra_parameters}" -- ${bridge_mprun_cmd} ${bridge_mprun_args}
+	else
+	    show_usage
+	    exit 1
+	    ${LOGGER} "${bridge_mprun_allocate_cmd} -e ${bridge_mprun_options} -E \"${bridge_mprun_extra_parameters}\""
+	    ${bridge_mprun_allocate_cmd} -e ${bridge_mprun_options} -E "${bridge_mprun_extra_parameters}"
+	fi
+
+    else
+
+	if [[ -n ${bridge_mprun_args} ]]
+	    then
+    	    ${LOGGER} "${bridge_mprun_run_cmd} ${bridge_mprun_options} -E \"${bridge_mprun_extra_parameters}\" -- ${bridge_mprun_args}"
+	    ${bridge_mprun_run_cmd} ${bridge_mprun_options} -E "${bridge_mprun_extra_parameters}" -- ${bridge_mprun_args}
+	else
+	    show_usage
+	    exit 1
+	    ${LOGGER} "${bridge_mprun_run_cmd} ${bridge_mprun_options} -E \"${bridge_mprun_extra_parameters}\""
+	    ${bridge_mprun_run_cmd} ${bridge_mprun_options} -E "${bridge_mprun_extra_parameters}"
+	fi
+
+    fi
+fi
+EXIT_STATUS=$?
+###################################################################################################################
+
+
+###################################################################################################################
+# On sort
+#------------------------------------------------------------------------------------------------------------------
+return ${EXIT_STATUS}
+###################################################################################################################

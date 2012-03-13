@@ -1,0 +1,142 @@
+#################################################################################
+#
+# Example of Addon for msub bridge command
+#
+# An addon should define an API in order to be called
+# during msub
+# 
+# Modifiable and accessible bridge variables are :
+#
+#       - in setopt/getopt/alteropt/alterscript
+#		BRIDGE_MSUB_GETOPT_OPTIONS
+#		BRIDGE_MSUB_PWD
+#		BRIDGE_MSUB_REQNAME
+#		BRIDGE_MSUB_PROJECT
+#		BRIDGE_MSUB_STUDY
+#		BRIDGE_MSUB_MULTIREQ
+#		BRIDGE_MSUB_STARTTIME
+#		BRIDGE_MSUB_QUEUE
+#		BRIDGE_MSUB_STDOUT
+#		BRIDGE_MSUB_STDERR
+#		BRIDGE_MSUB_NNODE
+#		BRIDGE_MSUB_NPROC
+#		BRIDGE_MSUB_NCORE
+#		BRIDGE_MSUB_MAXSMEM
+#		BRIDGE_MSUB_MAXSTIME
+#		BRIDGE_MSUB_MAXMEM
+#		BRIDGE_MSUB_MAXTIME
+#		BRIDGE_MSUB_LICENSES
+#		BRIDGE_MSUB_EXTRA_PARAMS
+#		bridge_msub_cmd : underlying submission cmd
+#		bridge_msub_args : submission cmd args 
+#
+#################################################################################
+
+function bridge_addon_msub_setopt {
+    return 0
+}
+
+function bridge_addon_msub_getopt {    
+    return 0
+}
+
+
+function bridge_addon_msub_alteropt {
+    return 0
+}
+
+
+function bridge_addon_msub_alterscript {
+    return 0
+}
+
+#################################################################################
+#
+# Example of Addon for mprun bridge command
+#
+# An addon should define an API in order to be called
+# during mprun and its plugins executions
+#
+# 
+# Modifiable and accessible bridge variables are :
+#
+#       - in setopt/getopt/alteropt
+#		BRIDGE_MPRUN_GETOPT_OPTIONS
+#               bridge_mprun_cmd : mprun unix command
+#               bridge_mprun_args : mprun args
+#		bridge_mprun_allocate_cmd : mprun spmd allocate command
+#		bridge_mprun_run_cmd : mprun spmd run command
+#		bridge_mprun_options : mprun computed options
+#		bridge_mprun_args : mprun trailing args (progname ...)
+#               bridge_mprun_force_allocation : yes in order to allocation
+#		bridge_mprun_allocation : yes|no in oprder to force allocation
+#		bridge_mprun_ncore : core count per task
+#		bridge_mprun_nproc : task count
+#		bridge_mprun_nnode : node count
+#		bridge_mprun_partition : partition name
+#		bridge_mprun_extra_parameters : additional parameters
+#		bridge_mprun_maxmem : max mem per task
+#		bridge_mprun_maxtime : max usable time (elapsed)
+#		bridge_mprun_mpi_type : MPI type 
+
+#
+#
+#	- in allocation stage 
+#		spmd_allocate_cmd
+#		spmd_allocate_options
+#		spmd_allocate_args
+#		spmd_allocate_separator
+#		spmd_allocate_ncore
+#		spmd_allocate_nproc
+#		spmd_allocate_nnode
+#		spmd_allocate_partition
+#		spmd_allocate_extra_parameters
+#		spmd_allocate_maxmem
+#		spmd_allocate_maxtime
+#
+#	- in run stage
+#		spmd_run_cmd
+#		spmd_run_options
+#		spmd_run_args
+#		spmd_run_separator
+#		spmd_run_ncore
+#		spmd_run_nproc
+#		spmd_run_nnode
+#		spmd_run_partition
+#		spmd_run_extra_parameters
+#		spmd_run_maxmem
+#		spmd_run_maxtime
+#
+#################################################################################
+
+# enable to alter
+function bridge_addon_mprun_setopt {
+    return 0
+}
+
+function bridge_addon_mprun_getopt {
+    return 0
+}
+
+
+function bridge_addon_mprun_alteropt {
+    return 0
+}
+
+function bridge_addon_mprun_spmd_pre_allocate {
+    return 0
+}
+
+
+function bridge_addon_mprun_spmd_post_allocate {
+    return 0
+}
+
+
+function bridge_addon_mprun_spmd_pre_run {
+    return 0
+}
+
+function bridge_addon_mprun_spmd_post_run {
+    return 0
+}

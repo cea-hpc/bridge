@@ -1,0 +1,79 @@
+#
+# Ce script fournit les primitives de manipulations des addons
+# Il necessite la presence de la variable d'environnement 
+# BRIDGE_RESOURCE_MANAGER_ADDONDIR pour fonctionner
+#
+#
+
+#
+# cette fonction appelle par ordre alphabetique l'ensemble des fichiers addons 
+# du repertoire defini par le variable d'environnement BRIDGE_ADDON_DIR
+# et execute la commande passee en 1er argument a l'aide des arguements suivant
+#
+# si un addon renvoie un status different de 0, alors la fonction s'arrete et renvoie ce status
+# au programme appelant. Cette fonctionnalite est utilise lorsqu'un addon prend a pris la main 
+# sur une execution et souhaite avertir le programme appelant qu'il n'est plus necessaire de
+# chercher a effectuer une operation
+#
+function bridge_addons_call_function {
+
+    ## on se place en mode debug si souhaite
+    typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+	then
+	set -x
+    fi
+    
+    ## on incremente le niveau de log
+    typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+
+    typeset rc=0
+    typeset addon
+    typeset subfunc
+    typeset checkfunc
+
+    typeset LOGGER="${LOGGER:-true} Addon Mgr :"
+    
+    if [ $# -ge 1 ] && [[ -n ${BRIDGE_ADDON_DIR} ]]
+	then
+ 
+	subfunc=$1
+	shift
+
+	for addon in ${BRIDGE_ADDONS}
+	  do
+	  
+	  ## source addon and execute requested function
+	  unset -f ${subfunc}
+	  if [[ ! -r ${BRIDGE_ADDON_DIR}/${addon} ]]
+	  then
+	      ${LOGGER} "skipping unreadable addon \"${addon}\""
+	      continue
+	  fi
+	  . ${BRIDGE_ADDON_DIR}/${addon} 2>/dev/null
+	  checkfunc=
+	  typeset +f ${subfunc} >/dev/null 2>&1
+	  if [[ $? -eq 0 ]]
+	      then
+	      eval ${subfunc} $@
+	  else
+	      ${LOGGER} "function ${subfunc} not defined in addon \"${addon}\", skipping"
+	      true
+	  fi
+
+	  ## check for requested function status, end loop if non null
+	  rc=$?
+	  if [ ${rc} -ne 0 ]
+	      then
+	      ${LOGGER} "ending loop due to '${addon}' non null return code"
+	      break
+	  fi
+
+	done
+    
+    fi
+
+    ## return last executed addon status or the default one (0)
+    return ${rc}
+
+}

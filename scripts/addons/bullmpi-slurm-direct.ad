@@ -1,0 +1,158 @@
+#################################################################################
+#
+# Addon for BullMPI support in Bridge with Slurm
+#
+# 
+#################################################################################
+
+function bridge_addon_mprun_setopt {
+
+    typeset MYGETOPTOPTION="e:r:"
+
+    echo "${BRIDGE_MPRUN_GETOPT_OPTIONS}" | grep -q ${MYGETOPTOPTION}
+
+    if [ $? -ne 0 ]
+	then
+	BRIDGE_MPRUN_GETOPT_OPTIONS="${BRIDGE_MPRUN_GETOPT_OPTIONS}e:r:"
+    fi
+
+    return 0
+
+}
+
+function bridge_addon_mprun_getopt {
+    
+    ## on se place en mode debug si souhaite
+    typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+	then
+	set -x
+    fi
+    
+    ## on incremente le niveau de log
+    typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+    
+    ## on ajoute une entete a la log
+    typeset LOGGER="${LOGGER} BullMPI Addon :"
+
+    ## on fixe le message d'aide a afficher si demande
+    typeset USAGE="\
+\t*) BullMPI
+\t\t -e options : additional parameters to pass to mpirun command\n\
+\t\t -r id      : start job relative to given node ID in the allocation (starting from 0)\n\
+"
+    
+    ## on fixe le status de sortie par defaut
+    typeset exit_status=0
+    
+    ## on parse les arguments
+    while getopts ${BRIDGE_MPRUN_GETOPT_OPTIONS} option
+      do
+      case ${option} in
+	  
+	  h)
+	      echo -e "${USAGE}" >&2
+	      return 0
+	      ;;
+
+	  e)
+	      echo ${BRIDGE_SLURM_OMPI_CMD_OPTIONS} | grep -q -- "${OPTARG}"
+	      if [[ $? -ne 0 ]]
+	      then
+		  export BRIDGE_SLURM_OMPI_CMD_OPTIONS="${BRIDGE_SLURM_OMPI_CMD_OPTIONS} ${OPTARG}"
+	      fi
+	      ${LOGGER} "mpirun options are now \"${BRIDGE_SLURM_OMPI_CMD_OPTIONS}\""
+	      ;;
+
+	  r)
+	      export BRIDGE_SLURM_OMPI_RELATIVE_ID=${OPTARG}
+	      ;;
+
+	  *)
+	      ;;
+      esac
+    done
+
+    return 0
+
+}
+
+function bridge_addon_mprun_alteropt {
+
+    ## on se place en mode debug si souhaite
+    typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+	then
+	set -x
+    fi
+    
+    ## on incremente le niveau de log
+    typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+    
+    ## on ajoute une entete a la log
+    typeset LOGGER="${LOGGER} BullMPI Addon :"
+
+    echo $(which mpicc 2>/dev/null) | grep -q bullmpi
+    if [ $? -ne 0 ]
+	then
+	return 0
+    fi
+    ${LOGGER} "BullMPI mpicc is the first in the PATH"
+
+    echo ${spmd_run_options} | grep -q 'resv-ports'
+    if [ $? -ne 0 ]
+	then
+	export spmd_run_options="${spmd_run_options} --resv-ports"
+	${LOGGER} "BullMPI mode is now enabled"
+    fi
+
+    return 0
+
+}
+
+function bridge_addon_mprun_spmd_pre_allocate {
+
+    return 0
+
+}
+
+function bridge_addon_mprun_spmd_post_allocate {
+
+    return 0
+
+}
+
+function bridge_addon_mprun_spmd_pre_run {
+
+    ## on se place en mode debug si souhaite
+    typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+	then
+	set -x
+    fi
+    
+    ## on incremente le niveau de log
+    typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+    
+    ## on ajoute une entete a la log
+    typeset LOGGER="${LOGGER} BullMPI Addon :"
+
+    if [[ -n ${BRIDGE_SLURM_OMPI_RELATIVE_ID} ]]
+	then
+	# on desactive la valeur de SLURM_NNODES pour eviter les problemes si l'allocation avait
+	# precise un nombre particulier de noeud
+	# erreur du type : --relative and SLURM_NNODES option incompatible with count of allocated nodes (1+2>2)
+	SLURM_NNODES=
+	export spmd_run_options="${spmd_run_options} -r ${BRIDGE_SLURM_OMPI_RELATIVE_ID}"
+	${LOGGER} "BullMPI mode with relative node ID ${BRIDGE_SLURM_OMPI_RELATIVE_ID}"
+    fi
+
+    return 0
+
+}
+
+function bridge_addon_mprun_spmd_post_run {
+
+    return 0
+    
+}

@@ -1,0 +1,195 @@
+#################################################################################
+#
+# Addon to broadcast executable in Bridge with Slurm prior parallel launch
+#
+# 
+#################################################################################
+
+function bridge_addon_mprun_setopt {
+
+    typeset MYGETOPTOPTION="Bb"
+
+    echo "${BRIDGE_MPRUN_GETOPT_OPTIONS}" | grep -q ${MYGETOPTOPTION}
+
+    if [ $? -ne 0 ]
+	then
+	BRIDGE_MPRUN_GETOPT_OPTIONS="${BRIDGE_MPRUN_GETOPT_OPTIONS}${MYGETOPTOPTION}"
+    fi
+
+    return 0
+
+}
+
+function bridge_addon_mprun_getopt {
+    
+    ## on se place en mode debug si souhaite
+    typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+	then
+	set -x
+    fi
+    
+    ## on incremente le niveau de log
+    typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+    
+    ## on ajoute une entete a la log
+    typeset LOGGER="${LOGGER} Broadcast Addon :"
+
+    ## on fixe le message d'aide a afficher si demande
+    typeset USAGE="\
+\t*) Broadcast Executable
+\t\t -B : broadcast executable before parallel execution \n\
+\t\t -b : do not broadcast executable before parallel execution \n\
+\n\
+\t   Broadcast is made in respect of the BRIDGE_BROADCAST_INCLUDE_PATTERN and \n\
+\t   BRIDGE_BROADCAST_EXCLUDE_PATTERN env variables (the first takes precedence). \n\
+\t   Only executables that will match (or not in case of exclude) the pattern will be \n\
+\t   broadcasted to the execution hosts.\n\
+\t   The pattern is expressed in egrep format, see man egrep for more details.\n\
+
+"
+    
+    ## on fixe le status de sortie par defaut
+    typeset exit_status=0
+    
+    ## on parse les arguments
+    while getopts ${BRIDGE_MPRUN_GETOPT_OPTIONS} option
+      do
+      case ${option} in
+	  
+	  h)
+	      echo -e "${USAGE}" >&2
+	      return 0
+	      ;;
+
+	  B)
+	      export BRIDGE_BROADCAST_MODE=1
+	      ${LOGGER} "enabled"
+	      ;;
+
+	  b)
+	      export BRIDGE_BROADCAST_MODE=0
+	      ${LOGGER} "disabled"
+	      ;;
+
+	  *)
+	      ;;
+      esac
+    done
+
+    return 0
+
+}
+
+function bridge_addon_mprun_alteropt {
+
+    ## on se place en mode debug si souhaite
+    typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+	then
+	set -x
+    fi
+    
+    ## on incremente le niveau de log
+    typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+    
+    ## on ajoute une entete a la log
+    typeset LOGGER="${LOGGER} Broadcast Addon :"
+
+    if [[ ${BRIDGE_BROADCAST_MODE} -eq 1 ]]
+    then
+	## force allocation
+	if [[ ${BRIDGE_MPRUN_ALLOCATION} != yes ]]
+	then
+	    bridge_mprun_force_allocation=yes
+	fi
+    fi
+
+    return 0
+}
+
+function bridge_addon_mprun_spmd_pre_allocate {
+
+    return 0
+
+}
+
+function bridge_addon_mprun_spmd_post_allocate {
+
+    return 0
+
+}
+
+function bridge_addon_mprun_spmd_pre_run {
+
+    ## on se place en mode debug si souhaite
+    typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+	then
+	set -x
+    fi
+    
+    ## on incremente le niveau de log
+    typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+    
+    ## on ajoute une entete a la log
+    typeset LOGGER="${LOGGER} Broadcast Addon :"
+
+    typeset skip_broadcast=0
+    if [[ ${BRIDGE_BROADCAST_MODE} -eq 1 ]] && [[ -n ${BRIDGE_BROADCAST_INCLUDE_PATTERN} ]]
+    then
+	typeset exec_file=$(which ${spmd_run_args%% *})
+	which ${exec_file} 2>/dev/null | egrep -q "${BRIDGE_BROADCAST_INCLUDE_PATTERN}"
+	if [[ $? -ne 0 ]]
+	then
+	    skip_broadcast=1
+	    ${LOGGER} "avoiding to broadcast ${exec_file} because of inclusion pattern \"${BRIDGE_BROADCAST_INCLUDE_PATTERN}\""
+	else
+	    ${LOGGER} "broadcasting ${exec_file} because of inclusion pattern \"${BRIDGE_BROADCAST_INCLUDE_PATTERN}\""
+	fi
+    elif [[ ${BRIDGE_BROADCAST_MODE} -eq 1 ]] && [[ -n ${BRIDGE_BROADCAST_EXCLUDE_PATTERN} ]]
+    then
+	typeset exec_file=$(which ${spmd_run_args%% *})
+	which ${exec_file} 2>/dev/null | egrep -q "${BRIDGE_BROADCAST_EXCLUDE_PATTERN}"
+	if [[ $? -eq 0 ]]
+	then
+	    skip_broadcast=1
+	    ${LOGGER} "avoiding to broadcast ${exec_file} because of exclusion pattern \"${BRIDGE_BROADCAST_EXCLUDE_PATTERN}\""
+	else
+	    ${LOGGER} "broadcasting ${exec_file} because of exclusion pattern \"${BRIDGE_BROADCAST_EXCLUDE_PATTERN}\""
+	fi
+    fi
+    
+    if [[ ${BRIDGE_BROADCAST_MODE} -eq 1 ]] && [[ ${skip_broadcast} -eq 0 ]]
+    then
+
+	## on broadcast le job
+	typeset exec_file=$(which ${spmd_run_args%% *})
+	typeset exec_args=${spmd_run_args#* }
+	if [[ ${exec_args} == ${spmd_run_args} ]]
+	then
+	    exec_args=
+	fi
+	typeset dst_file="/tmp/$(id -un)_${exec_file##*\/}_$$_${SLURM_JOBID}"
+	${LOGGER} "broadcasting ${exec_file} to remote:${dst_file} ..."
+	export BRIDGE_BROADCAST_ORIGINAL_CMD=${exec_file}
+	sbcast -Cfp ${exec_file} ${dst_file}
+	if [[ $? -ne 0 ]]
+	then
+	    ${LOGGER} "failure of broadcast ... staying in standard mode"
+	else
+	    ${LOGGER} "swapping executables ..."
+	    spmd_run_args="${dst_file} ${exec_args}"
+	fi
+
+    fi
+
+    return 0
+
+}
+
+function bridge_addon_mprun_spmd_post_run {
+
+    return 0
+    
+}

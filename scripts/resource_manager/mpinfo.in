@@ -1,0 +1,199 @@
+#!/bin/ksh
+#------------------------------------------------------------------------------------------------------------------
+# wrapper permettant l'obtention d'informations concernant les partitions paralleles
+#------------------------------------------------------------------------------------------------------------------
+
+
+###################################################################################################################
+#
+# PROGRAMME PRINCIPAL PROGRAMME PRINCIPAL PROGRAMME PRINCIPAL PROGRAMME PRINCIPAL PROGRAMME PRINCIPAL
+#
+# PROGRAMME PRINCIPAL PROGRAMME PRINCIPAL PROGRAMME PRINCIPAL PROGRAMME PRINCIPAL PROGRAMME PRINCIPAL
+#
+###################################################################################################################
+
+
+###################################################################################################################
+# Initialisation des parametres de base
+#------------------------------------------------------------------------------------------------------------------
+typeset BRIDGE_VERSION="@PACKAGE_NAME@-@PACKAGE_VERSION@"
+typeset PROG_VERSION="1.0.0"
+#------------------------------------------------------------------------------------------------------------------
+# le repertoire de base est fixe lors de l'installation du produit (via ./configure)
+# si il n'est pas coherent, c'est a dire qu'il ne correspond pas a un repertoire
+# on fixe un repere dans le systeme de fichier en utilisant le chemin d acces a l executable
+#------------------------------------------------------------------------------------------------------------------
+typeset BASE_DIR=`dirname $0`
+typeset PROGNAME=`basename $0`
+#------------------------------------------------------------------------------------------------------------------
+typeset BRIDGE_BASEDIR=@prefix@
+if [[ ! -d ${BRIDGE_BASEDIR} ]]
+    then
+    BRIDGE_BASEDIR=${BRIDGE_BASEDIR:-${BASE_DIR}/../}
+fi
+#------------------------------------------------------------------------------------------------------------------
+typeset BRIDGE_BINDIR=${BRIDGE_BASEDIR}/bin
+typeset BRIDGE_SCRIPTSDIR=${BRIDGE_BASEDIR}/share/scripts
+typeset BRIDGE_RESOURCE_MANAGER_PLUGINDIR=${BRIDGE_BASEDIR}/share/scripts/resource_manager/plugins
+typeset BRIDGE_ADDON_DIR=${BRIDGE_BASEDIR}/share/scripts/addons
+typeset BRIDGE_ADDON_SCRIPTSDIR=${BRIDGE_BASEDIR}/share/scripts/addons
+typeset BRIDGE_PROFILE_DIR=${BRIDGE_BASEDIR}/share/scripts/resource_manager/profiles
+#------------------------------------------------------------------------------------------------------------------
+typeset BRIDGE_CONFDIR=${BRIDGE_BASEDIR}/etc
+if [[ ! -d ${BRIDGE_CONFDIR} ]]
+    then
+    BRIDGE_CONFDIR=/etc
+fi
+#------------------------------------------------------------------------------------------------------------------
+typeset BRIDGE_HOSTNAME=$(hostname 2>/dev/null)
+#------------------------------------------------------------------------------------------------------------------
+# on fixe les categories auquelles ce programme appartient (les categories determinent les fichiers de conf
+# a sourcer lors de la lecture de la configuration (bridge_readconf)
+#------------------------------------------------------------------------------------------------------------------
+typeset BRIDGE_CATEGORIES="bridge_rm"
+#------------------------------------------------------------------------------------------------------------------
+# on fixe les variables liees a la log
+#------------------------------------------------------------------------------------------------------------------
+typeset BRIDGE_DEBUG_MODE=${BRIDGE_DEBUG_MODE:-no}
+typeset BRIDGE_CHECK_ONLY=${BRIDGE_CHECK_ONLY:-no}
+typeset BRIDGE_VERBOSE_MODE=${BRIDGE_VERBOSE_MODE:-no}
+typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-1}
+typeset BRIDGE_VERBOSE_MAXLEVEL=${BRIDGE_VERBOSE_MAXLEVEL:-0}
+typeset BRIDGE_LOGFILE=""
+typeset EXIT_STATUS=1
+#------------------------------------------------------------------------------------------------------------------
+# on fixe l'usage de la commande et le code retour par defaut
+#------------------------------------------------------------------------------------------------------------------
+typeset USAGE="Usage : ${PROGNAME} [-dvhV] [-p partition]
+
+ ${PROGNAME} is the CCC parallele partitions visualization interface.
+ You can increase verbosity to see what is really executed at the batch system level.
+
+ -h            : print this message
+ -D            : increase debug level
+ -v            : increase verbosity
+ -V            : print application version
+
+ -p partition  : print infos of a particular partition
+"
+#------------------------------------------------------------------------------------------------------------------
+###################################################################################################################
+# Analyse des options de la ligne de commande (priorite 1)
+# Sauvegarde du nom du script
+#------------------------------------------------------------------------------------------------------------------
+while getopts dvhVp: option
+do
+  case $option
+      in
+      d)
+	  BRIDGE_DEBUG_MODE=yes;
+	  ((BRIDGE_DEBUG_MAXLEVEL = BRIDGE_DEBUG_MAXLEVEL + 1 ))
+	  ;;
+      v)
+	  BRIDGE_VERBOSE_MODE=yes;
+	  ((BRIDGE_VERBOSE_MAXLEVEL = BRIDGE_VERBOSE_MAXLEVEL + 1 ))
+	  ;;
+      h) 
+	  echo "$USAGE"  >& 2 ;
+	  exit 0
+	  ;;
+      V) 
+	  echo "${PROGNAME}-${PROG_VERSION} (${BRIDGE_VERSION:-?})"
+	  exit 0
+	  ;;
+      p)
+	  partition="${OPTARG}"
+	  ;;
+      *) echo "$USAGE"  >& 2 ;exit 1 ;;
+  esac
+done
+OPTIND2=`expr $OPTIND - 1`
+shift ${OPTIND2}
+###################################################################################################################
+
+
+###################################################################################################################
+# On se place en mode debug si necessaire
+#------------------------------------------------------------------------------------------------------------------
+if [[ "${BRIDGE_DEBUG_MODE}" = "yes" ]]
+    then
+    set -x
+fi
+###################################################################################################################
+
+
+###################################################################################################################
+# On source les librairies communes utiles et on fixe les variables de log
+#------------------------------------------------------------------------------------------------------------------
+. ${BRIDGE_SCRIPTSDIR}/common/bridge_command
+. ${BRIDGE_SCRIPTSDIR}/common/bridge_printer
+. ${BRIDGE_SCRIPTSDIR}/common/bridge_readconf
+. ${BRIDGE_SCRIPTSDIR}/common/bridge_toolbox
+. ${BRIDGE_SCRIPTSDIR}/common/bridge_addon
+typeset LOGGER="bridge_printer ${DEFAULT_PRINTER_OPTIONS} -t verbose"
+typeset ERROR="bridge_printer ${DEFAULT_PRINTER_OPTIONS} -ft error"
+###################################################################################################################
+
+
+###################################################################################################################
+# On lit la configuration du programme et des categories qu'il utilise
+#------------------------------------------------------------------------------------------------------------------
+bridge_readconf
+###################################################################################################################
+
+
+###################################################################################################################
+# On se place en mode debug si necessaire
+#------------------------------------------------------------------------------------------------------------------
+if [[ "${BRIDGE_DEBUG_MODE}" = "yes" ]]
+    then
+    set -x
+fi
+###################################################################################################################
+
+
+###################################################################################################################
+# On charge le plugin detecte et on verifie que les fonctions d'allocation et d'execution existent
+#------------------------------------------------------------------------------------------------------------------
+typeset bridge_mpinfo_cmd=mpinfo_cmd
+for resource_manager in generic ${RESOURCE_MANAGER}
+  do
+  typeset resource_manager_plugin_file=${BRIDGE_RESOURCE_MANAGER_PLUGINDIR}/${resource_manager}
+  if [[ ! -r ${resource_manager_plugin_file} ]]
+      then
+      ${ERROR} "Resource Manager plugin '${resource_manager}' : ${resource_manager_plugin_file} : no such file"
+      return 254
+  fi
+  . ${resource_manager_plugin_file}
+done
+typeset mpinfo_cmd_version
+mpinfo_cmd_version=$(${bridge_mpinfo_cmd} -V 2>/dev/null)
+if [[ $? -ne 0 ]]
+    then
+    ${LOGGER} "Resource Manager plugin '${resource_manager}' : no ${bridge_mpinfo_cmd} found in implementation"
+    typeset stat_cmd=${BRIDGE_RMPSTAT_CMD}
+else
+    ${LOGGER} "Resource Manager plugin '${resource_manager}' : ${bridge_mpinfo_cmd} version ${mpinfo_cmd_version} "
+    typeset stat_cmd=${bridge_mpinfo_cmd}
+fi
+###################################################################################################################
+
+
+###################################################################################################################
+# Execution de la fonction
+#------------------------------------------------------------------------------------------------------------------
+if [[ -n ${partition} ]]
+    then
+    ${stat_cmd} -p ${partition}
+else
+    ${stat_cmd} -c
+fi
+EXIT_STATUS=$?
+###################################################################################################################
+
+
+###################################################################################################################
+# Sortie
+#------------------------------------------------------------------------------------------------------------------
+return ${EXIT_STATUS}
+###################################################################################################################

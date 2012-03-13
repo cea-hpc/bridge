@@ -1,0 +1,496 @@
+#------------------------------------------------------------------------------------------------
+#------------------------------------------------------------------------------------------------
+# Fonction bridge_lock_mgr
+#------------------------------------------------------------------------------------------------
+#------------------------------------------------------------------------------------------------
+# Arguments :
+#
+# -l        : mode lock, verouille le fichier
+# -u        : mode unlock, deverouille le fichier
+# -i        : mode info, informe sur le process ayant verouille le fichier (pid)
+#
+# -b        : bloque tant que le fichier n'est pas verouille
+#
+#------------------------------------------------------------------------------------------------
+
+
+
+#------------------------------------------------------------------------------------------------
+# fonctions internes fonctions internes fonctions internes fonctions internes fonctions internes 
+#------------------------------------------------------------------------------------------------
+
+#---------------------------
+# _check_lockdata_validity :
+#---------------------------
+# Verifie que les donnees d'un fichier lock sont toujours d'actualite.
+# En local : le process l'ayant cree existe toujours
+# En distant : le noeud repond au ping en moins d'un certain temps
+#
+# code de retour :
+#
+#   0    : le lock est toujours valide
+#   1    : pb de parametre
+#   2    : les donnees du lock sont incoherentes
+#  10    : lock local non valide car process termine
+#  20    : lock distant non valide car machine injoignable
+#
+function _check_lockdata_validity {
+
+    ## On se place en mode verbeux si souhaite
+    typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" == "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_VERBOSE_MAXLEVEL} ]]
+	then
+	set -x
+    fi
+
+    ## On efface les variables globales de sortie
+    BRIDGE_ERROR=""
+    BRIDGE_OUTPUT=""
+
+    ## On definit le niveau de log en fonction du niveau
+    ## d imbrication de la fonction c est a dire le niveau de la
+    ## fonction appelante incrementer de 1
+    typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+
+    ## on definit les variables locales
+    typeset status=0
+    typeset localhost=`hostname`
+    typeset localdata=""
+    typeset lockfile=""
+    typeset lock_host=""
+    typeset lock_pid=""
+    typeset lockfile_data="$@"
+    
+    ## on verifie les parametres
+    if [ $# -eq 0 ]
+	then
+	return 1
+    fi
+    if [ $# -ne 4 ]
+	then
+	status=2
+    else
+	lock_host=$(echo $1 | cut -d'=' -f2)
+	lock_pid=$(echo $2 | cut -d'=' -f2)
+	#### on est en presence d'un lock local au noeud
+	if [[ ${localhost} == ${lock_host} ]]
+	    then
+	    localdata="host=${localhost} $(cat /proc/${lock_pid}/stat 2>/dev/null | awk '{printf("pid=%u ppid=%u startjiffies=%u\n",$1,$4,$22)}' | head -n 1)"
+	    if [[ "${localdata}" == "${lockfile_data}" ]]
+		then
+		status=0
+	    else
+		status=10
+	    fi
+	#### on est en presence d'un lock distribue
+	else
+	    ##### on considere qu'un lock distant est toujours valide si le noeud est accessible
+	    ##### par ping
+	    ping -c1 -W 60 ${lock_host} >/dev/null 2>&1
+	    if [ $? -ne 0 ]
+		then
+		status=20
+	    else
+		status=0
+	    fi
+	####
+	fi
+    ###
+    fi
+    return ${status}
+
+}
+
+
+#--------------
+# _build_lock :
+#--------------
+#
+# Attention :
+#
+#   - ce lock repose sur un chmod 400
+#     il ne peut donc pas etre utilise en tant que root !!!
+#   - ce lock necessite les droits d'ecriture sur le repertoire parent
+#
+# Principe de fonctionnement :
+#
+#   - ecriture des donnees du process dans le fichier de lock
+#   - passage du fichier en mode 400
+#   - lecture des donnees du fichier lock
+#   - reussite du lock si concordance des donnees ecrites et lues
+#
+# code de retour :
+#
+#   0    : lock cree avec succes
+#   1    : pb de parametre
+#   2    : impossible d'ecrire dans le fichier de lock (echec sur lock concurrent)
+#   3    : donnees ecrites puis lues non concordante (echec sur lock concurrent)
+#   4    : le repertoire parent n'est pas accessible en ecriture
+# 255    : tentative de lock en tant que root !!!
+function _build_lock {
+
+    ## On se place en mode verbeux si souhaite
+    typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" == "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_VERBOSE_MAXLEVEL} ]]
+	then
+	set -x
+    fi
+
+    ## On efface les variables globales de sortie
+    BRIDGE_ERROR=""
+    BRIDGE_OUTPUT=""
+
+    ## On definit le niveau de log en fonction du niveau
+    ## d imbrication de la fonction c est a dire le niveau de la
+    ## fonction appelante incrementer de 1
+    typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+
+    ## on definit les variables locales
+    typeset status=0
+    typeset lockfile=""
+    typeset lockfile_data=""
+    typeset lockfile_data_check=""
+    
+    ## on verifie les parametres
+    if [ $# -ne 1 ]
+	then
+	BRIDGE_ERROR="usage : $0 lockfile"
+	return 1
+    fi
+    lockfile=$1
+
+    ## on verifie qu'on ne tourne pas en tant que root
+    if [ `id -u` -eq 0 ]
+	then
+	BRIDGE_ERROR="$0 can't be used with root privileges"
+	return 255
+    else
+	## on verifie qu'on a les droits d'ecritures sur le repertoire parent
+	if [[ -w "$(dirname ${lockfile})" ]]
+	    then
+	    lockfile_data="host=$(hostname 2>/dev/null) $(cat /proc/$$/stat | awk '{printf("pid=%u ppid=%u startjiffies=%u\n",$1,$4,$22)}')"
+	    echo ${lockfile_data} 2>/dev/null > ${lockfile}
+	### on a pas les droits, on ne peut rien faire
+	else
+	    BRIDGE_ERROR="lockfile parent directory is not writable"
+	    return 4
+	fi
+    fi
+
+    ## si l'ecriture a reussi, on passe le fichier en 400 (read-only)
+    if [ $? -eq 0 ]
+	then
+	chmod 400 ${lockfile} 2>/dev/null
+	### si le contenu est toujours le meme, on a gagne le lock
+	lockfile_data_check="$(cat ${lockfile} 2>/dev/null)"
+	if [[ ${lockfile_data} == ${lockfile_data_check} ]]
+	    then
+	    status=0
+	### le contenu a change, on a pas chope le lock
+	else
+	    BRIDGE_ERROR="concurrent lock detected : data has changed"
+	    status=3
+	fi
+    else
+	### un autre process a verouiller le fichier..., on a pas chope le lock
+	BRIDGE_ERROR="concurrent lock detected : unable to write data"
+	status=2
+    fi
+
+    return ${status}
+
+}
+
+#------------------------------------------------------------------------------------------------
+# fonctions principales fonctions principales fonctions principales fonctions principales
+#------------------------------------------------------------------------------------------------
+
+#---------------
+# bridge_lock_mgr :
+#---------------
+#
+# Principe de fonctionnement :
+#
+#  > Phase lock :
+#   - Test de presence d'un fichier de lock
+#   - lock present
+#     - verification de la validite du lock
+#     - si lock invalide, on le supprime, et on recommence au debut
+#     - si lock valide, on sort en erreur ou on attend (selon le choix fait)
+#   - lock non present
+#      - on tente de poser un lock
+#      - si ok on sort avec succes
+#      - si ko on sort en erreur ou on attend (selon le choix fait)
+#
+#  > Phase unlock :
+#   - suppression du fichier de lock
+#
+#  > Phase info :
+#   - affiche les donnees contenu dans le fichier de lock
+#
+# Problemes connus :
+#
+#   - non atomicite du test de validite et de la suppression
+#     dans le cas de plusieurs process concurrents, un des process
+#     peut tester l'ancien fichier mais supprimer un vrai lock poser
+#     par un de ses concurrents
+#     exemple : (T=test R=remove C=creation)
+#      T    T
+#      |    R
+#      |    C
+#      R    |
+#      C    |
+#      |    R
+#      R
+#
+# code de retour :
+#
+#   0    : lock cree avec succes
+#   1    : pb de parametre
+#   2    : impossible d'ecrire dans le fichier de lock (echec sur lock concurrent)
+#   3    : donnees ecrites puis lues non concordante (echec sur lock concurrent)
+#   4    : le repertoire parent n'est pas accessible en ecriture
+# 255    : tentative de lock en tant que root !!!
+# Problemes connus :
+function bridge_lock_mgr {
+
+    ###############################################################
+    # On se place en mode verbeux si souhaite
+    #--------------------------------------------------------------
+    typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" == "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_VERBOSE_MAXLEVEL} ]]
+	then
+	set -x
+    fi
+
+    ###############################################################
+    # On efface les variables globales de sortie
+    #--------------------------------------------------------------
+    BRIDGE_ERROR=""
+    BRIDGE_OUTPUT=""
+
+    ###############################################################
+    # On definit le niveau de log en fonction du niveau
+    # d imbrication de la fonction c est a dire le niveau de la
+    # fonction appelante incrementer de 1
+    #--------------------------------------------------------------
+    typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+
+    ###############################################################
+    # On definit les codes d'erreur
+    #--------------------------------------------------------------
+    typeset ERROR_USAGE=1
+    typeset ERROR_INVALID_MODE=2
+    typeset ERROR_INVALID_WORKFILE=3
+    typeset ERROR_ALREADY_LOCKED=10
+    typeset ERROR_UNABLE_TO_BUILD_LOCK=11
+    typeset ERROR_FILE_CREATION=12
+    typeset ERROR_RM_LOCK=13
+    typeset ERROR_LOCKFILE_DENIED=14
+    typeset ERROR_FILE_NOT_LOCKED=15
+    typeset ERROR_INVALID_MODE=16
+    typeset ERROR_TIMEOUT=17
+
+    ###############################################################
+    # On definit les logger par defaut
+    #--------------------------------------------------------------
+    typeset LOGGER=${LOGGER:-echo}
+    typeset ERROR=${ERROR:-echo}
+
+
+    typeset usage="Usage : $0 -l|u|i [-c] [-f] [-b maxtime] file"
+    typeset status=0
+
+    typeset globaldelay=0
+    typeset delay=2
+    typeset workfile=""
+    typeset lockfile=""
+    typeset mgr_mode=""
+    typeset blocking_mode="no"
+    typeset blocking_time=0
+
+    ## sauvegarde et validation des parametres
+    while getopts :lufb: c
+      do
+      case $c in
+	  l)
+	      mgr_mode="lock"
+	      ;;
+	  u)
+	      mgr_mode="unlock"
+	      ;;
+	  b)
+	      blocking_mode="yes"
+	      blocking_time=${OPTARG}
+	      ;;
+	  *)
+	      return ${ERROR_USAGE}
+	      ;;
+      esac
+    done
+    shift $OPTIND-1
+    if [ $# -ne 1 ] || [[ -z ${mgr_mode} ]]
+	then
+	return ${ERROR_USAGE}
+    else
+	workfile=$1
+    fi
+
+    ## validation de la presence du fichier de travail
+    ## si pas en mode creation
+    if [[ ${creation_mode} == "no" ]] && [[ ! -f ${workfile} ]]
+	then
+	return ${ERROR_INVALID_WORKFILE}
+    fi
+
+    ##
+    lockfile="${workfile}.bridge_lock"
+    case ${mgr_mode} in
+
+	lock)
+
+	    ## on se met dans une boucle au cas ou il y en aurait besoin
+	    while [ 1 -eq 1 ]
+	      do
+
+	      ### lock detecte
+	      if [[ -f ${lockfile} ]]
+		  then
+		  #### on verifie que le lock est toujours valide
+		  #### sinon on repasse ses droits en 600 et on reitere la boucle
+		  lockdata=$(cat ${lockfile} 2>/dev/null)
+		  _check_lockdata_validity ${lockdata}
+		  if [ $? -ne 0 ]
+		      then
+		      ${LOGGER} "vanished lock : ${lockdata}"
+		      #### on attend un temps aleatoire a cause du probleme de concurrence
+		      #### mentionne dans les problemes connus
+		      #sleep $(echo toto | awk '{srand('"$$"');print int(rand()*10)+1}')
+		      #### on verirife que le lock n'a pas change avant de le supprimer
+		      #### et on recommence le process
+		      if [[ "${lockdata}" == "$(cat ${lockfile} 2>/dev/null)" ]] 
+			  then
+			  rm -f ${lockfile} 2>/dev/null
+			  if [ $? -ne 0 ]
+			      then
+			      ${ERROR} "unable to remove vanished lock"
+			      return ${ERROR_RM_LOCK}
+			  else
+			      ${LOGGER} "vanished lock released"
+			  fi
+		      fi
+		      continue
+		  fi
+
+		  #### si on est en mode bloquant, on boucle si le temps max
+		  #### d'attente n'a pas ete depasse
+		  if [[ ${blocking_mode} == "yes" ]]
+		      then
+		      if [[ ${blocking_time} -eq 0 ]] || [[ ${globaldelay} -lt ${blocking_time} ]]
+			  then
+			  (( globaldelay = globaldelay + delay ))
+			  ${LOGGER} "file already locked, waiting ${delay} seconds"
+			  sleep ${delay}
+			  continue
+		      else
+			  return ${ERROR_TIMEOUT}
+		      fi
+		  else
+		      return ${ERROR_ALREADY_LOCKED}
+		  fi
+
+	      fi
+
+	      ### si on en arrive la, on tente de creer le lock
+	      ### si on est victime d'un lock concurrent
+	      ### on reagit en fonction des parametres
+	      ### sinon on sort en erreur ou en continue en fonction du status
+	      _build_lock ${lockfile}
+	      status=$?
+	      if [ ${status} -ne 0 ]
+		  then
+		  ${ERROR} "Unable to build lock : ${BRIDGE_ERROR:--}"
+	      fi
+	      case ${status} in
+		  2|3)
+		      if [[ ${blocking_mode} == "yes" ]]
+			  then
+			  if [[ ${blocking_time} -eq 0 ]] || [[ ${globaldelay} -lt ${blocking_time} ]]
+			      then
+			      (( globaldelay = globaldelay + delay ))
+			      sleep ${delay}
+			      continue
+			  else
+			      return ${ERROR_TIMEOUT}
+			  fi
+		      else
+			  return ${ERROR_ALREADY_LOCKED}
+		      fi
+		      ;;
+		  0)
+		      break
+		      ;;
+		  *)
+		      return ${ERROR_UNABLE_TO_BUILD_LOCK}
+		      ;;
+		  
+	      esac
+
+	    done
+
+	    status=0;
+
+	    ;;
+
+	unlock)
+
+	    if [[ -f ${lockfile} ]]
+		then
+		rm -f ${lockfile} 2>/dev/null
+		if [ $? -ne 0 ]
+		    then
+		    return ${ERROR_RM_LOCK}
+		fi
+	    fi
+
+	    status=0;
+
+	    ;;
+
+	info)
+
+	    if [[ -f ${lockfile} ]]
+		then
+		cat ${lockfile} 2>/dev/null
+		if [ $? -ne 0 ]
+		    then
+		    return ${ERROR_LOCKFILE_DENIED}
+		else
+		    status=0
+		fi
+	    else
+		return ${ERROR_FILE_NOT_LOCKED}
+	    fi
+
+	    ;;
+
+	*)
+	    return ${ERROR_INVALID_MODE}
+	    ;;
+
+    esac
+
+    return ${status}
+}
+
+
+
+function bridge_lock_file {
+    bridge_lock_mgr -l $@
+    return $?
+}
+
+function bridge_unlock_file {
+    bridge_lock_mgr -u $@
+    return $?
+}

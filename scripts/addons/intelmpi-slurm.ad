@@ -1,0 +1,154 @@
+#################################################################################
+#
+# Addon for IntelMPI support in Bridge with Slurm
+#
+# 2 environment variables can be used to externally configure 
+# openmpi launcher and args :
+#
+# BRIDGE_SLURM_INTELMPI_CMD srun by default
+# BRIDGE_SLURM_INTELMPI_CMD_OPTIONS empty by default
+# 
+#################################################################################
+
+function bridge_addon_mprun_setopt {
+
+    typeset MYGETOPTOPTION="e:"
+
+    echo "${BRIDGE_MPRUN_GETOPT_OPTIONS}" | grep -q ${MYGETOPTOPTION}
+
+    if [ $? -ne 0 ]
+	then
+	BRIDGE_MPRUN_GETOPT_OPTIONS="${BRIDGE_MPRUN_GETOPT_OPTIONS}e:"
+    fi
+
+    return 0
+
+}
+
+function bridge_addon_mprun_getopt {
+    
+    ## on se place en mode debug si souhaite
+    typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+	then
+	set -x
+    fi
+    
+    ## on incremente le niveau de log
+    typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+    
+    ## on ajoute une entete a la log
+    typeset LOGGER="${LOGGER} IntelMPI Addon :"
+
+    ## on fixe le message d'aide a afficher si demande
+    typeset USAGE="\
+\t*) IntelMPI
+\t\t -e options : additional parameters to pass to mpirun command (only used with mpirun backend)\n
+"
+    
+    ## on fixe le status de sortie par defaut
+    typeset exit_status=0
+    
+    ## on parse les arguments
+    while getopts ${BRIDGE_MPRUN_GETOPT_OPTIONS} option
+      do
+      case ${option} in
+	  
+	  h)
+	      echo -e "${USAGE}" >&2
+	      return 0
+	      ;;
+
+	  e)
+	      export BRIDGE_SLURM_INTELMPI_CMD_OPTIONS="${OPTARG}"
+	      ${LOGGER} "mpirun options are now \"${BRIDGE_SLURM_INTELMPI_CMD_OPTIONS}\""
+	      ;;
+
+	  *)
+	      ;;
+      esac
+    done
+
+    return 0
+
+}
+
+function bridge_addon_mprun_alteropt {
+
+    ## on se place en mode debug si souhaite
+    typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+	then
+	set -x
+    fi
+    
+    ## on incremente le niveau de log
+    typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+    
+    ## on ajoute une entete a la log
+    typeset LOGGER="${LOGGER} IntelMPI Addon :"
+
+    echo $(which mpicc 2>/dev/null) | grep -wq intel
+    if [ $? -ne 0 ]
+	then
+	return 0
+    fi
+    ${LOGGER} "IntelMPI mpicc is the first in the PATH"
+
+    if [[ ${BRIDGE_SLURM_INTELMPI_CMD:-srun} == "mpirun" ]] || [[ -z ${I_MPI_PMI_LIBRARY} ]]
+	then
+	## force allocation
+	if [[ ${BRIDGE_MPRUN_ALLOCATION} != yes ]]
+	    then
+	    bridge_mprun_force_allocation=yes
+	else
+	    export spmd_run_cmd=${BRIDGE_SLURM_INTELMPI_CMD:-mpirun}
+	    export spmd_run_options
+	    export spmd_run_separator=" "
+	    if [[ ${spmd_run_cmd} == "mpirun" ]]
+		then	
+		if [[ -n ${BRIDGE_SLURM_INTELMPI_CMD_OPTIONS} ]]
+		    then
+		    spmd_run_options="${spmd_run_options} ${BRIDGE_SLURM_INTELMPI_CMD_OPTIONS}"
+		fi
+		if [[ "$(echo $spmd_run_options | grep 'rsh=ssh')" = "" ]]
+		    then
+		    spmd_run_options="--rsh=ssh ${spmd_run_options} "  
+		fi
+	    fi
+	fi
+	${LOGGER} "IntelMPI mode is now enabled"
+    else
+	export spmd_run_cmd=${BRIDGE_SLURM_INTELMPI_CMD:-srun}
+	export spmd_run_options
+	export spmd_run_separator=" "
+	${LOGGER} "IntelMPI mode is now enabled in direct mode"
+    fi
+
+    return 0
+
+}
+
+function bridge_addon_mprun_spmd_pre_allocate {
+
+    return 0
+
+}
+
+function bridge_addon_mprun_spmd_post_allocate {
+
+    return 0
+
+}
+
+function bridge_addon_mprun_spmd_pre_run {
+
+    return 0
+
+}
+
+function bridge_addon_mprun_spmd_post_run {
+
+    return 0
+    
+}

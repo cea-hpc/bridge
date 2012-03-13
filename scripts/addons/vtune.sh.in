@@ -1,0 +1,395 @@
+#!/bin/ksh
+#------------------------------------------------------------------------------------------------------------------
+# wrapper permettant de profiler une application parallele a l'aide
+# du profiler vtune
+#------------------------------------------------------------------------------------------------------------------
+
+
+###################################################################################################################
+#
+# FONCTIONS INTERNES FONCTIONS INTERNES FONCTIONS INTERNES FONCTIONS INTERNES FONCTIONS INTERNES FONCTIONS INTERNES 
+#
+# FONCTIONS INTERNES FONCTIONS INTERNES FONCTIONS INTERNES FONCTIONS INTERNES FONCTIONS INTERNES FONCTIONS INTERNES 
+#
+###################################################################################################################
+
+###################################################################################################################
+# fonction d'affichage de l'usage
+#------------------------------------------------------------------------------------------------------------------
+function show_usage {
+
+    echo "${USAGE}"  >& 2
+
+    return 0
+}
+###################################################################################################################
+
+
+###################################################################################################################
+#
+# PROGRAMME PRINCIPAL PROGRAMME PRINCIPAL PROGRAMME PRINCIPAL PROGRAMME PRINCIPAL PROGRAMME PRINCIPAL
+#
+# PROGRAMME PRINCIPAL PROGRAMME PRINCIPAL PROGRAMME PRINCIPAL PROGRAMME PRINCIPAL PROGRAMME PRINCIPAL
+#
+###################################################################################################################
+
+
+###################################################################################################################
+# Initialisation des parametres de base
+#------------------------------------------------------------------------------------------------------------------
+typeset BRIDGE_VERSION="@PACKAGE_NAME@-@PACKAGE_VERSION@"
+typeset PROG_VERSION="1.0.0"
+#------------------------------------------------------------------------------------------------------------------
+# le repertoire de base est fixe lors de l'installation du produit (via ./configure)
+# si il n'est pas coherent, c'est a dire qu'il ne correspond pas a un repertoire
+# on fixe un repere dans le systeme de fichier en utilisant le chemin d acces a l executable
+#------------------------------------------------------------------------------------------------------------------
+typeset BASE_DIR=`dirname $0`
+typeset PROGNAME=`basename $0`
+#------------------------------------------------------------------------------------------------------------------
+typeset BRIDGE_BASEDIR=@prefix@
+if [[ ! -d ${BRIDGE_BASEDIR} ]]
+    then
+    BRIDGE_BASEDIR=${BRIDGE_BASEDIR:-${BASE_DIR}/../}
+fi
+#------------------------------------------------------------------------------------------------------------------
+typeset BRIDGE_BINDIR=${BRIDGE_BASEDIR}/bin
+typeset BRIDGE_SCRIPTSDIR=${BRIDGE_BASEDIR}/share/scripts
+typeset BRIDGE_RESOURCE_MANAGER_PLUGINDIR=${BRIDGE_BASEDIR}/share/scripts/resource_manager/plugins
+typeset BRIDGE_ADDON_DIR=${BRIDGE_BASEDIR}/share/scripts/addons
+typeset BRIDGE_PROFILE_DIR=${BRIDGE_BASEDIR}/share/scripts/resource_manager/profiles
+#------------------------------------------------------------------------------------------------------------------
+typeset BRIDGE_CONFDIR=${BRIDGE_BASEDIR}/etc
+if [[ ! -d ${BRIDGE_CONFDIR} ]]
+    then
+    BRIDGE_CONFDIR=/etc
+fi
+#------------------------------------------------------------------------------------------------------------------
+# on fixe les options de base du script
+typeset BRIDGE_VTUNE_GETOPT_OPTIONS="dvho:O:R:n:"
+#------------------------------------------------------------------------------------------------------------------
+typeset BRIDGE_HOSTNAME=$(hostname 2>/dev/null)
+#------------------------------------------------------------------------------------------------------------------
+# on fixe les categories auquelles ce programme appartient (les categories determinent les fichiers de conf
+# a sourcer lors de la lecture de la configuration (bridge_readconf)
+#------------------------------------------------------------------------------------------------------------------
+typeset BRIDGE_CATEGORIES=""
+#------------------------------------------------------------------------------------------------------------------
+# on fixe les variables liees a la log
+#------------------------------------------------------------------------------------------------------------------
+typeset BRIDGE_DEBUG_MODE=${BRIDGE_DEBUG_MODE:-no}
+typeset BRIDGE_CHECK_ONLY=${BRIDGE_CHECK_ONLY:-no}
+typeset BRIDGE_VERBOSE_MODE=${BRIDGE_VERBOSE_MODE:-no}
+typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-1}
+typeset BRIDGE_VERBOSE_MAXLEVEL=${BRIDGE_VERBOSE_MAXLEVEL:-0}
+typeset BRIDGE_LOGFILE=""
+typeset EXIT_STATUS=1
+#------------------------------------------------------------------------------------------------------------------
+# on fixe l'usage de la commande et le code retour par defaut
+#------------------------------------------------------------------------------------------------------------------
+typeset USAGE="usage : ${PROGNAME} [-dvh] [-o output_dir] [-n activity_name] [-O options] [-R rank] app [args..]
+
+ ${PROGNAME} est un wrapper interne permettant de profiler une application parallele a l'aide de vtune\n"
+###################################################################################################################
+# On source les librairies communes utiles et on fixe les variables de log
+#------------------------------------------------------------------------------------------------------------------
+. ${BRIDGE_SCRIPTSDIR}/common/bridge_command
+. ${BRIDGE_SCRIPTSDIR}/common/bridge_printer
+. ${BRIDGE_SCRIPTSDIR}/common/bridge_readconf
+. ${BRIDGE_SCRIPTSDIR}/common/bridge_toolbox
+. ${BRIDGE_SCRIPTSDIR}/common/bridge_addon
+typeset LOGGER="bridge_printer ${DEFAULT_PRINTER_OPTIONS} -t verbose Vtune Addon :"
+typeset ERROR="bridge_printer ${DEFAULT_PRINTER_OPTIONS} -ft error Vtune Addon :"
+###################################################################################################################
+# On fixe les parametres du script
+#------------------------------------------------------------------------------------------------------------------
+typeset bridge_vtune_run_cmd=/opt/intel/vtune/bin/vtl
+typeset bridge_vtune_activity_cmd=/opt/intel/vtune/bin/ActivityController
+typeset bridge_vtune_options=
+#------------------------------------------------------------------------------------------------------------------
+typeset bridge_vtune_activity_name=
+typeset bridge_vtune_activity_options=
+typeset bridge_vtune_process_rank=all
+typeset bridge_vtune_output_dir=
+#------------------------------------------------------------------------------------------------------------------
+# Analyse des options de la ligne de commande (priorite 1)
+# Sauvegarde du nom du script
+#------------------------------------------------------------------------------------------------------------------
+while getopts ${BRIDGE_VTUNE_GETOPT_OPTIONS} option 2>/dev/null
+do
+  case $option
+      in
+      d)
+	  BRIDGE_DEBUG_MODE=yes;
+	  ((BRIDGE_DEBUG_MAXLEVEL = BRIDGE_DEBUG_MAXLEVEL + 1 ))
+	  ;;
+      v)
+	  BRIDGE_VERBOSE_MODE=yes;
+	  ((BRIDGE_VERBOSE_MAXLEVEL = BRIDGE_VERBOSE_MAXLEVEL + 1 ))
+	  ;;
+      h) 
+	  show_usage
+	  exit 0
+	  ;;
+      V) 
+	  echo "${PROGNAME}-${PROG_VERSION} (${BRIDGE_VERSION:-?})"
+	  exit 0
+	  ;;
+
+      n)
+	  bridge_vtune_activity_name="${OPTARG}"
+	  ;;
+
+      O)
+	  bridge_vtune_activity_options="${OPTARG}"
+	  ;;
+
+      R)
+	  bridge_vtune_process_rank="${OPTARG}"
+	  ;;
+
+      o)
+	  bridge_vtune_output_dir="${OPTARG}"
+	  ;;
+      
+      *) 
+	  show_usage
+	  exit 1
+	  ;;
+  esac
+done
+#------------------------------------------------------------------------------------------------------------------
+# on supprime les options de la ligne courante et on sauvegarde le resultat
+shift `expr $OPTIND - 1`
+bridge_vtune_args="$@"
+###################################################################################################################
+
+
+###################################################################################################################
+# On se place en mode debug si necessaire
+#------------------------------------------------------------------------------------------------------------------
+if [[ "${BRIDGE_DEBUG_MODE}" = "yes" ]]
+    then
+    set -x
+fi
+###################################################################################################################
+
+
+###################################################################################################################
+# On lit la configuration du programme et des categories qu'il utilise
+# puis on charge le plugin detecte et on verifie que les fonctions d'allocation et d'execution existent
+#------------------------------------------------------------------------------------------------------------------
+bridge_readconf
+###################################################################################################################
+
+
+###################################################################################################################
+# On verifie qu'au moins un argument est present sur la ligne de commande
+#------------------------------------------------------------------------------------------------------------------
+if [[ $# -lt 1 ]]
+    then
+    show_usage >&2
+    return 2
+fi
+###################################################################################################################
+
+
+###################################################################################################################
+# On travaille
+#------------------------------------------------------------------------------------------------------------------
+# on commence par sourcer le fichier de definition des variables d'environnement parallele
+. ${BRIDGE_MPRUN_PROFILE} 2>/dev/null
+#------------------------------------------------------------------------------------------------------------------
+# on cree un projet par allocation
+typeset BRIDGE_VTUNE_PROJECT="project_${BRIDGE_MPRUN_JOBID}"
+typeset BRIDGE_VTUNE_PROJECT_DIR="${TMPDIR}/vtune/${BRIDGE_VTUNE_PROJECT}"
+# on verifie que les variables vtune sont fixees correctement
+if [[ -n ${VTUNE_USER_DIR} ]]
+    then
+    ${LOGGER} "surcharge de la variable d'environnement VTUNE_USER_DIR afin de garantir la coherence du projet resultat"
+fi
+export VTUNE_USER_DIR=${BRIDGE_VTUNE_PROJECT_DIR}
+${LOGGER} "VTUNE_USER_DIR=${BRIDGE_VTUNE_PROJECT_DIR}"
+#------------------------------------------------------------------------------------------------------------------
+# on cree un vtune global dir par job et par noeud
+if [[ -n ${VTUNE_GLOBAL_DIR} ]]
+    then
+    ${LOGGER} "surcharge de la variable d'environnement VTUNE_GLOBAL_DIR"
+fi
+VTUNE_GLOBAL_DIR="${BRIDGE_VTUNE_PROJECT_DIR}"
+VTUNE_GLOBAL_DIR="${VTUNE_GLOBAL_DIR}/job${BRIDGE_MPRUN_STEPID}_node${BRIDGE_MPRUN_NODEID}_task${BRIDGE_MPRUN_PROCID}/global_dir"
+${LOGGER} "VTUNE_GLOBAL_DIR=${VTUNE_GLOBAL_DIR}"
+#------------------------------------------------------------------------------------------------------------------
+# on regarde si une valeur d'identifiant de process est defini
+# si oui, on semble bien etre dans un job MPI, on continue
+# si non, on sort
+typeset VTL_APP
+typeset VTL_ARGS
+if [[ -z ${BRIDGE_MPRUN_PROCID} ]]
+    then
+    ${ERROR} "ce programme doit etre execute au sein d'une application parallele"
+    EXIT_STATUS=3
+else
+
+    ## on compare le rang local et le process rank vtune demande
+    if [[ ${BRIDGE_MPRUN_PROCID} -eq ${bridge_vtune_process_rank} ]]
+	then
+
+	### on cree eventuellement le dir du projet
+	if [[ ! -d ${VTUNE_USER_DIR} ]]
+	    then
+	    ${LOGGER} "creating VTUNE_USER_DIR ..."
+	    mkdir -p ${VTUNE_USER_DIR}
+	    if [ $? -ne 0 ]
+		then
+		${ERROR} "unable to create VTUNE_USER_DIR. End of program"
+		EXIT_NOW=
+	    else
+		${LOGGER} "created with success"
+	    fi
+	fi
+
+	## on cree eventuellement le repertoire de travail
+	if [[ ! -d ${VTUNE_GLOBAL_DIR} ]]
+	    then
+	    ${LOGGER} "creating VTUNE_GLOBAL_DIR ..."
+	    mkdir -p ${VTUNE_GLOBAL_DIR}
+	    if [ $? -ne 0 ]
+		then
+		${ERROR} "unable to create VTUNE_GLOBAL_DIR. End of program"
+		EXIT_NOW=
+	    else
+		${LOGGER} "created with success"
+	    fi
+	fi
+
+	## on genere la ligne de commande a executer
+	VTL_APP=$1
+	if [ $# -gt 1 ]
+	    then
+	    shift
+	    VTL_ARGS=$@
+	fi
+	${LOGGER} "command : ${VTL_APP}"
+	${LOGGER} "args : ${VTL_ARGS}"
+	if [[ -z ${bridge_vtune_activity_name} ]]
+	    then
+	    bridge_vtune_activity_name="job${BRIDGE_MPRUN_STEPID}_node${BRIDGE_MPRUN_NODEID}_task${BRIDGE_MPRUN_PROCID}"
+	fi
+	${LOGGER} "activity name : ${bridge_vtune_activity_name}"
+	if [[ -z ${bridge_vtune_activity_options} ]]
+	    then
+	    bridge_vtune_activity_options="-c sampling"
+	fi
+	${LOGGER} "activity options : ${bridge_vtune_activity_options}"
+
+	## on agit en fonction du process rank demande
+	if [[ ${bridge_vtune_process_rank} == all ]]
+	    then
+
+	    ### pas beau et a change, on recupere la liste des cpus binde...
+	    BRIDGE_VTUNE_CPUSET=$(echo $(cat /dev/cpuset/rms_${RMS_RESOURCE}/job_${RMS_JOBID}_*/cpus 2>/dev/null) |tr ' ' ',')
+	    
+	    ### on demarre la collecte
+	    typeset counter=0
+	    ${bridge_vtune_run_cmd} project -d activity ${bridge_vtune_activity_name} \
+		-d 0 ${bridge_vtune_activity_options} \
+		-o "-cpu-mask ${BRIDGE_VTUNE_CPUSET}" run &
+	    until ${bridge_vtune_activity_cmd}  -status | grep -q "The Activity (${bridge_vtune_activity_name}) is running"
+	      do
+	      if [[ ${counter} -gt 15 ]]
+		  then
+		  touch ${VTUNE_USER_DIR}/ERROR
+		  ${ERROR} "unable to start vtune, launching app without profiler support"
+		  break;
+	      fi
+	      (( counter = counter +1 ))
+	      sleep 2
+	    done
+
+	    #### on lance l'appli
+	    touch ${VTUNE_USER_DIR}/GO
+	    ${VTL_APP} ${VTL_ARGS}
+	    
+	else
+
+	    if [[ -z ${VTL_ARGS} ]]
+		then
+		COMMAND="${bridge_vtune_run_cmd} project -d activity ${bridge_vtune_activity_name} \
+${bridge_vtune_activity_options} -app ${VTL_APP} -moi ${VTL_APP} run"
+	    else
+		COMMAND="${bridge_vtune_run_cmd} project -d activity ${bridge_vtune_activity_name} \
+${bridge_vtune_activity_options} -app ${VTL_APP},\'${VTL_ARGS}\' -moi ${VTL_APP} run"
+	    fi
+
+	    touch ${VTUNE_USER_DIR}/GO
+	    ${COMMAND}
+	fi
+
+	STATUS=$?
+
+	### si vtune a bien demarre
+	if [[ ! -f ${VTUNE_USER_DIR}/ERROR ]]
+	    then
+
+	    #### on arrete un eventuel mode collecte globale
+	    if [[ ${bridge_vtune_process_rank} == all ]]
+		then
+		${bridge_vtune_activity_cmd} -stop
+	    fi
+	    
+	    #### on genere si ok les packages resultats
+	    typeset PACKAGE_FILENAME="vtune_${BRIDGE_VTUNE_PROJECT}_node${BRIDGE_MPRUN_NODEID}"
+	    if [[ -n ${bridge_vtune_output_dir} ]]
+		then
+		PACKAGE_FILENAME="${bridge_vtune_output_dir}/${PACKAGE_FILENAME}"
+	    fi
+	    COMMAND="${bridge_vtune_run_cmd} pack ${PACKAGE_FILENAME}"
+	    if [ -f "${PACKAGE_FILENAME}" ] || [ -f "${PACKAGE_FILENAME}.vxp" ]
+		then
+		rm -f ${PACKAGE_FILENAME} ${PACKAGE_FILENAME}.vxp
+	    fi
+	    ${COMMAND}
+	    
+	fi
+	
+	### on nettoie les repertoires de travail
+	rm -rf ${BRIDGE_VTUNE_PROJECT_DIR}
+	
+    else
+
+	typeset TIMEOUT_FLAG=no
+	typeset counter=0
+	while  [[ ! -f ${VTUNE_USER_DIR}/GO ]] && [[ ! -f ${VTUNE_USER_DIR}/ERROR ]]
+	  do
+	  if [[ ${counter} -gt 40 ]]
+	      then
+	      TIMEOUT_FLAG=yes
+	      break
+	  fi
+	  (( counter = counter +1 ))
+	  sleep 2
+	done
+	if [[ ! -f ${VTUNE_USER_DIR}/ERROR ]] && [[ ${TIMEOUT_FLAG} == "no" ]]
+	    then
+	    #### on execute 
+	    $@
+	else
+	    ${ERROR} "probleme durant le demarrage de vtune"
+	fi
+
+	STATUS=$?
+
+    fi
+    
+    EXIT_STATUS=$?
+
+fi
+###################################################################################################################
+
+
+###################################################################################################################
+# On sort
+#------------------------------------------------------------------------------------------------------------------
+return ${EXIT_STATUS}
+###################################################################################################################

@@ -1,0 +1,113 @@
+#################################################################################
+#
+# Addon for MPI type auto-detection in Bridge
+#
+# set bridge_mprun_mpi_type to one of the following value according to
+# the mpicc flavour found in the PATH
+#
+#     - openmpi : OpenMPI
+#     - mpich : MPICH V1
+#     - mpich2 : MPICH v2 
+#     - hpmpi : HP MPI 
+#     - none : no mpicc found in the path
+# 
+#################################################################################
+
+function bridge_addon_mprun_setopt {
+
+    return 0
+
+}
+
+function bridge_addon_mprun_getopt {
+    
+    return 0
+
+}
+
+function bridge_addon_mprun_alteropt {
+
+    ## on se place en mode debug si souhaite
+    typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+	then
+	set -x
+    fi
+    
+    ## on incremente le niveau de log
+    typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+    
+    ## on ajoute une entete a la log
+    typeset LOGGER="${LOGGER} MPI Type autodetect Addon :"
+
+    mpipath=$(which mpirun 2>/dev/null)
+    if [ $? -ne 0 ]
+	then
+	bridge_mprun_mpi_type=none
+	return 0
+    fi
+
+    case ${mpipath} in
+
+	*openmpi* )
+	    bridge_mprun_mpi_type=openmpi
+	    ;;
+
+	*mpich-1* )
+	    bridge_mprun_mpi_type=mpich
+	    ;;
+
+	*mpich2*)
+	    bridge_mprun_mpi_type=mpich2
+	    ;;
+
+	*/hp/* )
+	    bridge_mprun_mpi_type=hpmpi
+	    ;;
+
+	*)
+	    # let a potential default value
+	    ;;
+
+    esac
+
+    ${LOGGER} "MPI type is \"${bridge_mprun_mpi_type}\""
+
+    return 0
+
+}
+
+function bridge_addon_mprun_spmd_pre_allocate {
+
+    return 0
+
+}
+
+function bridge_addon_mprun_spmd_post_allocate {
+
+    return 0
+
+}
+
+function bridge_addon_mprun_spmd_pre_run {
+
+    case "${bridge_mprun_mpi_type}" in 
+	mpich)
+	    spmd_run_options="${spmd_run_options} -all-local"
+	    ;;
+	openmpi)
+	    spmd_run_options="${spmd_run_options} --launch-agent \"LD_LIBRARY_PATH=$LD_LIBRARY_PATH orted\""
+	    ;;
+	*)
+	    ;;
+    esac
+    
+    return 0
+
+}
+
+function bridge_addon_mprun_spmd_post_run {
+
+    return 0
+    
+}

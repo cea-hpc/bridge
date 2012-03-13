@@ -1,0 +1,249 @@
+Description generale
+--------------------
+
+Le produit Bridge est une couche d'abstraction se placant au dessus d'un systeme de Batch
+et/ou d'un gestionnaire de ressource et permettant de masquer les differences propres a chacun
+d'eux.
+
+Il est livre avec un jeu de commandes de base permettant d'obtenir l'etat des systemes sous-jacent
+et d'interagir avec eux. Il permet notamment de :
+	- soumettre des travaux
+	- obtenir des informations sur les travaux en cours
+	- arreter des travaux
+	- obtenir des informations sur les capacites de la machine sur laquelle il s'execute
+	(nom du cluster, nombre de core, nombre de noeud, queue batch,...)
+
+Il facilite l'ecriture de scripts maison, en leur evitant d'etre etroitement lies aux couches basses
+proposees sur une machine donnee. L'ensemble des applications se reposant sur le bridge fonctionneront
+sur tout systeme proposant cette meme couche dans une version compatible.
+
+Il fournit aussi un daemon, bridged, permettant de cacher les informations concernant les temps d'allocation des
+jobs en cours sur le systeme et de les distribuer aux clients en faisant la demande (via bridgedc ou via l'
+API dediee).
+
+
+Hierarchie du package propose
+-----------------------------
+
+  lib/
+	ce repertoire contient les sources des librairies bridge et bridgedapi. 
+	La librairie libbridge est le coeur du produit. C'est elle qui charge les plugins en fonction de la 
+	configuration demandee (systeme de batch, gestionnaire de ressources,...) et fait la passerelle 
+	entre ces plugins et les applications du produit
+	La librairie libbridgedapi permet elle la communication avec le daemon bridged.
+
+  plugins/
+	ce repertoire contient les sources des differents plugins proposes. Il est compose de deux 
+	repertoires, un pour les plugins des systemes de Batch (batch) et un pour les plugins des 
+	gestionnaires de resources (rm, pour resource manager). Chacun de ces deux repertoires contient
+	a son tour les repertoires propres a chaque systeme supporte
+
+  src/
+	ce repertoire contient les sources du jeu de commandes lie a la librairie libbridge ainsi que du daemon 
+	bridged
+
+  scripts/
+	ce repertoire contient les scripts du jeu de commandes de base et les plugins et/ou addons
+	associes. Les commandes scripts permettre d'etendre les fonctionalites de bases fournies par
+	les commandes binaires fournies par dans le repertoire "src"
+
+  etc/
+	ce repertoire contient les squelettes des fichiers de configuration necessaires au produit 
+
+  build-aux/
+	ce repertoire contient les fichiers de travail d'autotools pour la portabilite du produit
+
+  m4/
+	ce repertoire contient les add-ons autotools permettant la simplification de la configuration
+	et de l'installation du produit
+
+ 
+Configuration et installation du produit
+----------------------------------------
+
+Pour commencer, il est souhaitable de verifier que les systemes de Batch et les gestionnaires de ressources
+de la machine cible sont supportes par le produit. Pour cela, il suffit d'executer la commande suivante dans 
+le repertoire du produit (precedemment extrait) :
+
+bash$ ./configure --help
+`configure' configures bridge 1.2.0 to adapt to many kinds of systems.
+
+Usage: ./configure [OPTION]... [VAR=VALUE]...
+
+To assign environment variables (e.g., CC, CFLAGS...), specify them as
+VAR=VALUE.  See below for descriptions of some of the useful variables.
+
+Defaults for the options are specified in brackets.
+
+Configuration:
+  -h, --help              display this help and exit
+      --help=short        display options specific to this package
+      --help=recursive    display the short help of all the included packages
+  -V, --version           display version information and exit
+  -q, --quiet, --silent   do not print `checking...' messages
+      --cache-file=FILE   cache test results in FILE [disabled]
+  -C, --config-cache      alias for `--cache-file=config.cache'
+  -n, --no-create         do not create output files
+      --srcdir=DIR        find the sources in DIR [configure dir or `..']
+
+Installation directories:
+  --prefix=PREFIX         install architecture-independent files in PREFIX
+                          [/usr/local]
+  --exec-prefix=EPREFIX   install architecture-dependent files in EPREFIX
+                          [PREFIX]
+
+By default, `make install' will install all the files in
+`/usr/local/bin', `/usr/local/lib' etc.  You can specify
+an installation prefix other than `/usr/local' using `--prefix',
+for instance `--prefix=$HOME'.
+
+For better control, use the options below.
+
+Fine tuning of the installation directories:
+  --bindir=DIR           user executables [EPREFIX/bin]
+  --sbindir=DIR          system admin executables [EPREFIX/sbin]
+  --libexecdir=DIR       program executables [EPREFIX/libexec]
+  --datadir=DIR          read-only architecture-independent data [PREFIX/share]
+  --sysconfdir=DIR       read-only single-machine data [PREFIX/etc]
+  --sharedstatedir=DIR   modifiable architecture-independent data [PREFIX/com]
+  --localstatedir=DIR    modifiable single-machine data [PREFIX/var]
+  --libdir=DIR           object code libraries [EPREFIX/lib]
+  --includedir=DIR       C header files [PREFIX/include]
+  --oldincludedir=DIR    C header files for non-gcc [/usr/include]
+  --infodir=DIR          info documentation [PREFIX/info]
+  --mandir=DIR           man documentation [PREFIX/man]
+
+Program names:
+  --program-prefix=PREFIX            prepend PREFIX to installed program names
+  --program-suffix=SUFFIX            append SUFFIX to installed program names
+  --program-transform-name=PROGRAM   run sed PROGRAM on installed program names
+
+System types:
+  --build=BUILD     configure for building on BUILD [guessed]
+  --host=HOST       cross-compile to build programs to run on HOST [BUILD]
+
+Optional Features:
+  --disable-FEATURE       do not include FEATURE (same as --enable-FEATURE=no)
+  --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
+  --enable-shared[=PKGS]
+                          build shared libraries [default=yes]
+  --enable-static[=PKGS]
+                          build static libraries [default=yes]
+  --enable-fast-install[=PKGS]
+                          optimize for fast installation [default=yes]
+  --disable-dependency-tracking  speeds up one-time build
+  --enable-dependency-tracking   do not reject slow dependency extractors
+  --disable-libtool-lock  avoid locking (might break parallel builds)
+
+Optional Packages:
+  --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
+  --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
+  --with-gnu-ld           assume the C compiler uses GNU ld [default=no]
+  --with-pic              try to use only PIC/non-PIC objects [default=use
+                          both]
+  --with-tags[=TAGS]
+                          include additional configurations [automatic]
+  --with-lsf[=PATH]
+                          Specify LSF support and path
+  --with-lsf-lib[=PATH]
+                          Specify LSF libraries path
+  --with-lsf-slurm        Specify LSF with Slurm binding support
+  --with-nqsII[=PATH]
+                          Specify NQSII support and path
+  --with-nqsII-lib[=PATH]
+                          Specify NQSII libraries path
+  --with-slurm[=PATH]
+                          Specify SLURM support and path
+  --with-slurm-lib[=PATH]
+                          Specify SLURM libraries path
+
+Some influential environment variables:
+  CC          C compiler command
+  CFLAGS      C compiler flags
+  LDFLAGS     linker flags, e.g. -L<lib dir> if you have libraries in a
+              nonstandard directory <lib dir>
+  CPPFLAGS    C/C++ preprocessor flags, e.g. -I<include dir> if you have
+              headers in a nonstandard directory <include dir>
+  CPP         C preprocessor
+  CXX         C++ compiler command
+  CXXFLAGS    C++ compiler flags
+  CXXCPP      C++ preprocessor
+  F77         Fortran 77 compiler command
+  FFLAGS      Fortran 77 compiler flags
+
+Use these variables to override the choices made by `configure' or to help
+it to find libraries and programs with nonstandard names/locations.
+
+Report bugs to <matthieu.hautreux@cea.fr>.
+bash$
+
+On constate ici que LSF, LSF avec binding Slurm, NQS, et Slurm sont supportes. (via les --with-*)
+Il est possible de specifier les chemins d'acces aux produits lorsque ceux-ci ne sont pas places aux 
+emplacements par defaut. Dans ce cas, le chemin indiquer doit permettre d'acceder aux entetes en lui 
+ajoutant 'include' et aux librarires en lui ajoutant 'lib'. Le repertoire des librairies peut toutefois
+etre indiquement independamment en utilisant l'option '--with-produit-lib=PATH'. A ce moment la, le chemin
+indique est directement le chemin incluant le repertoire 'lib'.
+
+Lors de la phase de configuraiton, les fichiers de configuration sont automatiquement generes en fonction des choix de produits operes.
+
+Exemple de commande de configuration :
+
+bash$ ./configure --with-lsf=/usr/local/lsf/6.2 --with-lsf-lib=/usr/local/lsf/6.2/linux2.6-glibc2.3-ia64-slurm/lib --with-lsf-slurm --with-slurm \
+--prefix=/usr/local/bridge
+
+Il suffit ensuite de lancer la compilation puis l'installation :
+
+bash$ make
+
+	.....
+
+bash$ make install
+
+	.....
+
+bash$
+
+Remarque : avec autotools, il est possible d'ajouter un prefix a toutes les commandes installees. Pour cela il suffit d'utiliser le parametre
+--program-prefix lors du configure. Exemple : 
+
+bash$  ./configure --with-lsf=/usr/local/lsf/6.2 --with-lsf-lib=/usr/local/lsf/6.2/linux2.6-glibc2.3-ia64-slurm/lib --with-lsf-slurm --with-slurm \
+--program-prefix=ccc_ --prefix=/usr/local/bridge
+
+Remarque bis : avec autotools, il est facile d'installer le programme dans un autre repertoire que le prefix choisi, afin de verifier le contenu
+genere, et eventuellement de le repackager. Par exemple, pour generer le produit dans le repertoire /tmp, il suffit de faire :
+
+bash$ make install DESTDIR=/tmp
+
+Les fichiers de configuration se trouvent a la racine du repertoire `prefix`/etc/ ou dans le repertoire `sysconf-dir`.
+
+Utilisation
+------------
+
+A l'issu de l'installation, les commandes utilisateurs sont accessibles dans le repertoire 'bin', et le daemon bridged dans le repertoire 'sbin'
+La liste suivante decrit les commandes principales fournies actuellement :
+
+	[haut niveau|scripts]
+	- msub          : permet de soumettre un travail batch (session batch executant le script fourni)
+	- mstat         : permet d'obtenir des informations sur les sessions batch actives et/out terminees
+	- mdel          : permet d'arreter/signaler une session Batch
+	- mprun		: permet de lancer une application parallele
+
+	[bas niveau|executable C]
+	- bmstat	: permet d'obtenir des informations sur le systeme Batch actif
+	- bqstat        : permet d'obtenir des informations sur les queues Batch disponibles
+	- bnstat        : permet d'obtenir des informations sur les noeuds Batch disponibles
+	- bqstat        : permet d'obtenir des informations sur les sessions Batch actives et/ou terminees
+
+	- rmmstat       : permet d'obtenir des informations sur le gestionnaire de ressources actif
+	- rmpstat       : permet d'obtenir des informations sur les partitions gerees par le gestionnaire de ressources
+	- rmastat       : permet d'obtenir des informations sur les allocations actives et/ou terminees
+
+Si toutefois vous avez utilisez l'option --program-prefix, ces scripts se nommeront program-prefix*. (par exemple, pour le prefix ccc_, on aura les
+applications ccc_msub, ccc_mstat,...)
+
+Il est possible d'ajouter des addons aux parties Batch et gestion de ressources de Bridge. Pour cela, il suffit de placer les scripts d'addons dans
+les repertoires adhoc (${prefix}/share/scripts/batch_system/addons et ${prefix}/share/scripts/resource_manager/addons). Un ensemble d'addons est fournit
+par defaut dans le repertoire ${prefix}/share/scripts/addons.
+
+Attention, tous les addons ne fonctionnent pas dans les deux types d'utilisation mentionnes. Cf l'addon example.ad pour plus d'informations sur les addons.
+

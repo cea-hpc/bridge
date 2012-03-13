@@ -1,0 +1,92 @@
+
+#################################################################################
+#
+# Addon to broadcast executable in Bridge with Slurm prior parallel launch
+#
+# 
+#################################################################################
+
+function bridge_addon_mprun_setopt {
+
+    return 0
+
+}
+
+function bridge_addon_mprun_getopt {
+    
+    return 0
+
+}
+
+function bridge_addon_mprun_alteropt {
+
+ ## on se place en mode debug si souhaite
+    typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+        then
+        set -x
+    fi
+
+    ## on incremente le niveau de log
+    typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+
+    ## on ajoute une entete a la log
+    typeset LOGGER="${LOGGER} Inter-para-limits Addon :"
+
+    if [ "$BRIDGE_MSUB_MAXTIME" != "" ] ;then
+      return 0
+    fi
+      
+
+    LIMIT_FILE=$BRIDGE_MPRUN_MAXTIME_CONF_FILE
+    if [ ! -f $LIMIT_FILE ] ; then
+            return 0
+    fi
+
+    # on fixe une valeur de depart nulle et on parse le fichier de conf
+    # a la recherche de la valeur correspondant au nombre demande
+    TIMELIMIT=0
+    while read LINE
+      do
+      echo $LINE | grep "#" >/dev/null
+      if [ $? = 0 ] ; then continue ; fi
+      set -- $LINE
+      PE=$1 ; TLIM=$2
+      if [ "$bridge_mprun_nproc" -le $PE -o  $PE = "-1" ]
+          then
+          TIMELIMIT=$TLIM
+          break
+      fi
+    done < $LIMIT_FILE
+
+    if [ "$bridge_mprun_maxtime" = "" -o  "$bridge_mprun_maxtime" -gt $TIMELIMIT ] ; then
+       ${LOGGER} "set time limit to $TIMELIMIT sec"
+       bridge_mprun_maxtime=$TIMELIMIT
+    fi
+
+    return 0
+}
+
+function bridge_addon_mprun_spmd_pre_run {
+
+ return 0
+
+}
+
+function bridge_addon_mprun_spmd_pre_allocate {
+
+    return 0
+
+}
+
+function bridge_addon_mprun_spmd_post_allocate {
+
+    return 0
+
+}
+
+function bridge_addon_mprun_spmd_post_run {
+
+    return 0
+    
+}

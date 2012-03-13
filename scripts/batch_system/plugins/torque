@@ -1,0 +1,698 @@
+#!/bin/ksh
+#
+###################################################################################################################
+
+# build nodes requirements string
+# syntax : build_nodes_list nnode nprocpernode constraints
+# exp
+#   build_nodes_req 2 4 "blue:bigmem"
+# result
+#   ppn=4:blue:bigmem+ppn=4:blue:bigmem
+#
+function build_nodes_req {
+
+    typeset fstatus=255
+
+    typeset ct
+    typeset ctl
+
+    typeset nc
+    typeset nn
+
+    typeset val=""
+
+    if [[ $# -lt 2 ]]
+	then
+	return 1
+    fi
+
+    nn=$1
+    nc=$2
+
+    shift 2
+
+    if [[ ${nn} -ge 1 ]]
+	then
+
+	ct=${nn}
+        val="ppn=${nc}"
+
+	if [[ $# -eq 1 ]]
+	    then
+	    val="${val}:$1"
+	fi
+
+	while [[ ${ct} -gt 1 ]]
+	  do
+	  val="${val}+ppn=${nc}"
+	  if [[ $# -eq 1 ]]
+	      then
+	      val="${val}:$1"
+	  fi
+	  (( ct = ct - 1 ))
+	done
+	
+	echo ${val}
+	fstatus=0
+    fi
+
+    return ${fstatus}
+}
+
+###################################################################################################################
+# Fonction de soumission
+# version 1.0
+#------------------------------------------------------------------------------------------------------------------
+#
+# Arguments :
+#
+#  -r request_name              nom de la requete 
+#  -s study                     nom de l'etude a laquelle se rapporte la soumission
+#  -A project                   nom du projet auquel se rapporte la soumission
+#
+#  -W                           flag indiquant que deux jobs portant le meme nom de requete peuvent s'executer en simultane
+#
+#  -S [[month:]day:]hour:minute date de demarrage de l'application               
+#  -q queue                     queue d'execution batch a utiliser
+#
+#  -o output_file               fichier ou stocker le stdout 
+#  -e error_file                fichier ou stocker le stderr
+#
+#  -N nnode                     nombre de noeud parallele souhaite en exclusif
+#  -n nproc                     nombre de processus parallele en exclusif
+#  -c ncoreperproc              nombre de core par processus parallele en exclusif (1 par defaut)
+#  -m tsmemlimit                quantite max de memoire utilisable en fonctionnement "time sharing"
+#  -t tstimelimit               quantite max de temps utilisable en fonctionnement "time sharing"
+#  -M tsmemlimit                quantite max de memoire utilisable en fonctionnement "exclusive"
+#  -T tstimelimit               quantite max de temps utilisable en fonctionnement "exclusive"
+#
+#  -L "licenses..."             chaine contenant les parametres de licences
+#  -K                           allocation des processeurs en debut de job
+#
+#------------------------------------------------------------------------------------------------------------------
+function submit_cmd {
+    
+    ## on se place en mode debug si souhaite
+    typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+	then
+	set -x
+    fi
+
+    ## on incremente le niveau de log
+    typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+
+    ## on fixe les variables de travail
+    typeset VERSION="Torque-1.0"
+    typeset exit_status=0
+    typeset local_submit_cmd=${bridge_msub_cmd:-qsub}
+    typeset local_submit_args="-V ${bridge_msub_args}"
+    typeset LOCAL_ARGEXP1=
+    typeset LOCAL_ARGEXP2=
+    typeset LOCAL_FILEARG=
+    typeset LOCAL_SCRIPTFILE=
+    typeset LOCAL_SCRIPTMODE=
+
+    ## on fixe les variables de parametrage
+    typeset request_name=
+    typeset study_name=
+    typeset project_name=
+    typeset same_request_at_same_time_flag=0
+    typeset requested_start_time=
+    typeset requested_queue=
+    typeset output_file=
+    typeset error_file=
+    typeset nnode=
+    typeset nproc=
+    typeset ncoreperproc=
+    typeset time_sharing_memlimit
+    typeset time_sharing_timelimit
+    typeset exclusive_memlimit
+    typeset exclusive_timelimit
+    typeset requested_licenses=""
+    typeset keep_allocation=""
+    typeset extra_parameters=""
+    typeset mail_info=""
+    typeset mail_addr=""
+
+    typeset torque_resources=""
+    
+    ## on lit les parametres en entree et on les places dans une variable
+    ## de stockage, elle seront utilisees ulterieurement
+    while getopts r:o:e:s:A:N:n:c:m:t:M:T:L:q:S:KVWE:@: option
+      do
+      case ${option} in
+	  r)
+	      LOCAL_ARGEXP1="$LOCAL_ARGEXP1""request_name=${OPTARG}; "
+	      ;;
+	  s)
+	      LOCAL_ARGEXP1="$LOCAL_ARGEXP1""study_name=${OPTARG}; "
+	      ;;
+	  A)
+	      LOCAL_ARGEXP1="$LOCAL_ARGEXP1""project_name=${OPTARG}; "
+	      ;;
+	  W)
+	      same_request_at_same_time_flag=1
+	      ;;
+	  S)
+	      LOCAL_ARGEXP1="$LOCAL_ARGEXP1""requested_start_time=${OPTARG}; "
+	      ;;
+	  q)
+	      LOCAL_ARGEXP1="$LOCAL_ARGEXP1""requested_queue=${OPTARG}; "
+	      ;;
+	  ## on traduit un eventuel %I signifiant l'ID du job par l'equivalent Torque
+	  o)
+	      LOCAL_ARGEXP1="$LOCAL_ARGEXP1""output_file=${OPTARG}; "
+	      ;;
+	  ## on traduit un eventuel %I signifiant l'ID du job par l'equivalent Torque
+	  e)
+	      LOCAL_ARGEXP1="$LOCAL_ARGEXP1""error_file=${OPTARG}; "
+	      ;;
+	  N)
+	      LOCAL_ARGEXP1="$LOCAL_ARGEXP1""nnode=${OPTARG}; "
+	      ;;
+	  n)
+	      LOCAL_ARGEXP1="$LOCAL_ARGEXP1""nproc=${OPTARG}; "
+	      ;;
+	  c)
+	      LOCAL_ARGEXP1="$LOCAL_ARGEXP1""ncoreperproc=${OPTARG}; "
+	      ;;
+	  m)
+	      LOCAL_ARGEXP1="$LOCAL_ARGEXP1""time_sharing_memlimit=${OPTARG}; "
+	      ;;
+	  t)
+	      LOCAL_ARGEXP1="$LOCAL_ARGEXP1""time_sharing_timelimit=${OPTARG}; "
+	      ;;
+	  M)
+	      LOCAL_ARGEXP1="$LOCAL_ARGEXP1""exclusive_memlimit=${OPTARG}; "
+	      ;;
+	  T)
+	      LOCAL_ARGEXP1="$LOCAL_ARGEXP1""exclusive_timelimit=${OPTARG}; "
+	      ;;
+	  L)
+	      LOCAL_ARGEXP1="$LOCAL_ARGEXP1""requested_licenses=${OPTARG}; "
+	      ;;
+	  K)
+	      keep_allocation=1
+	      ;;
+	  V)
+	      echo ${VERSION}
+	      return 0
+	      ;;
+	  E)
+	      extra_parameters="${OPTARG}"
+	      ;;
+	  @)
+	      mail_addr=${OPTARG%%:*}
+	      if [[ ${OPTARG} != ${mail_addr} ]]
+		  then
+		  mail_info=${OPTARG#*:}
+	      fi
+	      ;;
+	  *)
+	      exit_status=255
+	      break
+	      ;;
+      esac
+    done
+    shift ${OPTIND}-1 2>/dev/null
+
+    ## on verifie qu'un argument script est fourni ( le caractere - pour une lecture sur stdin)
+    LOCAL_FILEARG=$1
+    if [ "$LOCAL_FILEARG" = "" ] ;then
+        echo "$0 : argument absent" >&2
+        exit 2
+    fi
+    
+    ## on fixe le nom de la requete a partir du nom du script a executer ou par STDIN si lecture sur STDIN
+    ## on le fixe tout d'abord a la valeur de scriptname pour commencer afin de charger la valeur devinee par msub
+    if [[ -z ${request_name} ]]
+	then
+	request_name=${scriptname}
+    fi
+    if [ "$LOCAL_FILEARG" = "-" ]; then
+        LOCAL_SCRIPTFILE=$SCRATCHDIR/STDIN$$
+        cat - > $LOCAL_SCRIPTFILE
+        LOCAL_SCRIPTMODE=1
+	## on fixe un nom de requete si on en a pas (il sera eventuellement surcharge si le script en contient un)
+	if [[ -z ${request_name} ]]
+	    then
+	    request_name=STDIN
+	fi
+    else
+        LOCAL_SCRIPTMODE=0
+        LOCAL_SCRIPTFILE=$LOCAL_FILEARG
+	## on fixe un nom de requete si on n'en a pas ( il sera eventuellement surcharge si le script en contient un)
+	if [[ -z ${request_name} ]]
+	    then
+	    request_name=$(basename $LOCAL_FILEARG)
+	fi
+    fi
+
+    ## on definit le script AWK d'extraction des options PBS a prendre en compte lors de la soumission :
+    ##  - fichiers stdout/stderr, afin d'evaluer les variables ou autres commandes (exp : #PBS -o $HOME/test.o)
+    ##  - nom de la requete, afin de faciliter l'association d'un nom de programme a un script
+    ##  - projet impacte par l'execution, pour la comptabilite
+    AWKSCRIPT='
+/^#PBS/ {
+        opt=0
+        for(i=2; i<=NF; i++)
+                if ($i=="-e") {
+                        printf("error_file=")
+                        i++
+                        printf("%s ", $i)
+                        opt=1
+                }
+                else if ($i=="-o") {
+                        printf("output_file=")
+                        i++
+                        printf("%s ", $i)
+                        opt=1
+                }
+               else if ($i=="-N") {
+                        printf("request_name=")
+                        i++
+                        printf("%s ", $i)
+                        opt=1
+                }
+               else if ($i=="-A") {
+                        printf("project_name=")
+                        i++
+                        printf("%s ", $i)
+                        opt=1
+                }
+
+        if ($opt==1) { printf("; ") }
+ }
+'
+
+    ## on associe certaines options du script aux variables
+    ## locales
+    LOCAL_ARGEXP2=`awk "$AWKSCRIPT" < $LOCAL_SCRIPTFILE`
+    eval $LOCAL_ARGEXP2
+    
+    ## on associe les options fournies en parametre aux variables
+    ## locales (surcharge des options du script)
+    eval $LOCAL_ARGEXP1
+
+    # on exporte les variables potentiellement modifiee par les options torque
+    # du scripts
+    export BRIDGE_MSUB_REQNAME=${request_name}
+    export BRIDGE_MSUB_PROJECT=${project_name}
+    export BRIDGE_MSUB_STDOUT=${output_file}
+    export BRIDGE_MSUB_STDERR=${error_file}
+
+    ## on fixe le nom de la requete
+    if [[ -n ${request_name} ]]
+	then
+	local_submit_args="${local_submit_args} -N ${request_name}"
+    fi
+
+    ## Torque ne supporte pas cette option
+#     if [[ -n ${study_name} ]]
+#     then
+# 	local_submit_args="${local_submit_args} -s ${study_name}"   #PBS -N MONJOB
+#     fi
+
+    ## on fixe le projet associe a la requete (account torque)
+    if [[ -n ${project_name} ]]
+	then
+	local_submit_args="${local_submit_args} -A ${project_name}"
+    fi
+
+    ## LSF ne supporte pas cette option
+#     if [[ ${same_request_at_same_time_flag} -ne 0 ]]
+# 	then
+# 	local_submit_args="${local_submit_args} -W"
+#     fi
+
+    ## on fixe les informations concernant le mail
+    if [[ -n ${mail_addr} ]]
+	then
+	local_submit_args="${local_submit_args} -M ${mail_addr}"
+	case ${mail_info} in
+	    begin)
+		local_submit_args="${local_submit_args} -m ab"
+		;;
+	    "begin,end")
+		local_submit_args="${local_submit_args} -m abe"
+		;;
+	    *)
+		local_submit_args="${local_submit_args} -m ae"
+		;;
+	esac
+    fi
+
+    ## on fixe la date de depart de l'execution
+    if [[ -n ${requested_start_time} ]]
+	then
+	local_submit_args="${local_submit_args} -a $(echo ${requested_start_time} | tr '/' ':' | tr ' ' ':' | sed 's/\://')"
+    fi
+
+    ## on fixe la queue d'execution souhaitee
+    if [[ -n ${requested_queue} ]]
+	then
+	local_submit_args="${local_submit_args} -q ${requested_queue}"
+    fi
+
+    ## on fixe le fichier pour le stdout
+    ## si il n'est pas precise, on laisse Torque le faire
+    ## car on a pas la possibilite de creer les ${request_name}.%I.{o,e}
+    ## Torque ne gere pas les ID en %I ou autres
+    if [[ -n ${output_file} ]]
+	then
+	local_submit_args="${local_submit_args} -o ${output_file}"
+	export BRIDGE_MSUB_STDERR=""
+    fi
+
+    ## on fixe le fichier pour le stderr
+    ## si il n'est pas precise, on laisse Torque le faire
+    ## car on a pas la possibilite de creer les ${request_name}.%I.{o,e}
+    ## Torque ne gere pas les ID en %I ou autres
+    if [[ -n ${error_file} ]]
+	then
+	local_submit_args="${local_submit_args} -e ${error_file}"
+	export BRIDGE_MSUB_STDERR=""
+    fi
+
+    ## Torque permet simplement de definir un nombre de noeuds et le nombre 
+    ## de cores par noeud
+    ## il faut donc calculer ces valeurs
+    if [[ ${nnode} -gt 0 ]]
+	then
+	typeset ncore=${ncoreperproc:-1}
+	if [[ ${nproc} -gt 0 ]]
+	    then
+	    ### 15/04/2009
+	    ### un bug avec torque-2.3.6 semble empecher l'utilisation
+	    ### de la syntaxe nodes=2:ppn=4+3:ppn=6 ...
+	    ### les parties 2:... avec les + de separation semble bloquer le
+	    ### scheduler
+	    ### on remplace donc ca par plus de +... pour eviter de specifier
+	    ### le nombre
+	    ### de plus quand un seul 2:... est utilise, tout est mis sur le 
+	    ### meme noeud physique...donc on applique la meme methode que
+	    ### precedemment afin que ce ne soit plus le cas
+	    typeset ncorepernode=0
+	    typeset nprocpernode=0
+	    typeset residu=0
+	    typeset ct
+	    typeset ctl
+	    (( nprocpernode = nproc / nnode ))
+	    (( residu = nproc % nnode ))
+	    (( ncorepernode = nprocpernode * ncore ))
+	    if [[ ${residu} -eq 0 ]]
+		then
+		torque_resources="${torque_resources},nodes=$(build_nodes_req ${nnode} ${ncorepernode})"
+	    else
+		(( nnode = nnode - 1 ))
+		torque_resources="${torque_resources},nodes=$(build_nodes_req ${nnode} ${ncorepernode})"
+		(( ncorepernode = ncorepernode + residu * ncore ))
+		torque_resources="${torque_resources}+$(build_nodes_req 1 ${ncorepernode})"
+		(( nnode = nnode + 1 ))
+	    fi
+	else
+	    ## compatibilite DAM, l'option 'N' si 'n' n'est pas defini, correspond a nproc
+	    typeset total_ncore
+	    nproc=${nnode}
+	    (( total_ncore = nproc * ncore ))
+	    torque_resources="${torque_resources},nodes=${total_ncore}"
+	fi
+    else
+	if [[ ${nproc} -gt 0 ]]
+	    then
+	    typeset ncore=${ncoreperproc:-1}
+	    typeset total_ncore
+	    (( total_ncore = nproc * ncore ))
+	    torque_resources="${torque_resources},nodes=${total_ncore}"
+	else
+	    echo "error : invalid resources specification (-N${nnode:-_undefined_},-n${nproc:-_undefined_})" >&2
+	    return 1
+	fi
+    fi
+
+    ## Torque ne supporte pas les deux types de memoire, par default l'exclusive(parallele)
+    ## est prefere
+    ## De plus Torque utilise une limite globale pour le job, on multiplie donc la memoire
+    ## requise par processus par le nombre de processus demande
+    nproc=${nproc:-1}
+    if [[ -n ${exclusive_memlimit} ]]
+	then
+	typeset memlimit
+	(( memlimit = nproc * exclusive_memlimit ))
+	torque_resources="${torque_resources},mem=${memlimit}mb,pmem=${exclusive_memlimit}"
+    elif [[ -n ${time_sharing_memlimit} ]]
+        then
+	typeset memlimit
+	(( memlimit = nproc * time_sharing_memlimit ))
+	torque_resources="${torque_resources},mem=${memlimit}mb,pmem=${time_sharing_memlimit}"
+    fi
+
+    ## Torque ne supporte pas les deux types de temps, par default l'exclusive(parallele)
+    ## est prefere
+    if [[ -n ${exclusive_timelimit} ]]
+	then
+	torque_resources="${torque_resources},walltime=${exclusive_timelimit}"
+    elif [[ -n ${time_sharing_timelimit} ]]
+	then
+	torque_resources="${torque_resources},walltime=${time_sharing_timelimit}"
+    fi
+    
+    ## Pas encore pris en compte
+#     if [[ -n ${requested_licenses} ]]
+# 	then
+# 	local_submit_args="${local_submit_args} -L \"${requested_licenses}\""
+#     fi
+
+    ## Torque par defaut fait toujours une allocation des le depart
+#     if [[ -n ${keep_allocation} ]]
+# 	then
+# 	local_submit_args="${local_submit_args}"
+#     fi
+
+    ## on supprime la premiere virgule et on fixe les resources demandees
+    if [[ -n ${torque_resources} ]]
+	then
+	torque_resources="${torque_resources#*,}"
+	local_submit_args="${local_submit_args} -l${torque_resources}"
+    fi
+
+    ## pas de probleme, on soumet
+    if [ ${exit_status} -eq 0 ]
+	then
+	${LOGGER} -- "${local_submit_cmd} ${local_submit_args} ${extra_parameters} < $LOCAL_SCRIPTFILE"
+	output=$(${local_submit_cmd} ${local_submit_args} ${extra_parameters} < $LOCAL_SCRIPTFILE 2>&1)
+	exit_status=$?
+    fi
+
+    ## si la soumission a ete faite par lecture du script sur stdin
+    ## on supprime le fichier temporaire cree
+    if [ "${LOCAL_SCRIPTMODE}" = 1 ] ;then
+	\rm ${LOCAL_SCRIPTFILE}
+    fi
+
+    ## on affiche en sortie simplement l'ID du job soumis
+    if [[ -n ${output} ]]
+	then
+	## si pb d'execution, on affiche l'output sinon on le filtre
+	if [[ ${exit_status} -eq 0 ]]
+	    then
+	    # les lignes en sortie de Torque sont de la forme :
+	    # 140.cesium0.local
+	    # on affiche que l'ID
+	    output=${output%%.*}
+	    echo "${BRIDGE_MSUB_SUBMISSION_MESSAGE}${output}"
+	else
+	    echo ${output}
+	fi
+    fi
+    
+    ## on renvoie le code de retour
+    return ${exit_status}
+}
+
+
+###################################################################################################################
+# Fonction d'obtention d'informations detaillees sur une session batch
+# version 1.0
+#------------------------------------------------------------------------------------------------------------------
+# Usage : bsinfo_cmd [-V] [-H] batchid [batchid ...]
+#
+# Arguments :
+#
+#         -H                      Get information in history data
+#         -V                      Print function version
+#
+#------------------------------------------------------------------------------------------------------------------
+function bsinfo_cmd {
+
+    ## on se place en mode debug si souhaite
+    typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+	then
+	set -x
+    fi
+
+    ## on incremente le niveau de log
+    typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+
+    ## on fixe les variables de travail
+    typeset VERSION="Torque-1.0"
+    typeset history_mode=no
+
+    ## on lit les parametres
+    while getopts VH option
+      do
+      case ${option} in
+	  V)
+	      echo ${VERSION}
+	      return 0
+	      ;;
+	  H)
+	      history_mode=yes
+	      ;;
+      esac
+    done
+    shift ${OPTIND}-1 2>/dev/null
+
+    ## on verifie qu'au moins un batchid est donne
+    if [[ $# -eq 0 ]]
+	then
+	${LOGGER} "Bad usage : no batchid specified"
+	return 255
+    fi
+    
+    ## on agit en fonction du mode
+    if [[ ${history_mode} = yes ]]
+	then
+	qstat -f $@
+    else
+	qstat -n -1 $@
+    fi
+        
+    return $?
+}
+
+
+###################################################################################################################
+# Fonction d'arret et/ou de transmission d'un signal a une session batch
+# version 1.0
+#------------------------------------------------------------------------------------------------------------------
+# Usage : bsdel_cmd [-V] [-k] [-K] [-s signal] [-r allocid] batchid [batchid ...]
+#
+# Arguments :
+#        -V          : print function version
+#
+#        -k          : kill mode
+#        -K          : kill mode with batch system database remove of the batch session
+#
+#        -s signal   : signal to send
+#        -r allocid  : resource allocation to signal/delete inside the batch session
+#        batchid     : ID of the targeted batch session
+#
+#------------------------------------------------------------------------------------------------------------------
+function bsdel_cmd {
+
+    ## on se place en mode debug si souhaite
+    typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+	then
+	set -x
+    fi
+
+    ## on incremente le niveau de log
+    typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+
+    ## on fixe les variables de travail
+    typeset VERSION="Torque-1.0"
+    typeset LOCAL_ERROR=
+    typeset exit_status=0
+    typeset qdel_cmd=qdel
+    typeset qsig_cmd=qsig
+    typeset kill_mode=no
+    typeset kill_and_remove_mode=no
+    typeset signal=SIGTERM
+    typeset allocid=
+
+    ## on lit les parametres
+    while getopts VkKs:r: option
+      do
+      case ${option} in
+	  V)
+	      echo ${VERSION}
+	      return 0
+	      ;;
+	  k)
+	      kill_mode=yes
+	      ;;
+	  K)
+	      kill_and_remove_mode=yes
+	      ;;
+	  s)
+	      signal=${OPTARG}
+	      ;;
+	  r)
+	      ## avec Torque, on ne peut pas atteindre les allocations sous-jacente
+	      ## on enregistre la valeur mais on ne s'en servira pas
+	      allocid=${OPTARG}
+	      ;;
+      esac
+    done
+    shift ${OPTIND}-1 2>/dev/null
+
+    ## on verifie qu'au moins un batchid est donne
+    if [[ $# -eq 0 ]]
+	then
+	${LOGGER} "Bad usage : no batchid specified"
+	return 255
+    fi
+
+    ## si on est en mode remove, on supprime toute reference de cette session
+    ## dans la liste des sessions actives de Torque
+    if [[ ${kill_and_remove_mode} = yes ]]
+	then
+	${LOGGER} "Command : ${qdel_cmd} -p $@"
+	LOCAL_ERROR=$(${qdel_cmd} -p $@ 2>&1)
+	exit_status=$?
+	if [[ ${exit_status} -ne 0 ]]
+	    then
+	    ${LOGGER} ${LOCAL_ERROR}
+	fi
+	return ${exit_status}
+    fi
+    
+    ## le mode kill correspond a un qdel
+    ## si le signal a transmettre est SIGTERM ou SIGKILL
+    ## on utilise aussi le mode kill
+    ## cela est necessaire pour supprimer les jobs pending 
+    ## car le qsig ne marche pas pour ces jobs la
+    case ${signal} in
+	TERM|SIGTERM|KILL|SIGKILL)
+	    kill_mode=yes
+	    ;;
+    esac
+  
+    if [[ ${kill_mode} = yes ]]
+	then
+	${LOGGER} "Command : ${qdel_cmd} $@"
+	LOCAL_ERROR=$(${qdel_cmd} $@ 2>&1)
+	exit_status=$?
+	if [[ ${exit_status} -ne 0 ]]
+	    then
+	    ${LOGGER} ${LOCAL_ERROR}
+	fi
+	return ${exit_status}
+    fi
+    
+    ## le mode signal utilise qsig
+    ${LOGGER} "Command : ${qsig_cmd} -s ${signal} $@"
+    LOCAL_ERROR=$(${qsig_cmd} -s ${signal} $@ 2>&1)
+    exit_status=$?
+    if [[ ${exit_status} -ne 0 ]]
+	then
+	${LOGGER} ${LOCAL_ERROR}
+    fi
+
+    ## on renvoie le code de retour
+    return ${exit_status}
+}

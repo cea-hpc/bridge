@@ -1,0 +1,148 @@
+#!/bin/ksh
+#
+#/********************************************************************************************************************\
+#
+# Cet addon msub permet de se placer en mode MPMD en environnement station (plugin ws)
+#
+#\********************************************************************************************************************/
+
+function bridge_addon_mprun_setopt {
+
+    typeset MYGETOPTOPTION="f:"
+
+    echo "${BRIDGE_MPRUN_GETOPT_OPTIONS}" | grep -q ${MYGETOPTOPTION}
+
+    if [ $? -ne 0 ]
+	then
+	BRIDGE_MPRUN_GETOPT_OPTIONS="${BRIDGE_MPRUN_GETOPT_OPTIONS}${MYGETOPTOPTION}"
+    fi
+
+    return 0
+
+}
+
+function bridge_addon_mprun_getopt {
+    
+    ## on se place en mode debug si souhaite
+    typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+	then
+	set -x
+    fi
+    
+    ## on incremente le niveau de log
+    typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+    
+    ## on ajoute une entete a la log
+    typeset LOGGER="${LOGGER} MPMD Addon :"
+
+    ## par defaut, on desactive le mode MPMD
+    if [[ -z ${BRIDGE_MPRUN_ADDON_MPMD} ]]
+	then
+	BRIDGE_MPRUN_ADDON_MPMD=
+    fi
+
+    ## on fixe le message d'aide a afficher si demande
+    typeset USAGE="\
+\t*) MPMD (Multiple Programs Multiple Data)
+\t\t -f descfile : activate MPMD mode using tasks description file 'descfile'\n"
+    
+    ## on fixe le status de sortie par defaut
+    typeset exit_status=0
+    
+    ## on parse les arguments
+    while getopts ${BRIDGE_MPRUN_GETOPT_OPTIONS} option
+      do
+      case ${option} in
+	  
+	  h)
+	      echo -e "${USAGE}" >&2
+	      return 0
+	      ;;
+
+	  f)
+	      BRIDGE_MPRUN_ADDON_MPMD=${OPTARG}
+	      ;;
+
+	  *)
+	      ;;
+      esac
+    done
+    export BRIDGE_MPRUN_ADDON_MPMD
+    
+    return ${exit_status}
+}
+
+
+function bridge_addon_mprun_alteropt {
+
+    ## on se place en mode debug si souhaite
+    typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+	then
+	set -x
+    fi
+    
+    ## on incremente le niveau de log
+    typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+    
+    ## on ajoute une entete a la log
+    typeset LOGGER="${LOGGER} MPMD Addon :"
+    
+    if [[ -n ${BRIDGE_MPRUN_ADDON_MPMD} ]]
+	then
+	
+	if [[ ! -r ${BRIDGE_MPRUN_ADDON_MPMD} ]]
+	    then
+	    ${ERROR} "MPMD Addon : invalid task file ${BRIDGE_MPRUN_ADDON_MPMD}"
+	else
+	    ${LOGGER} "using tasks file ${BRIDGE_MPRUN_ADDON_MPMD}"
+
+            case "${bridge_mprun_mpi_type}" in 
+
+		openmpi|mpich2) 
+		
+		    integer NBTASK
+		    integer NBTASK_CUMUL=0
+		    SEP=" "
+		    bridge_mprun_args_ori=${bridge_mprun_args}
+		    bridge_mprun_args=
+		    while read NBTASK CMD
+		      do
+		      NBTASK_CUMUL=$NBTASK_CUMUL+$NBTASK
+		      bridge_mprun_args="$bridge_mprun_args $SEP -np $NBTASK ${bridge_mprun_args_ori} $CMD"
+		      SEP=" : "
+		    done < $BRIDGE_MPRUN_ADDON_MPMD
+		    ;;
+		
+		*) 
+		    echo "MPI type \"${bridge_mprun_mpi_type}\" not yet supported"
+		    ;;
+	    esac
+
+	fi
+    fi
+    
+    return 0
+}
+
+function bridge_addon_mprun_spmd_pre_allocate {
+    return 0
+}
+
+function bridge_addon_mprun_spmd_post_allocate {
+    return 0
+}
+
+function bridge_addon_mprun_spmd_pre_run {
+    return 0
+}
+
+function bridge_addon_mprun_spmd_post_run {
+    return 0
+}
+
+function bridge_addon_msub_alterscript {
+    return 0
+}
+

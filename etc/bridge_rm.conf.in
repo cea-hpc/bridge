@@ -1,0 +1,27 @@
+#------------------------------------------------------------------------------#
+# @PACKAGE@ batch system related scripts configuration file
+# (Generated using autotools)
+#------------------------------------------------------------------------------#
+RESOURCE_MANAGER=@BRIDGE_RM_SYSTEM@
+BRIDGE_BINDING=@BRIDGE_BINDING@
+
+BRIDGE_MPSTAT_EXCLUDED_PARTITIONS=
+
+# default parameters than can be set
+BRIDGE_MPRUN_DEFAULT_NCORE=
+BRIDGE_MPRUN_DEFAULT_NPROC=
+BRIDGE_MPRUN_DEFAULT_NNODE=
+BRIDGE_MPRUN_DEFAULT_PARTITION=
+BRIDGE_MPRUN_DEFAULT_MAXMEM=
+BRIDGE_MPRUN_DEFAULT_MAXTIME=
+BRIDGE_MPRUN_DEFAULT_EXTRA_PARAMETERS=
+
+# exclusive mode configuration
+# exclusive mode requires that all nodes share the same amount of cores
+# that must be defined in BRIDGE_MPRUN_MAX_NCORE
+BRIDGE_MPRUN_EXCLUSIVE=no
+BRIDGE_MPRUN_EXCLUSIVE_THRESHOLD=
+BRIDGE_MPRUN_MAX_NCORE=
+
+# addons
+BRIDGE_ADDONS=

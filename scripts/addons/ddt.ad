@@ -1,0 +1,169 @@
+
+#################################################################################
+#
+# Addon for DDT debuger support in Bridge
+# 
+#################################################################################
+
+function bridge_addon_mprun_setopt {
+
+    typeset MYGETOPTOPTION="d:"
+
+    echo "${BRIDGE_MPRUN_GETOPT_OPTIONS}" | grep -q ${MYGETOPTOPTION}
+
+    if [ $? -ne 0 ]
+	then
+	BRIDGE_MPRUN_GETOPT_OPTIONS="${BRIDGE_MPRUN_GETOPT_OPTIONS}d:"
+    fi
+
+    return 0
+
+}
+
+function bridge_addon_mprun_getopt {
+    
+    ## on se place en mode debug si souhaite
+    typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+	then
+	set -x
+    fi
+    
+    ## on incremente le niveau de log
+    typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+    
+    ## on ajoute une entete a la log
+    typeset LOGGER="${LOGGER} DDT Addon :"
+
+    ## par defaut, on desactive le mode DDT
+    if [[ -z ${BRIDGE_ADDON_DDT} ]]
+	then
+	BRIDGE_ADDON_DDT=0
+    fi
+
+    ## on fixe le message d'aide a afficher si demande
+    typeset USAGE="\
+\t*) DDT
+\t\t -d ddt: launch the application in debug mode using DDT\n"
+    
+    ## on fixe le status de sortie par defaut
+    typeset exit_status=0
+    
+    ## on parse les arguments
+    while getopts ${BRIDGE_MPRUN_GETOPT_OPTIONS} option
+      do
+      case ${option} in
+	  
+	  h)
+	      echo -e "${USAGE}" >&2
+	      return 0
+	      ;;
+
+	  d)
+	      if [[ ${OPTARG} == ddt ]]
+		  then
+		  BRIDGE_ADDON_DDT=1
+	      fi
+	      ;;
+	  *)
+	      ;;
+      esac
+    done
+
+    exit_status=0
+
+    return ${exit_status}
+}
+
+
+function bridge_addon_mprun_alteropt {
+
+    ## on se place en mode debug si souhaite
+    typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+	then
+	set -x
+    fi
+
+    ## on incremente le niveau de log
+    typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+    
+    ## on ajoute une entete a la log
+    typeset LOGGER="${LOGGER} DDT Addon :"
+
+    if [[ ${BRIDGE_ADDON_DDT} -eq 1 ]]
+	then
+	## on force le mode allocation au niveau du bridge
+	## afin de conserver les resources durant toute la session
+	## de debug plutot que d'attendre l'allocation a chaque
+	## nouveau run
+	${LOGGER} "enforcing allocation"
+	bridge_mprun_force_allocation=yes
+
+	## on fixe les variables DDT pour le lancement des runs SPMD
+	case "${bridge_mprun_mpi_type}" in 
+	    openmpi|mpich2|hpmpi|bull*)
+		export DDTMPIRUN=mpirun
+		;;
+	    mpich|*)
+		export DDTMPIRUN="${bridge_mprun_cmd}"
+		;;
+	esac
+
+	case ${RESOURCE_MANAGER} in
+	    ws)
+	        export DDTMPIRUN=mpirun
+		export EXTRA_MPI_ARGUMENTS_TAG=${bridge_mprun_extra_parameters}
+		bridge_mprun_extra_parameters=
+		;;
+	    slurm)
+		export EXTRA_MPI_ARGUMENTS_TAG=${BRIDGE_SLURM_OMPI_CMD_OPTIONS}
+		;;
+	esac
+	
+	export DDT_NO_TIMEOUT=1
+	export DDT_PROCESS_TIMEOUT=0
+
+	## on fixe le flag indiquant qu'on a fait le boulot
+	## afin de ne pas boucler
+	export BRIDGE_ADDON_DDT=2
+
+	## on lance le programme en debug via DDT
+	${LOGGER} "swapping mprun program with DDT"
+	bridge_mprun_cmd="ddt"
+	bridge_mprun_args="-n ${bridge_mprun_nproc:-1} ${bridge_mprun_args}"
+	
+	## on fixe le code d'erreur
+	exit_status=0
+	
+    fi
+
+    return ${exit_status}
+
+}
+
+function bridge_addon_mprun_spmd_pre_allocate {
+
+    return 0
+
+}
+
+
+function bridge_addon_mprun_spmd_post_allocate {
+
+    return 0
+
+}
+
+
+function bridge_addon_mprun_spmd_pre_run {
+
+    return 0
+
+}
+
+function bridge_addon_mprun_spmd_post_run {
+
+    return 0
+    
+}

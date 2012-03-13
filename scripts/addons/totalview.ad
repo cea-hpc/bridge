@@ -1,0 +1,184 @@
+function bridge_addon_mprun_setopt {
+
+    typeset MYGETOPTOPTION="d:"
+
+    echo "${BRIDGE_MPRUN_GETOPT_OPTIONS}" | grep -q ${MYGETOPTOPTION}
+
+    if [ $? -ne 0 ]
+	then
+	BRIDGE_MPRUN_GETOPT_OPTIONS="${BRIDGE_MPRUN_GETOPT_OPTIONS}d:"
+    fi
+
+    return 0
+}
+
+function bridge_addon_mprun_getopt {
+    
+    ## on se place en mode debug si souhaite
+    typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+	then
+	set -x
+    fi
+    
+    ## on incremente le niveau de log
+    typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+    
+    ## on ajoute une entete a la log
+    typeset LOGGER="${LOGGER} Totalview Addon :"
+
+    ## par defaut, on desactive le mode Totalview
+    if [[ -z ${BRIDGE_MPRUN_ADDON_TOTALVIEW} ]]
+	then
+	BRIDGE_MPRUN_ADDON_TOTALVIEW=0
+    fi
+
+    ## on fixe le message d'aide a afficher si demande
+    typeset USAGE="\
+\t*) Totalview
+\t\t -d tv : launch the application in debug mode using Totalview\n"
+    
+    ## on fixe le status de sortie par defaut
+    typeset exit_status=0
+    
+    ## on parse les arguments
+    while getopts ${BRIDGE_MPRUN_GETOPT_OPTIONS} option
+      do
+      case ${option} in
+	  
+	  h)
+	      echo -e "${USAGE}" >&2
+	      return 0
+	      ;;
+
+	  d)
+	      if [[ ${OPTARG} == tv ]]
+		  then
+		  BRIDGE_MPRUN_ADDON_TOTALVIEW=1
+		  ${LOGGER} "debug with Totalview is now enabled"
+		  ## force allocation
+		  if [[ ${BRIDGE_MPRUN_ALLOCATION} != yes ]]
+		  then
+		      bridge_mprun_force_allocation=yes
+		  fi
+		  # on ne supporte pas le binding via un script wrapper 
+		  # avec le debug totalview
+		  if [[ ${BRIDGE_CPUS_BINDING} == yes ]]
+		  then	
+		      export BRIDGE_CPUS_BINDING=no
+		  fi
+		  # on ne supporte pas le 
+		  if [[ ${BRIDGE_BROADCAST_MODE} -eq 1 ]]
+		  then	
+		      export BRIDGE_BROADCAST_MODE=0
+		  fi		  
+	      fi
+	      ;;
+	  *)
+	      ;;
+      esac
+    done
+    export BRIDGE_MPRUN_ADDON_TOTALVIEW
+    
+    return ${exit_status}
+}
+
+function bridge_addon_mprun_alteropt {
+
+    return 0
+
+}
+
+function bridge_addon_mprun_spmd_pre_allocate {
+
+    return 0
+
+}
+
+
+function bridge_addon_mprun_spmd_post_allocate {
+
+    return 0
+
+}
+
+
+function bridge_addon_mprun_spmd_pre_run {
+
+    if [[ ${BRIDGE_MPRUN_ADDON_TOTALVIEW} -eq 1 ]]
+	then
+
+	## on se place en mode debug si souhaite
+	typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+	if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+	    then
+	    set -x
+	fi
+    
+	## on incremente le niveau de log
+	typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+
+	## on remplace la commande a executer
+	spmd_run_cmd_new="totalview"
+	case ${spmd_run_cmd} in
+	    prun|srun)
+	        if [[ ${BRIDGE_MPRUN_TOTALVIEW_MODE} != "basic" ]]
+		    then
+		    spmd_run_options_new="${spmd_run_cmd}"
+		    spmd_run_separator_new="-a ${spmd_run_options}"
+		else
+		    echo "#########################"
+		    echo "# Totalview support"
+		    echo "# -----------------"
+		    echo "#"
+		    echo "# please do the following actions in Totalview startup parameters window :"
+		    echo "#"
+		    echo "#  - select 'CEA Bridge - Generic' parallel system"
+		    echo "#  - set the required tasks number you want to launch"
+		    echo "#"
+		    echo "#########################"
+		    spmd_run_options_new=""
+		    spmd_run_separator_new="-args"
+		    export BRIDGE_SLURM_OMPI_BASIC=1
+		fi
+		;;
+	    *)
+		echo "#########################"
+		echo "# Totalview support"
+		echo "# -----------------"
+		echo "#"
+		echo "# please do the following actions in Totalview startup parameters window :"
+		echo "#"
+		echo "#  - select 'CEA Bridge - Generic' parallel system"
+		echo "#  - set the required tasks number you want to launch"
+		echo "#"
+		echo "#########################"
+		spmd_run_options_new=""
+		spmd_run_separator_new="-args"
+		;;
+	esac
+    
+	## on ajoute une entete a la log
+	${LOGGER} "Totalview addon : replacing current launch command '${spmd_run_cmd} ${spmd_run_options} ${spmd_run_separator}'"
+	${LOGGER} "Totalview addon : new launch command is '${spmd_run_cmd_new} ${spmd_run_options_new} ${spmd_run_separator_new}'"
+	export TVDSVRLAUNCHCMD=ssh
+	spmd_run_cmd="${spmd_run_cmd_new}"
+	spmd_run_options="${spmd_run_options_new}"
+	spmd_run_separator="${spmd_run_separator_new}"
+	BRIDGE_MPRUN_ADDON_TOTALVIEW=0
+	typeset exit_status=0
+
+	## on rend la main a la fonction appelante
+	return 0
+	
+    else
+	return 0
+    fi
+    
+}
+
+function bridge_addon_mprun_spmd_post_run {
+
+    return 0
+    
+}

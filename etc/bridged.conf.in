@@ -1,0 +1,39 @@
+#------------------------------------------------------------------------------#
+# @PACKAGE@ library configuration file
+# (Generated using autotools)
+#------------------------------------------------------------------------------#
+
+#------------------------------------------------------------------------------#
+# Bridge Stats Daemon - Daemon configuration
+#------------------------------------------------------------------------------#
+bridged {
+
+        address         =       "" ;
+        port            =       12346 ;
+
+        cachedir       	=       "/tmp" ;
+	timeout		=	10 ;
+
+	worker		=	5 ;
+	queue		=	"20000" ;
+
+        logfile        	=       "/var/log/bridged.log" ;
+        loglevel       	=       1 ;
+        debugfile      	=       "/var/log/bridged.log" ;
+        debuglevel     	=       0 ;
+
+}
+#------------------------------------------------------------------------------#
+
+#------------------------------------------------------------------------------#
+# Bridge Stats Daemon - Stats collect configuration
+#------------------------------------------------------------------------------#
+rus_mgr {
+
+	protection_time		=	"0";
+	refresh_interval	=	"60";
+	synchro_command		=	"\
+	@prefix@/bin/cea_bsstat -o batchid,partimeused,partimelim 2>/dev/null";
+
+}
+#------------------------------------------------------------------------------#

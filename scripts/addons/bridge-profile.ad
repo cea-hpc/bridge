@@ -1,0 +1,158 @@
+#################################################################################
+#
+# Addon to create bridge environment variable using associated profile
+#
+# 
+#################################################################################
+
+function bridge_addon_mprun_setopt {
+
+    typeset MYGETOPTOPTION="I:"
+
+    echo "${BRIDGE_MPRUN_GETOPT_OPTIONS}" | grep -q ${MYGETOPTOPTION}
+
+    if [ $? -ne 0 ]
+	then
+	BRIDGE_MPRUN_GETOPT_OPTIONS="${BRIDGE_MPRUN_GETOPT_OPTIONS}${MYGETOPTOPTION}"
+    fi
+
+    return 0
+
+}
+
+function bridge_addon_mprun_getopt {
+    
+    ## on se place en mode debug si souhaite
+    typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+	then
+	set -x
+    fi
+    
+    ## on incremente le niveau de log
+    typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+    
+    ## on ajoute une entete a la log
+    typeset LOGGER="${LOGGER} Bridge-Profile Addon :"
+
+    ## on fixe le message d'aide a afficher si demande
+    typeset USAGE="\
+\t*) Bridge Profile
+\t\t -I "envvars" : load Bridge env variables based on underlying resource mgr \n\
+\t\t              and print listed env vars just after the allocation of resources\n\
+\t\t              (use all as envvars to print all BRIDGE_ vars)\n\
+\t\t              (Note: automatically force allocation when requested)\n\
+\n\
+\t   The same behavior can be requested using BRIDGE_PROFILE_ADDON="env_vars..." \n\n"
+
+    ## on fixe le status de sortie par defaut
+    typeset exit_status=0
+    
+    ## on parse les arguments
+    while getopts ${BRIDGE_MPRUN_GETOPT_OPTIONS} option
+      do
+      case ${option} in
+	  
+	  h)
+	      echo -e "${USAGE}" >&2
+	      return 0
+	      ;;
+
+	  I)
+	      export BRIDGE_PROFILE_ADDON="${OPTARG}"
+	      ${LOGGER} "enabled"	
+	      ;;
+
+	  *)
+	      ;;
+      esac
+    done
+
+    return 0
+
+}
+
+function bridge_addon_mprun_alteropt {
+
+    ## on se place en mode debug si souhaite
+    typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+	then
+	set -x
+    fi
+    
+    ## on incremente le niveau de log
+    typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+    
+    ## on ajoute une entete a la log
+    typeset LOGGER="${LOGGER} Bridge-Profile Addon :"
+
+    if [[ -n ${BRIDGE_PROFILE_ADDON} ]]
+    then
+	## force allocation
+	if [[ ${BRIDGE_MPRUN_ALLOCATION} != yes ]]
+	then
+	    bridge_mprun_force_allocation=yes
+	    ${LOGGER} "forcing allocation"
+	fi
+    fi
+
+    return 0
+}
+
+function bridge_addon_mprun_spmd_pre_allocate {
+
+    return 0
+
+}
+
+function bridge_addon_mprun_spmd_post_allocate {
+
+    return 0
+
+}
+
+function bridge_addon_mprun_spmd_pre_run {
+
+    ## on se place en mode debug si souhaite
+    typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+	then
+	set -x
+    fi
+    
+    ## on incremente le niveau de log
+    typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+    
+    ## on ajoute une entete a la log
+    typeset LOGGER="${LOGGER} Bridge-Profile Addon :"
+
+
+    if [[ -n ${BRIDGE_PROFILE_ADDON} ]]
+    then
+	# Start by loading the resource manager profile
+	if [[ -z ${BRIDGE_MPRUN_PROFILE} ]]
+	then
+	    ${LOGGER} "no profile specified in BRIDGE_MPRUN_PROFILE, skipping"
+	else
+	    . ${BRIDGE_MPRUN_PROFILE}
+	    if [[ ${BRIDGE_PROFILE_ADDON} == "all" ]]
+	    then
+		selected_env_vars=$(env | grep -v BRIDGE_PROFILE_ADDON | egrep "^BRIDGE_")
+	    else
+		env_vars=$(echo ${BRIDGE_PROFILE_ADDON} | egrep "^BRIDGE_" | sed -e 's/\ \ */|/g' )
+		selected_env_vars=$(env | grep -v BRIDGE_PROFILE_ADDON | egrep "${env_vars}")
+	    fi
+	    echo ${selected_env_vars}
+	fi
+    fi
+
+    return 0
+
+}
+
+function bridge_addon_mprun_spmd_post_run {
+
+    return 0
+    
+}

@@ -1,0 +1,368 @@
+function spmd_allocate_cmd {
+
+    ## on se place en mode debug si souhaite
+    typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+	then
+	set -x
+    fi
+
+    ## on incremente le niveau de log
+    typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+
+    ## on indique le profile associe au plugin
+    export BRIDGE_MPRUN_PROFILE=${BRIDGE_PROFILE_DIR}/rms.sh
+
+    ## on ajoute une entete a la log
+    typeset LOGGER="${LOGGER} Allocate : "
+
+    typeset VERSION="rms-1.0"
+    typeset exit_status=0
+
+    max_ncore_per_node=${BRIDGE_MPRUN_MAX_NCORE:-1}
+    spmd_allocate_cmd="allocate"
+    spmd_allocate_options=
+    spmd_allocate_args=
+
+    spmd_allocate_ncore=1
+    spmd_allocate_nproc=1
+    spmd_allocate_nnode=
+    spmd_allocate_partition=
+    spmd_allocate_project=
+    spmd_allocate_extra_parameters=
+    spmd_allocate_maxmem=
+    spmd_allocate_maxtime=
+
+    spmd_allocate_exclusive=no
+
+    while getopts Vc:n:N:p:A:M:E:eT: option
+      do
+      case ${option} in
+	  
+	  V)
+	      echo ${VERSION}
+	      return 0
+	      ;;
+
+	  c)
+	      spmd_allocate_ncore=${OPTARG}
+	      ;;
+
+	  n)
+	      spmd_allocate_nproc=${OPTARG}
+	      ;;
+
+	  N)
+	      spmd_allocate_nnode=${OPTARG}
+	      ;;
+
+	  p)
+	      spmd_allocate_partition=${OPTARG}
+	      ;;
+
+	  A)
+	      spmd_allocate_project=${OPTARG}
+	      ;;
+
+	  E)
+	      if [[ -n ${OPTARG} ]]
+		  then
+		  spmd_allocate_extra_parameters=${OPTARG}
+	      fi
+	      ;;
+	  e)
+	      spmd_allocate_exclusive=yes
+	      ;;
+
+	  M)
+	      spmd_allocate_maxmem=${OPTARG}
+	      ;;
+
+	  T)
+	      spmd_allocate_maxtime=${OPTARG}
+	      ;;
+
+	  *)
+	      spmd_allocate_exit_status=255
+	      break
+	      ;;
+      esac
+    done
+    shift ${OPTIND}-1 2>/dev/null
+    spmd_allocate_args=$@
+
+    # on appelle les addons eventuels en phase spmd_pre_allocate
+    bridge_addons_call_function bridge_addon_mprun_spmd_pre_allocate ${spmd_allocate_args}
+
+    ## si le code de retour de la stack des addons est 0
+    ## alors le job n'a pas ete lance par un des addons
+    ## donc on le lance, sinon, un des addons s'en est charge
+    ## on passe au post run
+    if [ $? -eq 0 ]
+	then
+        # on fixe la partition si demandee
+	if [[ -n ${spmd_allocate_partition} ]]
+	    then
+	    spmd_allocate_options="${spmd_allocate_options} -p ${spmd_allocate_partition}"
+	fi
+        # on fixe le projet si demande
+	if [[ -n ${spmd_allocate_project} ]]
+	    then
+	    spmd_allocate_options="${spmd_allocate_options} -P ${spmd_allocate_project}"
+	fi
+        # la commande allocate de RMS ne permet pas de specifier le nombre de core
+        # par processus, seulement le nombre de core par noeud alloue. Il faut donc 
+        # calculer cela
+        #
+        # on distingue deux cas :
+        #    - un seul core par processus et pas d'allocation exclusive
+        #      -> on fixe simplement les parametres nproc et ncore sur les options
+        #    - le reste des cas de figure
+        #      -> on calcule le nombre de noeud et de core par noeud afin de satisfaire le 
+        #         max necessaire au bon fonctionnement du programme quitte a faire de la surallocation
+	if [[ ${spmd_allocate_ncore} -eq 1 ]] && [[ ${spmd_allocate_exclusive} != yes ]]
+	    then
+	    spmd_allocate_options="${spmd_allocate_options} -n ${spmd_allocate_nproc}"
+	    if [[ -n ${spmd_allocate_nnode} ]]
+		then
+		spmd_allocate_options="${spmd_allocate_options} -N ${spmd_allocate_nnode}"
+	    fi
+	else
+
+	    typeset ncore_per_node
+	    if [[ ${spmd_allocate_nproc} == ${spmd_allocate_nnode} ]]
+		then
+		ncore_per_node=${spmd_allocate_ncore}
+	    else
+		typeset max_nproc_per_node
+		(( max_nproc_per_node = max_ncore_per_node / spmd_allocate_ncore ))
+		if [[ ! ${max_nproc_per_node} -gt 0 ]]
+		    then
+		    # abort ! ne devrait jamais arriver, on teste les arguments afin de verifier que
+		    # le nombre de core demande n'est pas superieur au max autorise
+		    exit 255
+		else
+		    typeset min_nnode
+		    #### on calcul le nombre de noeud minimum necessaire
+		    (( min_nnode = spmd_allocate_nproc /  max_nproc_per_node ))
+		    typeset reste
+		    (( reste = spmd_allocate_nproc %  max_nproc_per_node ))
+		    if [[ ${reste} -gt 0 ]]
+			then
+			(( min_nnode = min_nnode + 1 ))
+		    fi
+		    if [[ ${min_nnode} -eq 1 ]]
+			then
+			(( ncore_per_node = spmd_allocate_nproc * spmd_allocate_ncore ))
+		    else
+			(( ncore_per_node = max_nproc_per_node * spmd_allocate_ncore ))
+		    fi
+		    #### on surcharge le nombre de noeud demande sauf si ce dernier est superieur 
+		    #### a la valeur calculee
+		    if [[ -z "${spmd_allocate_nnode}" ]]
+			then
+			spmd_allocate_nnode=${min_nnode}
+		    else
+			if [[ ${spmd_allocate_nnode} -lt ${min_nnode} ]]
+			    then
+			    spmd_allocate_nnode=${min_nnode}
+			fi
+		    fi
+		fi
+	    fi
+
+	    # si on en mode exclusif, on surcharge le nombre de core par noeud afin de forcer
+	    # l'allocation complete
+	    if [[ ${spmd_allocate_exclusive} == yes ]]
+		then
+		ncore_per_node=${max_ncore_per_node}
+	    fi
+
+	    # on fixe les options
+	    spmd_allocate_options="${spmd_allocate_options} -C ${ncore_per_node} -N ${spmd_allocate_nnode}"
+
+	fi
+
+
+	# on fixe quelques options utiles a l'allocation
+	if [[ -n ${spmd_allocate_maxmem} ]]
+	    then
+	    export RMS_MEMLIMIT=${spmd_allocate_maxmem}
+	fi
+	if [[ -n ${spmd_allocate_maxtime} ]]
+	    then
+	    export RMS_TIMELIMIT=${spmd_allocate_maxtime}
+	fi
+
+        ## on export quelques variables d'environnement dont une indiquant que l'on 
+	## a deja fait une allocation afin d'eviter les boucles
+	export BRIDGE_MPRUN_ALLOCATION=yes
+
+	${LOGGER} "${spmd_allocate_cmd} ${spmd_allocate_options} ${spmd_allocate_extra_parameters} -- ${spmd_allocate_args}"
+	eval ${spmd_allocate_cmd} ${spmd_allocate_options} ${spmd_allocate_extra_parameters} -- ${spmd_allocate_args}
+	exit_status=$?
+
+    fi
+
+    # on appelle les addons eventuels en phase spmd_post_allocate
+    bridge_addons_call_function bridge_addon_mprun_spmd_post_allocate ${spmd_allocate_args}
+
+    ${LOGGER} "exiting with status ${exit_status}"
+    return ${exit_status}
+}
+
+
+function spmd_run_cmd {
+
+    ## on se place en mode debug si souhaite
+    typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+	then
+	set -x
+    fi
+
+    ## on incremente le niveau de log
+    typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+
+    ## on indique le profile associe au plugin
+    export BRIDGE_MPRUN_PROFILE=${BRIDGE_PROFILE_DIR}/rms.sh
+
+    ## on ajoute une entete a la log
+    typeset LOGGER="${LOGGER} Run :"
+
+    typeset VERSION="rms-1.0"
+    typeset exit_status=0
+
+    spmd_run_ncore=
+    spmd_run_nproc=
+    spmd_run_nnode=
+    spmd_run_partition=
+    spmd_run_project=
+    spmd_run_extra_parameters=
+    spmd_run_maxmem=
+    spmd_run_maxtime=
+
+    max_ncore_per_node=${BRIDGE_MPRUN_MAX_NCORE}
+    spmd_run_cmd="prun"
+    spmd_run_options=
+    spmd_run_args=
+
+    while getopts Vc:n:N:p:A:M:E:T: option
+      do
+      case ${option} in
+	  
+	  V)
+	      echo ${VERSION}
+	      return 0
+	      ;;
+
+	  c)
+	      spmd_run_ncore=${OPTARG}
+	      ;;
+
+	  n)
+	      spmd_run_nproc=${OPTARG}
+	      ;;
+
+	  N)
+	      spmd_run_nnode=${OPTARG}
+	      ;;
+
+	  p)
+	      spmd_run_partition=${OPTARG}
+	      ;;
+
+	  A)
+	      spmd_run_project=${OPTARG}
+	      ;;
+
+	  E)
+	      if [[ -n ${OPTARG} ]]
+		  then
+		  spmd_run_extra_parameters=${OPTARG}
+	      fi
+	      ;;
+
+	  M)
+	      spmd_run_maxmem=${OPTARG}
+	      ;;
+
+	  T)
+	      spmd_run_maxtime=${OPTARG}
+	      ;;
+
+	  *)
+	      exit_status=255
+	      break
+	      ;;
+      esac
+    done
+    # on shift les options de la ligne de commande
+    shift ${OPTIND}-1 2>/dev/null
+    spmd_run_args=$@
+
+    # on log un message si on est au sein d'une allocation
+    if [[ ${BRIDGE_MPRUN_ALLOCATION} == yes ]]
+	then
+	${LOGGER} "wrapping allocation detected"
+    fi
+	
+    # on appelle les addons eventuels en phase spmd_pre_run
+    bridge_addons_call_function bridge_addon_mprun_spmd_pre_run ${spmd_run_args}
+
+    ## si le code de retour de la stack des addons est 0
+    ## alors le job n'a pas ete lance par un des addons
+    ## donc on le lance, sinon, un des addons s'en est charge
+    ## on passe au post run
+    if [ $? -eq 0 ]
+	then
+
+	### on construit la ligne des options
+	if [[ -n ${spmd_run_ncore} ]]
+	    then
+	    spmd_run_options="${spmd_run_options} -c ${spmd_run_ncore}"
+	fi
+	if [[ -n ${spmd_run_nproc} ]]
+	    then
+	    spmd_run_options="${spmd_run_options} -n ${spmd_run_nproc}"
+	fi
+	if [[ -n ${spmd_run_nnode} ]]
+	    then
+	    spmd_run_options="${spmd_run_options} -N ${spmd_run_nnode}"
+	fi
+	if [[ -n ${spmd_run_partition} ]]
+	    then
+	    spmd_run_options="${spmd_run_options} -p ${spmd_run_partition}"
+	fi
+	if [[ -n ${spmd_run_project} ]]
+	    then
+	    spmd_run_options="${spmd_run_options} -P ${spmd_run_project}"
+	fi
+	if [[ -n ${spmd_run_maxmem} ]]
+	    then
+	    export RMS_MEMLIMIT=${spmd_run_maxmem}
+	fi
+	if [[ -n ${spmd_run_maxtime} ]]
+	    then
+	    export RMS_TIMELIMIT=${spmd_run_maxtime}
+	fi
+	
+	### on execute
+	${LOGGER} "${spmd_run_cmd} ${spmd_run_options} ${spmd_run_extra_parameters} -- ${spmd_run_args}"
+	eval ${spmd_run_cmd} ${spmd_run_options} ${spmd_run_extra_parameters} -- ${spmd_run_args}
+	exit_status=$?
+
+    else
+
+	${LOGGER} "execution already done by an addon"
+
+    fi
+
+    # on appelle les addons eventuels en phase spmd_post_run
+    bridge_addons_call_function bridge_addon_mprun_spmd_post_run ${spmd_run_args}
+    
+
+    # 
+    ${LOGGER} "exiting with status ${exit_status}"
+    return ${exit_status}
+}

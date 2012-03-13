@@ -1,0 +1,668 @@
+#!/bin/ksh
+#
+###################################################################################################################
+# Fonction de soumission
+# version 1.0
+#------------------------------------------------------------------------------------------------------------------
+#
+# Arguments :
+#
+#  -r request_name              nom de la requete 
+#  -s study                     nom de l'etude a laquelle se rapporte la soumission
+#  -A project                   nom du projet auquel se rapporte la soumission
+#
+#  -W                           flag indiquant que deux jobs portant le meme nom de requete peuvent s'executer en simultane
+#
+#  -S [[month:]day:]hour:minute date de demarrage de l'application               
+#  -q queue                     queue d'execution batch a utiliser
+#
+#  -o output_file               fichier ou stocker le stdout 
+#  -e error_file                fichier ou stocker le stderr
+#
+#  -N nnode                     nombre de noeud parallele souhaite en exclusif
+#  -n nproc                     nombre de processus parallele en exclusif
+#  -c ncoreperproc              nombre de core par processus parallele en exclusif (1 par defaut)
+#  -m tsmemlimit                quantite max de memoire utilisable en fonctionnement "time sharing"
+#  -t tstimelimit               quantite max de temps utilisable en fonctionnement "time sharing"
+#  -M tsmemlimit                quantite max de memoire utilisable en fonctionnement "exclusive"
+#  -T tstimelimit               quantite max de temps utilisable en fonctionnement "exclusive"
+#
+#  -L "licenses..."             chaine contenant les parametres de licences
+#  -K                           allocation des processeurs en debut de job
+#
+#------------------------------------------------------------------------------------------------------------------
+function submit_cmd {
+    
+    ## on se place en mode debug si souhaite
+    typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+	then
+	set -x
+    fi
+
+    ## on incremente le niveau de log
+    typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+
+    ## on fixe les variables de travail
+    typeset VERSION="LSF-1.0"
+    typeset LOGGER="${LOGGER} submit:"
+    typeset exit_status=0
+    typeset local_submit_cmd=${bridge_msub_cmd:-bsub}
+    typeset local_submit_args=${bridge_msub_args}
+    typeset LOCAL_ARGEXP1=
+    typeset LOCAL_ARGEXP2=
+    typeset LOCAL_FILEARG=
+    typeset LOCAL_SCRIPTFILE=
+    typeset LOCAL_SCRIPTMODE=
+
+    ## on fixe les variables de parametrage
+    typeset request_name=
+    typeset study_name=
+    typeset project_name=
+    typeset same_request_at_same_time_flag=0
+    typeset requested_start_time=
+    typeset requested_queue=
+    typeset output_file=
+    typeset error_file=
+    typeset nnode=
+    typeset nproc=
+    typeset ncoreperproc=
+    typeset time_sharing_memlimit
+    typeset time_sharing_timelimit
+    typeset exclusive_memlimit
+    typeset exclusive_timelimit
+    typeset requested_licenses=""
+    typeset keep_allocation=""
+    typeset extra_parameters=""
+    typeset mail_info=""
+    typeset mail_addr=""
+    
+    ## on lit les parametres en entree et on les places dans une variable
+    ## de stockage, elle seront utilisees ulterieurement
+    while getopts r:o:e:s:A:N:n:c:m:t:M:T:L:q:S:KVWE:@: option
+      do
+      case ${option} in
+	  r)
+	      LOCAL_ARGEXP1="$LOCAL_ARGEXP1""request_name=${OPTARG}; "
+	      ;;
+	  s)
+	      LOCAL_ARGEXP1="$LOCAL_ARGEXP1""study_name=${OPTARG}; "
+	      ;;
+	  A)
+	      LOCAL_ARGEXP1="$LOCAL_ARGEXP1""project_name=${OPTARG}; "
+	      ;;
+	  W)
+	      same_request_at_same_time_flag=1
+	      ;;
+	  S)
+	      LOCAL_ARGEXP1="$LOCAL_ARGEXP1""requested_start_time=${OPTARG}; "
+	      ;;
+	  q)
+	      LOCAL_ARGEXP1="$LOCAL_ARGEXP1""requested_queue=${OPTARG}; "
+	      ;;
+	  ## on traduit un eventuel %I signifiant l'ID du job par l'equivalent LSF (%J)
+	  o)
+	      LOCAL_ARGEXP1="$LOCAL_ARGEXP1""output_file=$(echo ${OPTARG} | sed -e 's/%I/%J/g'); "
+	      ;;
+	  ## on traduit un eventuel %I signifiant l'ID du job par l'equivalent LSF (%J)
+	  e)
+	      LOCAL_ARGEXP1="$LOCAL_ARGEXP1""error_file=$(echo ${OPTARG} | sed -e 's/%I/%J/g'); "
+	      ;;
+	  N)
+	      LOCAL_ARGEXP1="$LOCAL_ARGEXP1""nnode=${OPTARG}; "
+	      ;;
+	  n)
+	      LOCAL_ARGEXP1="$LOCAL_ARGEXP1""nproc=${OPTARG}; "
+	      ;;
+	  c)
+	      LOCAL_ARGEXP1="$LOCAL_ARGEXP1""ncoreperproc=${OPTARG}; "
+	      ;;
+	  m)
+	      LOCAL_ARGEXP1="$LOCAL_ARGEXP1""time_sharing_memlimit=${OPTARG}; "
+	      ;;
+	  t)
+	      LOCAL_ARGEXP1="$LOCAL_ARGEXP1""time_sharing_timelimit=${OPTARG}; "
+	      ;;
+	  M)
+	      LOCAL_ARGEXP1="$LOCAL_ARGEXP1""exclusive_memlimit=${OPTARG}; "
+	      ;;
+	  T)
+	      LOCAL_ARGEXP1="$LOCAL_ARGEXP1""exclusive_timelimit=${OPTARG}; "
+	      ;;
+	  L)
+	      LOCAL_ARGEXP1="$LOCAL_ARGEXP1""requested_licenses=${OPTARG}; "
+	      ;;
+	  K)
+	      keep_allocation=1
+	      ;;
+	  V)
+	      echo ${VERSION}
+	      return 0
+	      ;;
+	  E)
+	      extra_parameters="${OPTARG}"
+	      ;;
+	  @)
+	      mail_addr=${OPTARG%%:*}
+	      if [[ ${OPTARG} != ${mail_addr} ]]
+		  then
+		  mail_info=${OPTARG#*:}
+	      fi
+	      ;;
+	  *)
+	      exit_status=255
+	      break
+	      ;;
+      esac
+    done
+    shift ${OPTIND}-1 2>/dev/null
+
+    ## on verifie qu'un argument script est fourni ( le caractere - pour une lecture sur stdin)
+    LOCAL_FILEARG=$1
+    if [ "$LOCAL_FILEARG" = "" ] ;then
+        echo "$0 : argument absent" >&2
+        exit 2
+    fi
+    
+    ## on fixe le nom de la requete a partir du nom du script a executer ou par STDIN si lecture sur STDIN
+    ## on le fixe tout d'abord a la valeur de scriptname pour commencer afin de charger la valeur devinee par msub
+    if [[ -z ${request_name} ]]
+	then
+	request_name=${scriptname}
+    fi
+    if [ "$LOCAL_FILEARG" = "-" ]; then
+        LOCAL_SCRIPTFILE=$SCRATCHDIR/STDIN$$
+        cat - > $LOCAL_SCRIPTFILE
+        LOCAL_SCRIPTMODE=1
+	## on fixe un nom de requete si on en a pas (il sera eventuellement surcharge si le script en contient un)
+	if [[ -z ${request_name} ]]
+	    then
+	    request_name=STDIN
+	fi
+    else
+        LOCAL_SCRIPTMODE=0
+        LOCAL_SCRIPTFILE=$LOCAL_FILEARG
+	## on fixe un nom de requete si on n'en a pas ( il sera eventuellement surcharge si le script en contient un)
+	if [[ -z ${request_name} ]]
+	    then
+	    request_name=$(basename $LOCAL_FILEARG)
+	fi
+    fi
+    
+    ## on definit le script AWK d'extraction des options LSF a prendre en compte lors de la soumission :
+    ##  - fichiers stdout/stderr, afin d'evaluer les variables ou autres commandes (exp : #MSUB -o $HOME/test.o)
+    ##  - nom de la requete, afin de faciliter l'association d'un nom de programme a un script
+    ##  - projet impacte par l'execution, pour la comptabilite
+    AWKSCRIPT='
+/^#BSUB/ {
+        opt=0
+        for(i=2; i<=NF; i++)
+                if ($i=="-e") {
+                        printf("error_file=")
+                        i++
+                        printf("%s ", $i)
+                        opt=1
+                }
+                else if ($i=="-o") {
+                        printf("output_file=")
+                        i++
+                        printf("%s ", $i)
+                        opt=1
+                }
+               else if ($i=="-J") {
+                        printf("request_name=")
+                        i++
+                        printf("%s ", $i)
+                        opt=1
+                }
+               else if ($i=="-G") {
+                        printf("project_name=")
+                        i++
+                        printf("%s ", $i)
+                        opt=1
+                }
+        if ($opt==1) { printf("; ") }
+ }
+'
+    
+    ## on associe certaines options du script aux variables
+    ## locales
+    LOCAL_ARGEXP2=`awk "$AWKSCRIPT" < $LOCAL_SCRIPTFILE`
+    eval $LOCAL_ARGEXP2
+
+    ## on associe les options fournies en parametre aux variables
+    ## locales (surcharge des options du script)
+    eval $LOCAL_ARGEXP1
+
+    # on exporte les variables potentiellement modifiee par les options LSF
+    # du scripts
+    export BRIDGE_MSUB_REQNAME=${request_name}
+    export BRIDGE_MSUB_PROJECT=${project_name}
+    export BRIDGE_MSUB_STDOUT=${output_file}
+    export BRIDGE_MSUB_STDERR=${error_file}
+
+    ## on fixe le nom de la requete
+    if [[ -n ${request_name} ]]
+	then
+	local_submit_args="${local_submit_args} -J ${request_name}"
+    fi
+
+    ## LSF ne supporte pas cette option
+    if [[ -n ${study_name} ]]
+	then
+	${LOGGER} "[Warning] LSF doesn't support the study option"
+    fi
+
+    ## on fixe le projet associe a la requete
+    if [[ -n ${project_name} ]]
+	then
+	local_submit_args="${local_submit_args} -G ${project_name}"
+    fi
+
+    ## LSF ne supporte pas cette option
+    if [[ ${same_request_at_same_time_flag} -ne 0 ]]
+	then
+	${LOGGER} "[Warning] LSF doesn't support the ${PROGNAME} -W option"
+    fi
+
+    ## on fixe les informations concernant le mail
+    if [[ -n ${mail_addr} ]]
+	then
+	local_submit_args="${local_submit_args} -u ${mail_addr}"
+	case ${mail_info} in
+	    begin)
+	    local_submit_args="${local_submit_args} -B"
+	    ;;
+	    "begin,end")
+	    local_submit_args="${local_submit_args} -B -N"
+	    ;;
+	    *)
+	    local_submit_args="${local_submit_args} -N"
+	    ;;
+	esac
+    fi
+    
+    ## on fixe la date de depart de l'execution
+    if [[ -n ${requested_start_time} ]]
+	then
+	local_submit_args="${local_submit_args} -b $(echo ${requested_start_time} | tr ' ' ':' | tr '/' ':')"
+    fi
+
+    ## on fixe la queue d'execution souhaitee
+    if [[ -n ${requested_queue} ]]
+	then
+	local_submit_args="${local_submit_args} -q ${requested_queue}"
+    fi
+
+    ## on fixe le fichier pour le stdout
+    ## si il n'est pas precise, on en construit un par defaut
+    if [[ -n ${output_file} ]]
+	then
+	local_submit_args="${local_submit_args} -o ${output_file}"
+    else
+	local_submit_args="${local_submit_args} -o ${request_name}.%J.o"
+	export BRIDGE_MSUB_STDOUT="${request_name}.%J.o"
+    fi
+
+    ## on fixe le fichier pour le stderr
+    ## si il n'est pas precise, on en construit un par defaut
+    if [[ -n ${error_file} ]]
+	then
+	local_submit_args="${local_submit_args} -e ${error_file}"
+    else
+	local_submit_args="${local_submit_args} -e ${request_name}.%J.e"
+	export BRIDGE_MSUB_STDERR="${request_name}.%J.e"
+    fi
+
+    ## LSF ne supporte que le nombre de core total souhaite, donc on le calcul
+    ## en fonction du nombre de process, de noeud, et de core par process
+    typeset max_nproc_per_node
+    typeset ncore=${ncoreperproc:-1}
+    if [[ ${BRIDGE_MSUB_MAX_NCORE} == auto ]]
+	then
+	BRIDGE_MSUB_MAX_NCORE=$(cat /proc/cpuinfo | egrep "^core id" | wc -l)
+	${LOGGER} "based on cpuinfo, max core per node is ${BRIDGE_MSUB_MAX_NCORE}"
+    fi
+    if [[ -n ${BRIDGE_MSUB_MAX_NCORE} ]]
+	then
+	(( max_nproc_per_node = BRIDGE_MSUB_MAX_NCORE / ncore ))
+	if [[ ${max_nproc_per_node} -eq 0 ]]
+	    then
+	    ${ERROR} "no more than ${BRIDGE_MSUB_MAX_NCORE} core(s) can be requested per process"
+	    return 2
+	fi
+    fi
+    if [[ -n ${nnode} ]]
+	then
+	if [[ -n ${nproc} ]]
+	    then
+	    typeset nproc_per_node
+	    typeset residu
+	    typeset ncore_per_node
+	    typeset global_ncore
+	    ## on calcule le nombre de processus max par noeud
+	    (( nproc_per_node = nproc / nnode ))
+	    (( residu = nproc % nnode ))
+	    if [[ ${residu} -ne 0 ]]
+		then
+		(( nproc_per_node = nproc_per_node + 1 ))
+	    fi
+	    ## on regarde si c'est coherent avec le max permis si defini (le max permis tient
+	    ## compte du nombre de core par processus demande)
+	    ## si ce n'est pas le cas, on borne la demande a ce nombre max, et on allouera 
+	    ## donc plus de noeud, on avertit donc l'utilisateur
+	    ## on en deduit le nomre de processus LSF a demande par noeud (cf plus bas)
+	    if [[ -n ${max_nproc_per_node} ]] && [[ ${max_nproc_per_node} -lt ${nproc_per_node} ]]
+		then
+		(( ncore_per_node = max_nproc_per_node * ncore ))
+		${LOGGER} "[Warning] no more than ${max_nproc_per_node} processus can be launched per node"
+		${LOGGER} "[Warning] releasing nodes count constraint"
+	    else
+		(( ncore_per_node = nproc_per_node * ncore ))
+	    fi
+	    ## on calcule le nombre max de processus a alloue dans LSF. Cela permet d'allouer plus 
+	    ## de processus afin de simuler un nombre de core par processus superieur a 1 au besoin
+	    (( global_ncore = nproc * ncore ))
+	    ## on place le nombre total de core a allouer ainsi que le nombre de core par 
+	    ## noeud. ccc_mprun s'arrangera pour lancer ce qu'il faut la dessus
+	    local_submit_args="${local_submit_args} -n ${global_ncore} -R span[ptile=${ncore_per_node}]"
+	else
+	    ## compatibilite DAM, l'option 'N' si 'n' n'est pas defini, correspond a nproc
+            typeset alloc_ncore
+            (( alloc_ncore = nnode * ncore ))
+	    local_submit_args="${local_submit_args} -n ${alloc_ncore}"
+	    ## on regarde si on doit fixe un nombre de processus au sens LSF par noeud afin de
+	    ## simuler pour avoir assez de core par noeud pour repondre au besoin utilisateur
+	    if [[ ${ncore} -gt 1 ]] && [[ -n ${max_nproc_per_node} ]]
+		then
+		typeset ncore_per_node
+		(( ncore_per_node = max_nproc_per_node * ncore ))
+		local_submit_args="${local_submit_args} -R span[ptile=${ncore_per_node}]"
+	    fi
+	fi
+    else
+	if [[ -n ${nproc} ]]
+	    then
+	    typeset alloc_ncore
+	    (( alloc_ncore = nproc * ncore ))
+	    local_submit_args="${local_submit_args} -n ${alloc_ncore}"
+	    ## on regarde si on doit fixe un nombre de processus au sens LSF par noeud afin de
+	    ## simuler pour avoir assez de core par noeud pour repondre au besoin utilisateur
+	    if [[ ${ncore} -gt 1 ]] && [[ -n ${max_nproc_per_node} ]]
+		then
+		typeset ncore_per_node
+		(( ncore_per_node = max_nproc_per_node * ncore ))
+		local_submit_args="${local_submit_args} -R span[ptile=${ncore_per_node}]"
+	    fi
+	fi
+    fi
+
+    ## LSF ne supporte pas les deux types de memoire, par default l'exclusive(parallele)
+    ## est prefere
+    if [[ -n ${exclusive_memlimit} ]]
+	then
+	typeset memlimit
+	(( memlimit = exclusive_memlimit * 1024 ))
+	local_submit_args="${local_submit_args} -M ${memlimit}"
+    elif [[ -n ${time_sharing_memlimit} ]]
+        then
+        typeset memlimit
+        (( memlimit = time_sharing_memlimit * 1024 ))
+        local_submit_args="${local_submit_args} -M ${memlimit}"
+    fi
+
+    ## LSF ne supporte pas les deux types de temps, par default l'exclusive(parallele)
+    ## est prefere
+    if [[ -n ${exclusive_timelimit} ]]
+	then
+	typeset runlimit
+	typeset residu
+	(( runlimit = exclusive_timelimit / 60 ))
+	(( residu = exclusive_timelimit % 60 ))
+	if [[ ${residu} -ne 0 ]]
+	    then
+	    (( runlimit = runlimit + 1 ))
+	fi
+	local_submit_args="${local_submit_args} -W ${runlimit}"
+    elif [[ -n ${time_sharing_timelimit} ]]
+	then
+	typeset runlimit
+	typeset residu
+	(( runlimit = time_sharing_timelimit / 60 ))
+	(( residu = time_sharing_timelimit % 60 ))
+	if [[ ${residu} -ne 0 ]]
+	    then
+	    (( runlimit = runlimit + 1 ))
+	fi
+	local_submit_args="${local_submit_args} -W ${runlimit}"
+    fi
+    
+    ## Pas encore pris en compte
+    if [[ -n ${requested_licenses} ]]
+	then
+	${LOGGER} "[Warning] LSF doesn't support the ${PROGNAME} -L option"
+    fi
+
+    ## LSF par defaut fait toujours une allocation de le depart
+#     if [[ -n ${keep_allocation} ]]
+# 	then
+# 	local_submit_args="${local_submit_args}"
+#     fi
+
+    ## pas de probleme, on soumet
+    if [ ${exit_status} -eq 0 ]
+	then
+	${LOGGER} -- "${local_submit_cmd} ${local_submit_args} ${extra_parameters} < $LOCAL_SCRIPTFILE"
+	output=$(${local_submit_cmd} ${local_submit_args} ${extra_parameters} < $LOCAL_SCRIPTFILE 2>&1)
+	exit_status=$?
+    fi
+
+    ## si la soumission a ete faite par lecture du script sur stdin
+    ## on supprime le fichier temporaire cree
+    if [ "${LOCAL_SCRIPTMODE}" = 1 ] ;then
+	rm ${LOCAL_SCRIPTFILE}
+    fi
+
+    ## on affiche en sortie simplement l'ID du job soumis
+    if [[ -n ${output} ]]
+	then
+	## si pb d'execution, on affiche l'output sinon on le filtre
+	if [[ ${exit_status} -eq 0 ]]
+	    then
+	    # les lignes en sortie de slurm sont de la forme :
+	    # Job <227599> is submitted to default queue <test>.
+	    # on affiche que l'ID
+	    # on supprime tout ce qui serait avant "Job <" par la
+	    # meme occasion
+	    output=${output#*Job <}
+	    output=${output%%>*}
+	    echo "${BRIDGE_MSUB_SUBMISSION_MESSAGE}${output}"
+	else
+	    echo ${output}
+	fi
+    fi
+    
+    ## on renvoie le code de retour
+    return ${exit_status}
+}
+
+
+###################################################################################################################
+# Fonction d'obtention d'informations detaillees sur une session batch
+# version 1.0
+#------------------------------------------------------------------------------------------------------------------
+# Usage : bsinfo_cmd [-V] [-H] batchid [batchid ...]
+#
+# Arguments :
+#
+#         -H                      Get information in history data
+#         -V                      Print function version
+#
+#------------------------------------------------------------------------------------------------------------------
+function bsinfo_cmd {
+
+    ## on se place en mode debug si souhaite
+    typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+	then
+	set -x
+    fi
+
+    ## on incremente le niveau de log
+    typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+
+    ## on fixe les variables de travail
+    typeset VERSION="LSF-1.0"
+    typeset history_mode=no
+
+    ## on lit les parametres
+    while getopts VH option
+      do
+      case ${option} in
+	  V)
+	      echo ${VERSION}
+	      return 0
+	      ;;
+	  H)
+	      history_mode=yes
+	      ;;
+      esac
+    done
+    shift ${OPTIND}-1 2>/dev/null
+
+    ## on verifie qu'au moins un batchid est donne
+    if [[ $# -eq 0 ]]
+	then
+	${LOGGER} "Bad usage : no batchid specified"
+	return 255
+    fi
+    
+    ## on agit en fonction du mode
+    if [[ ${history_mode} = yes ]]
+	then
+	bhist -l $@
+    else
+	bjobs -l $@
+    fi
+        
+    return $?
+}
+
+
+###################################################################################################################
+# Fonction d'arret et/ou de transmission d'un signal a une session batch
+# version 1.0
+#------------------------------------------------------------------------------------------------------------------
+# Usage : bsdel_cmd [-V] [-k] [-K] [-s signal] [-r allocid] batchid [batchid ...]
+#
+# Arguments :
+#        -V          : print function version
+#
+#        -k          : kill mode
+#        -K          : kill mode with batch system database remove of the batch session
+#
+#        -s signal   : signal to send
+#        -r allocid  : resource allocation to signal/delete inside the batch session
+#        batchid     : ID of the targeted batch session
+#
+#------------------------------------------------------------------------------------------------------------------
+function bsdel_cmd {
+
+    ## on se place en mode debug si souhaite
+    typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+	then
+	set -x
+    fi
+
+    ## on incremente le niveau de log
+    typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+
+    ## on fixe les variables de travail
+    typeset VERSION="LSF-1.0"
+    typeset LOCAL_ERROR=
+    typeset exit_status=0
+    typeset bkill_cmd=bkill
+    typeset kill_mode=no
+    typeset kill_and_remove_mode=no
+    typeset signal=SIGTERM
+    typeset allocid=
+
+    ## on lit les parametres
+    while getopts VkKs:r: option
+      do
+      case ${option} in
+	  V)
+	      echo ${VERSION}
+	      return 0
+	      ;;
+	  k)
+	      kill_mode=yes
+	      ;;
+	  K)
+	      kill_and_remove_mode=yes
+	      ;;
+	  s)
+	      signal=${OPTARG}
+	      ;;
+	  r)
+	      ## avec LSF, on ne peut pas atteindre les allocations sous-jacente
+	      ## on enregistre la valeur mais on ne s'en servira pas
+	      allocid=${OPTARG}
+	      ;;
+      esac
+    done
+    shift ${OPTIND}-1 2>/dev/null
+
+    ## on verifie qu'au moins un batchid est donne
+    if [[ $# -eq 0 ]]
+	then
+	${LOGGER} "Bad usage : no batchid specified"
+	return 255
+    fi
+    
+    ## le mode kill va correspondre au transfert du signal SIGKILL
+    if [[ ${kill_mode} = yes ]]
+	then
+	signal=SIGKILL
+    fi
+    
+    ## on agit en fonction du signal demande
+    case ${signal} in
+	TERM|SIGTERM|SIGKILL|KILL)
+	    bkill_args=
+	    ;;
+        STOP|TSTOP|SIGSTOP|SIGTSTOP)
+	    bkill_args=
+	    bkill_cmd=bstop
+	    ;;
+        CONT|SIGCONT)
+	    bkill_args=
+	    bkill_cmd=bresume
+	    ;;
+	*)
+	    bkill_args="-s ${signal}"
+	    ;;
+    esac
+
+    ${LOGGER} "Command : ${bkill_cmd} ${bkill_args} $@"
+    LOCAL_ERROR=$(${bkill_cmd} ${bkill_args} $@ 2>&1)
+    exit_status=$?
+
+    ## si on est en mode remove, on supprime toute reference de cette session
+    ## dans la liste des sessions actives de LSF
+    if [[ ${kill_and_remove_mode} = yes ]]
+	then
+	${LOGGER} "Command : ${bkill_cmd} -r $@"
+	LOCAL_ERROR=$(${bkill_cmd} -r $@ 2>&1)
+	exit_status=$?
+    fi
+
+    if [[ -n ${LOCAL_ERROR} ]]
+	then
+	${LOGGER} ${LOCAL_ERROR}
+    fi
+
+    ## on renvoie le code de retour
+    return ${exit_status}
+}

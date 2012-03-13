@@ -1,0 +1,151 @@
+#################################################################################
+#
+# Addon for spank-stats support in Bridge
+# 
+#################################################################################
+
+#################################################################################
+# MSUB QOS support
+#--------------------------------------------------------------------------------
+function bridge_addon_msub_setopt {
+    return 0
+}
+
+function bridge_addon_msub_getopt {
+    return 0
+}
+
+function bridge_addon_msub_alteropt {
+    return 0
+}
+
+function bridge_addon_msub_alterscript {
+    return 0
+}
+#################################################################################
+
+
+#################################################################################
+# MPRUN QOS support
+#--------------------------------------------------------------------------------
+function bridge_addon_mprun_setopt {
+
+    typeset MYGETOPTOPTION="S"
+
+    echo "${BRIDGE_MPRUN_GETOPT_OPTIONS}" | grep -q ${MYGETOPTOPTION}
+
+    if [ $? -ne 0 ]
+	then
+	BRIDGE_MPRUN_GETOPT_OPTIONS="${BRIDGE_MPRUN_GETOPT_OPTIONS}${MYGETOPTOPTION}"
+    fi
+
+    return 0
+
+}
+
+function bridge_addon_mprun_getopt {
+    
+    ## on se place en mode debug si souhaite
+    typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+	then
+	set -x
+    fi
+    
+    ## on incremente le niveau de log
+    typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+    
+    ## on ajoute une entete a la log
+    typeset LOGGER="${LOGGER} Spank-stats Addon :"
+    typeset ERROR="${ERROR} Spank-stats Addon :"
+
+    ## on fixe le message d'aide a afficher si demande
+    typeset USAGE="\
+\t*) Spank-stats
+\t\t -S : collect and print statistics at the end of the job\n"
+    
+    ## on fixe le status de sortie par defaut
+    typeset exit_status=0
+    
+    ## on parse les arguments
+    while getopts ${BRIDGE_MPRUN_GETOPT_OPTIONS} option
+      do
+      case ${option} in
+	  
+	  h)
+	      echo -e "${USAGE}" >&2
+	      return 0
+	      ;;
+
+	  S)
+	      BRIDGE_MPRUN_ADDON_SPANK_STATS=1
+	      ${LOGGER} "enabled"
+	      ;;
+	  
+	  *)
+	      ;;
+      esac
+    done
+
+    return ${exit_status:-1}
+}
+
+function bridge_addon_mprun_alteropt {
+
+    ## on se place en mode debug si souhaite
+    typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+	then
+	set -x
+    fi
+    
+    ## on incremente le niveau de log
+    typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+    
+    ## on ajoute une entete a la log
+    typeset LOGGER="${LOGGER} QOS Addon :"
+    typeset ERROR="${ERROR} QOS Addon :"
+
+    ## on active la QOS
+    if [[ -n ${BRIDGE_MPRUN_ADDON_SPANK_STATS} ]]
+    then
+	case ${RESOURCE_MANAGER} in
+            slurm)
+		export SLURM_EPILOG=${BRIDGE_ADDON_SCRIPTSDIR}/$(bridge_command_enhance spank-stats.sh)
+		export SPANK_STATS_DIGEST=1
+		spmd_run_options="${spmd_run_options} --stats=30"
+		;;
+	    *)
+		${ERROR} "not supported with ${RESOURCE_MANAGER}"
+		;;
+	esac
+    fi
+
+    return 0
+
+}
+
+function bridge_addon_mprun_spmd_pre_allocate {
+
+    return 0
+
+}
+
+function bridge_addon_mprun_spmd_post_allocate {
+
+    return 0
+
+}
+
+function bridge_addon_mprun_spmd_pre_run {
+
+    return 0
+
+}
+
+function bridge_addon_mprun_spmd_post_run {
+
+    return 0
+    
+}
+#################################################################################

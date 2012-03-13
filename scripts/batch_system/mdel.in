@@ -1,0 +1,222 @@
+#!/bin/ksh
+#------------------------------------------------------------------------------------------------------------------
+# wrapper permettant d'arreter et/ou de transmettre un signal a une session batch
+#------------------------------------------------------------------------------------------------------------------
+
+
+###################################################################################################################
+#
+# PROGRAMME PRINCIPAL PROGRAMME PRINCIPAL PROGRAMME PRINCIPAL PROGRAMME PRINCIPAL PROGRAMME PRINCIPAL
+#
+# PROGRAMME PRINCIPAL PROGRAMME PRINCIPAL PROGRAMME PRINCIPAL PROGRAMME PRINCIPAL PROGRAMME PRINCIPAL
+#
+###################################################################################################################
+
+
+###################################################################################################################
+# Initialisation des parametres de base
+#------------------------------------------------------------------------------------------------------------------
+typeset BRIDGE_VERSION="@PACKAGE_NAME@-@PACKAGE_VERSION@"
+typeset PROG_VERSION="1.0.0"
+#------------------------------------------------------------------------------------------------------------------
+# le repertoire de base est fixe lors de l'installation du produit (via ./configure)
+# si il n'est pas coherent, c'est a dire qu'il ne correspond pas a un repertoire
+# on fixe un repere dans le systeme de fichier en utilisant le chemin d acces a l executable
+#------------------------------------------------------------------------------------------------------------------
+typeset BASE_DIR=`dirname $0`
+typeset PROGNAME=`basename $0`
+#------------------------------------------------------------------------------------------------------------------
+typeset BRIDGE_BASEDIR=@prefix@
+if [[ ! -d ${BRIDGE_BASEDIR} ]]
+    then
+    BRIDGE_BASEDIR=${BRIDGE_BASEDIR:-${BASE_DIR}/../}
+fi
+#------------------------------------------------------------------------------------------------------------------
+typeset BRIDGE_BINDIR=${BRIDGE_BASEDIR}/bin
+typeset BRIDGE_SCRIPTSDIR=${BRIDGE_BASEDIR}/share/scripts
+typeset BRIDGE_BATCH_SYSTEM_PLUGINDIR=${BRIDGE_BASEDIR}/share/scripts/batch_system/plugins
+#------------------------------------------------------------------------------------------------------------------
+typeset BRIDGE_CONFDIR=${BRIDGE_BASEDIR}/etc
+if [[ ! -d ${BRIDGE_CONFDIR} ]]
+    then
+    BRIDGE_CONFDIR=/etc
+fi
+#------------------------------------------------------------------------------------------------------------------
+typeset BRIDGE_HOSTNAME=$(hostname 2>/dev/null)
+#------------------------------------------------------------------------------------------------------------------
+# on fixe les categories auquelles ce programme appartient (les categories determinent les fichiers de conf
+# a sourcer lors de la lecture de la configuration (bridge_readconf)
+#------------------------------------------------------------------------------------------------------------------
+typeset BRIDGE_CATEGORIES="bridge_bs"
+#------------------------------------------------------------------------------------------------------------------
+# on fixe les variables liees a la log
+#------------------------------------------------------------------------------------------------------------------
+typeset BRIDGE_DEBUG_MODE=no
+typeset BRIDGE_CHECK_ONLY=no
+typeset BRIDGE_VERBOSE_MODE=no
+typeset BRIDGE_VERBOSE_LEVEL=1
+typeset BRIDGE_VERBOSE_MAXLEVEL=0
+typeset BRIDGE_LOGFILE=""
+typeset EXIT_STATUS=1
+#------------------------------------------------------------------------------------------------------------------
+# on fixe l'usage de la commande et le code retour par defaut
+#------------------------------------------------------------------------------------------------------------------
+typeset USAGE="Usage : ${PROGNAME} [-dvhV] [-k] [-K] [-s signal] [-r allocid] batchid
+
+ ${PROGNAME} fournit une interface unifiee pour la suppression et/ou le signalement des applications Batch
+
+        -h          : affiche ce message
+        -d          : augmente le niveau de debug
+        -v          : augmente le niveau de verbosite
+        -V          : affiche la version du produit et de l'application et se termine
+
+        -k          : mode kill
+        -K          : mode kill avec suppression de toute reference dans le systeme de Batch
+
+        -s signal   : transmet le signal 'signal'
+        -r allocid  : action a accomplir sur l'allocation sous-jacente d'ID 'allocid'
+
+        batchid     : ID de la session Batch concernee
+"
+#------------------------------------------------------------------------------------------------------------------
+typeset del_cmd=bsdel_cmd
+typeset del_args=
+#------------------------------------------------------------------------------------------------------------------
+typeset kill_mode=no
+typeset kill_and_remove_mode=no
+typeset signal=
+typeset allocid=
+#------------------------------------------------------------------------------------------------------------------
+###################################################################################################################
+# Analyse des options de la ligne de commande (priorite 1)
+# Sauvegarde du nom du script
+#------------------------------------------------------------------------------------------------------------------
+while getopts dvhVkKs:r: option
+do
+  case $option
+      in
+      d)
+	  BRIDGE_DEBUG_MODE=yes;
+	  ((BRIDGE_DEBUG_MAXLEVEL = BRIDGE_DEBUG_MAXLEVEL + 1 ))
+	  ;;
+      v)
+	  BRIDGE_VERBOSE_MODE=yes;
+	  ((BRIDGE_VERBOSE_MAXLEVEL = BRIDGE_VERBOSE_MAXLEVEL + 1 ))
+	  ;;
+      h) 
+	  echo "$USAGE"  >& 2 ;
+	  exit 0
+	  ;;
+      V) 
+	  echo "${PROGNAME}-${PROG_VERSION} (${BRIDGE_VERSION:-?})"
+	  exit 0
+	  ;;
+      k)
+	  kill_mode=yes
+	  ;;
+      K)
+	  kill_and_remove_mode=yes
+	  ;;
+      s)
+	  signal=${OPTARG}
+	  ;;
+      r)
+	  allocid=${OPTARG}
+	  ;;
+      *) echo "$USAGE"  >& 2 ;exit 255 ;;
+  esac
+done
+OPTIND2=`expr $OPTIND - 1`
+shift ${OPTIND2}
+###################################################################################################################
+
+
+###################################################################################################################
+# On se place en mode debug si necessaire
+#------------------------------------------------------------------------------------------------------------------
+if [[ "${BRIDGE_DEBUG_MODE}" = "yes" ]]
+    then
+    set -x
+fi
+###################################################################################################################
+
+
+###################################################################################################################
+# On verifie qu'au moins un batchid a ete specifie
+#------------------------------------------------------------------------------------------------------------------
+if [ $# -ne 1 ]
+    then
+    echo "${USAGE}" >&2
+    return 255
+fi
+###################################################################################################################
+
+
+###################################################################################################################
+# On source les librairies communes utiles et on fixe les variables de log
+#------------------------------------------------------------------------------------------------------------------
+. ${BRIDGE_SCRIPTSDIR}/common/bridge_command
+. ${BRIDGE_SCRIPTSDIR}/common/bridge_printer
+. ${BRIDGE_SCRIPTSDIR}/common/bridge_readconf
+typeset LOGGER="bridge_printer ${DEFAULT_PRINTER_OPTIONS} -t verbose"
+typeset ERROR="bridge_printer ${DEFAULT_PRINTER_OPTIONS} -ft error"
+###################################################################################################################
+
+
+###################################################################################################################
+# On lit la configuration du programme et des categories qu'il utilise
+# on commence par charger le plugin par defaut
+# puis on charge le plugin detecte et on verifie que la fonction de soumission
+# existe
+#------------------------------------------------------------------------------------------------------------------
+bridge_readconf
+for BATCH_SYSTEM in generic ${BATCH_SYSTEM}
+  do
+  typeset batch_system_plugin_file=${BRIDGE_BATCH_SYSTEM_PLUGINDIR}/${BATCH_SYSTEM}
+  if [[ ! -r ${batch_system_plugin_file} ]]
+      then
+      ${ERROR} "Batch system plugin '${BATCH_SYSTEM}' : pas de fichier ${batch_system_plugin_file}"
+      return 254
+  fi
+  . ${batch_system_plugin_file}
+done
+typeset del_cmd_version
+del_cmd_version=$(${del_cmd} -V 2>/dev/null)
+if [[ $? -ne 0 ]]
+    then
+    ${ERROR} "Batch system plugin '${BATCH_SYSTEM}' : impossible d'obtenir la version de ${del_cmd}"
+    return 253
+else
+    ${LOGGER} "Batch system plugin '${BATCH_SYSTEM}' : ${del_cmd} version ${del_cmd_version} "
+fi
+###################################################################################################################
+
+
+###################################################################################################################
+# Execution de la fonction
+#------------------------------------------------------------------------------------------------------------------
+if [[ -n ${signal} ]]
+    then
+    del_args="-s ${signal}"
+fi
+if [[ ${kill_and_remove_mode} = yes ]]
+    then
+    del_args="${del_args} -K"
+elif [[ ${kill_mode} = yes ]]
+    then
+    del_args="${del_args} -k"
+fi
+if [[ -n ${allocid} ]]
+    then
+    del_args="${del_args} -r ${allocid}"
+fi
+${del_cmd} ${del_args} $@
+EXIT_STATUS=$?
+###################################################################################################################
+
+
+###################################################################################################################
+# Sortie
+#------------------------------------------------------------------------------------------------------------------
+return ${EXIT_STATUS}
+###################################################################################################################

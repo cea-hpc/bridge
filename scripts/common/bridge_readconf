@@ -1,0 +1,57 @@
+function bridge_readconf {
+
+    ###############################################################
+    # On se place en mode verbeux si souhaite
+    #--------------------------------------------------------------
+    typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+	then
+	set -x
+    fi
+
+    typeset STATUS=2
+
+    typeset CLUSTER=`hostname | sed 's/^cws-//' |  sed 's/\([0-9]\)*\(\-.*\)*$//'`
+    typeset NODE=`hostname`
+
+    typeset NODE_CONF="${NODE}.conf"
+    typeset CLUSTER_CONF="${CLUSTER}.conf"
+    typeset DEFAULT_CONF="conf"
+    
+    ## le repertoire des confs est defini ou alors /etc
+    for confdir in ${BRIDGE_CONFDIR} /etc
+      do
+
+	## si le nom du programme appelant ou une ou plusieurs categories
+	## ont ete definies, alors on tente de sourcer les fichiers de configuration
+	## associes
+	if [[ -n ${PROGNAME} ]] || [[ -n ${BRIDGE_CATEGORIES} ]]
+	    then
+	    for prefix in ${BRIDGE_CATEGORIES} ${PROGNAME} 
+	      do
+	
+	      for suffix in ${DEFAULT_CONF} ${CLUSTER_CONF} ${NODE_CONF}
+		do
+		
+		if [ -r ${confdir}/${prefix}.${suffix} ]
+		    then
+		    . ${confdir}/${prefix}.${suffix}
+		    STATUS=0
+		fi
+		
+	      done
+	      
+	    done
+	fi
+
+	## break if at least one source was made in a dir
+	if [[ ${STATUS} -eq 0 ]]
+	    then
+	    break
+	fi
+
+    done
+
+    return 0
+
+}

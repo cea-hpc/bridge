@@ -1,0 +1,134 @@
+#!/bin/ksh
+#
+#/********************************************************************************************************************\
+#
+# Cet addon msub permet de modifier le script soumis afin de lui ajouter une entete et un pied de page.
+#
+# Il est a noter que le pied de page ne sera execute que si l'utilisateur ne met pas fin explicitement
+# au programme par un appel return ou exit.
+#
+# Il est toutefois possible de traper pour executer un code en sortie de script
+#
+# Pour pouvoir fonctionner, cet addon necessite la presence dans l'environnement de la variable
+# BRIDGE_ADDON_DAM_WRAPPER_TEMPLATE, son contenu correspondant au fichier template a utiliser 
+# pour generer le script qui surchargera celui passe en premier argument.
+#
+# La variable BRIDGE_ADDON_DAM_WRAPPER_EXCLUDED_QUEUES permet de specifier sous forme d'arguments a egrep
+# la liste des queues pour lesquelles il n'est pas necessaire d'appliquer la logique de l'addon.
+#
+# Exemple de template
+# 
+#  #!/bin/bash
+#
+#  echo "Debut"
+#
+#  #### SCRIPT BEGINS HERE ####
+#
+#  #### SCRIPT ENDS HERE ####
+#
+#  echo "Fin"
+#
+# Les balises "#### SCRIPT BEGINS HERE ####" et "#### SCRIPT ENDS HERE ####" delimitent l'emplacement
+# ou sera insere le script de l'utilisateur
+# 
+#\********************************************************************************************************************/
+
+function bridge_addon_msub_setopt {
+    return 0
+}
+
+function bridge_addon_msub_getopt {
+    return 0
+}
+
+
+function bridge_addon_msub_alteropt {
+    return 0
+}
+
+function bridge_addon_msub_alterscript {
+
+    ## on se place en mode debug si souhaite
+    typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+	then
+	set -x
+    fi
+    
+    ## on incremente le niveau de log
+    typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+    
+    ## on ajoute une entete a la log
+    typeset LOGGER="${LOGGER} DAM Wrapper Addon :"
+
+    ## on regarde si la queue demandee n'est pas exclue du mecanisme
+    if [[ -n ${BRIDGE_MSUB_QUEUE} ]] && [[ -n ${BRIDGE_ADDON_DAM_WRAPPER_EXCLUDED_QUEUES} ]]
+	then
+	${LOGGER} "excluded queues match the pattern '${BRIDGE_ADDON_DAM_WRAPPER_EXCLUDED_QUEUES}'"
+	echo ${BRIDGE_MSUB_QUEUE} | egrep -q "${BRIDGE_ADDON_DAM_WRAPPER_EXCLUDED_QUEUES}"
+	if [[ $? -eq 0 ]]
+	    then
+	    ${LOGGER} "requested queue ${BRIDGE_MSUB_QUEUE} is excluded, skipping"
+	    return 0
+	fi
+    fi
+
+    ## le script a modifier doit etre accessible en tant que 1er argument
+    if [[ -z ${BRIDGE_MSUB_SCRIPTFILE} ]]
+	then
+	${LOGGER} "no script defined in variable 'BRIDGE_MSUB_SCRIPTFILE', skipping"
+    else
+
+	## on verifie que la variable contenant le template de script
+	## a generer est present
+	if [[ -z ${BRIDGE_ADDON_DAM_WRAPPER_TEMPLATE} ]]
+	    then
+
+	    ${LOGGER} "no template defined in BRIDGE_ADDON_DAM_WRAPPER_TEMPLATE, skipping"
+
+	else
+
+	    ## on verifie que le fichier existe reellement
+	    if [[ -f ${BRIDGE_ADDON_DAM_WRAPPER_TEMPLATE} ]]
+		then
+		${LOGGER} "using template file ${BRIDGE_ADDON_DAM_WRAPPER_TEMPLATE}"
+
+		## on genere un fichier temporaire
+		typeset temp_scriptfile=$(bridge_tmpfile ${TMPDIR:-/tmp}/DAM_wrapper)
+		if [[ -n ${temp_scriptfile} ]]
+		    then
+		    
+		    ## on genere le fichier script ameliore
+		    sed -e '0,/#### SCRIPT BEGINS HERE ####/!d' ${BRIDGE_ADDON_DAM_WRAPPER_TEMPLATE} > ${temp_scriptfile}
+		    cat ${BRIDGE_MSUB_SCRIPTFILE} >> ${temp_scriptfile}
+		    sed -e '/#### SCRIPT ENDS HERE ####/,$!d' ${BRIDGE_ADDON_DAM_WRAPPER_TEMPLATE} >> ${temp_scriptfile}
+
+		    ## on remplace le script de base par le nouveau
+		    cat ${temp_scriptfile} > ${BRIDGE_MSUB_SCRIPTFILE}
+		    
+		    ## on verifie qu'on a reussi
+		    if [[ $? -ne 0 ]]
+			then
+			${LOGGER} "unable to replace scriptfile with the generated one"
+		    else
+			${LOGGER} "scriptfile ${BRIDGE_MSUB_SCRIPTFILE} successfully enhanced"
+		    fi
+
+		    ## on supprime le fichier temporaire
+		    \rm -f ${temp_scriptfile}
+
+		else
+		    ${LOGGER} "unable to create temporary script file"
+		fi
+
+	    else
+		${LOGGER} "invalid template file ${BRIDGE_ADDON_DAM_WRAPPER_TEMPLATE}"
+	    fi
+
+	fi
+
+    fi
+
+    return 0
+}
+

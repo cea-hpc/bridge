@@ -1,0 +1,70 @@
+
+function bridge_addon_msub_setopt {
+    return 0
+}
+
+function bridge_addon_msub_getopt {
+    return 0
+}
+
+
+function bridge_addon_msub_alteropt {
+
+    ## on se place en mode debug si souhaite
+    typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+	then
+	set -x
+    fi
+    
+    ## on incremente le niveau de log
+    typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+    
+    ## on ajoute une entete a la log
+    typeset LOGGER="${LOGGER} DAM Auto-queue Addon :"
+
+    ## do auto-selection only if queue is not already set
+    if [[ -z ${BRIDGE_MSUB_QUEUE} ]]
+	then
+	typeset partname=
+	typeset parttlim=
+	typeset partncpus=
+	typeset bestpartname=
+	typeset bestparttlim=
+	typeset bestpartncpus=
+	typeset jobtime=${BRIDGE_MSUB_MAXTIME:-0}
+	typeset nb_cpus=${BRIDGE_MSUB_NPROC:-1}
+	typeset nb_cores=${BRIDGE_MSUB_NCORE:-1}
+	(( nb_cpus = nb_cpus * nb_cores ))
+
+	${LOGGER} "required time is ${jobtime}s - required cpus nb is ${nb_cpus}"
+
+	if [[ -z ${BRIDGE_MSUB_ALLOWED_QUEUE} ]]
+	then
+	    BRIDGE_MSUB_ALLOWED_QUEUE="batch|nor_seq|nor_par|lit_par|express|big_par"
+	fi
+	BRIDGE_MSUB_QUEUE=$(${BRIDGE_BQSTAT_CMD} -o name,maxpartime,maxparcpunb | \
+	    egrep "${BRIDGE_MSUB_ALLOWED_QUEUE}" | grep -v "?" |\
+	    sed s/\-/10000000/ | sort -n -k 3 -k 2	 | \
+	    awk -vtlim=${jobtime} -vcpu=${nb_cpus} \
+	    'BEGIN{s=0;}{ if ( tlim <= $2 && cpu <= $3 ) { s=1; print $1 ;}}END{if ( s == 0 ) print $1;}' | head -n 1 )
+
+	### display auto-queue result
+	if [[ -n ${BRIDGE_MSUB_QUEUE} ]]
+	    then
+	    ${LOGGER} "job queue is now '${BRIDGE_MSUB_QUEUE}'"
+	else
+	    ${LOGGER} "unable to auto select a queue"
+	fi
+    else	
+	${LOGGER} "queue '${BRIDGE_MSUB_QUEUE}' is already set, skipping"
+    fi
+
+    return 0
+
+}
+
+
+function bridge_addon_msub_alterscript {
+    return 0
+}
