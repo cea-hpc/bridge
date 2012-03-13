@@ -1,3 +1,15 @@
+* Changes in bridge-1.4.13 (ongoing)
+==========================
+	-- addons: add autodefmem addon
+	-- addons: add autoaccount addon
+	-- mpp: show reservations
+	-- mpp: dont show subaccounts
+	-- mpp: allow filtering of reservations and fix nodelist
+	-- QoS addon: allow any qos
+	-- mpp: sort numerically by priority
+	-- msub: allow multiple -E
+	-- mpp: differentiate completing job
+	
 * Changes in bridge-1.4.12
 ==========================
 	-- IntelMPI addon : now use direct srun execution when I_MPI_PMI_LIBRARY
