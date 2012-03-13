@@ -11,7 +11,7 @@
 #
 ###################################################################################################################
 function check_val {
-    if [ $1 = "-" ] || [ $1 = "?" ] ||  [ $1 = "(null)" ]
+    if [ $# -eq "0" ] || [ $1 = "-" ] || [ $1 = "?" ] ||  [ $1 = "(null)" ]
 	then
 	return 1
     else
@@ -107,9 +107,11 @@ function set_purple_mode {
 	printf "[0;35m"
     fi
 }
+
 function extract_base_acct {
     echo ${1%%@*}
 }
+
 ###################################################################################################################
 
 ###################################################################################################################
@@ -202,6 +204,8 @@ typeset show_running=0
 typeset show_suspended=0
 typeset show_pending=0
 typeset show_project
+typeset show_user
+typeset show_partition
 typeset show_with_color=yes
 typeset show_with_header=yes
 #------------------------------------------------------------------------------------------------------------------
@@ -243,9 +247,11 @@ do
 	  ;;
       q)
 	  stat_args="${stat_args} -q ${OPTARG}"
+	  show_partition=${OPTARG}
 	  ;;
       u)
 	  stat_args="${stat_args} -u ${OPTARG}"
+	  show_user=${OPTARG}
 	  ;;
       a)
 	  show_project=${OPTARG}
@@ -503,43 +509,153 @@ ${stat_cmd} ${stat_args} | tr '?' '-' | sort -t '^' -k 7 -r |\
   fi
 done
 
-set_purple_mode
+
 typeset end_of_line=0
+
+if [[ -n "$show_user" ]]; then
+    user_projects="`sacctmgr -nP list assoc where user=$show_user | cut -f 2 -d '|'  | sort -u | while read line; do echo -n "$line,"; done; echo 2>/dev/null`"
+fi
+
+set_purple_mode
 scontrol --details -o show reservation | awk '/ReservationName/{
-match($0,/Users=([\[\]\(\)a-z\-:_@A-Z0-9]+)/,a);
+match($0,/Users=([\[\]\(\)a-z\-,:_@A-Z0-9]+)/,a);
 printf "%s ",a[1]; 
-match($0,/Accounts=([\[\]\(\)a-z\-:_@A-Z0-9]+)/,a);
+match($0,/Accounts=([\[\]\(\)a-z\-,:_@A-Z0-9]+)/,a);
 printf "%s ",a[1]; 
-match($0,/ReservationName=([\[\]\(\)a-z\-:_@A-Z0-9]+)/,a);
+match($0,/ReservationName=([\[\]\(\)a-z\-,:_@A-Z0-9]+)/,a);
 printf "%s ",a[1]; 
-match($0,/PartitionName=([\[\]\(\)a-z\-:_@A-Z0-9]+)/,a);
+match($0,/StartTime=([\[\]\(\)a-z\-,:_@A-Z0-9]+)/,a);
 printf "%s ",a[1]; 
-match($0,/StartTime=([\[\]\(\)a-z\-:_@A-Z0-9]+)/,a);
+match($0,/EndTime=([\[\]\(\)a-z\-,:_@A-Z0-9]+)/,a);
 printf "%s ",a[1]; 
-match($0,/EndTime=([\[\]\(\)a-z\-:_@A-Z0-9]+)/,a);
-printf "%s ",a[1]; 
-match($0,/Nodes=([\[\]\(\)a-z\-:_@A-Z0-9]+)/,a);
+match($0,/Nodes=([\[\]\(\)a-z\-,:_@A-Z0-9]+)/,a);
 printf "%s ",a[1]; 
 printf "\n";
 }' | while [[ ${end_of_line} -eq 0 ]]
   do
-  read USER PROJECT NAME QUEUE SLURMSTART SLURMLIM NODES
+  read USERS PROJECTS NAME SLURMSTART SLURMLIM NODES
   status=$?
+  USER=
+  PROJECT=
+  USER_PROJECT=
+  QUEUE= 
   if [ $status -eq 0 ]
       then
+      project_count=0
 
-      if [[ -n ${show_project} ]]
-      then
-	  if [[ ${show_project} != *@* ]]; then 
-	      PROJECT=`extract_base_acct $PROJECT`
-	  fi
-	  
-	  if [[ ${PROJECT} != ${show_project} ]]
-	  then
+      # Filter by project
+      if [[ -n ${show_project} ]]; then
+	  # Search for the project in the project list of the reservation
+	  IFS=,
+	  for p in $PROJECTS; do
+	      if [[ ${show_project} != *@* ]]; then 
+		  p=`extract_base_acct $p`
+	      fi
+	      
+	      if [[ ${p} = ${show_project} ]]; then
+		  PROJECT=${p}
+		  break
+	      fi
+	  done
+	  unset IFS
+
+	  if [[ -z ${PROJECT} ]]; then
+	      # We're not in this reservation
 	      continue
 	  fi
-      else
+      fi
+
+
+      # Filter by user
+      if [[ -n ${show_user} ]]
+      then
+	  # See if the user is allowed to use one of the project of the reservation
+	  IFS=,	  
+	  for p in $PROJECTS; do
+
+	      for up in $user_projects; do
+		  if [[ ${p} = ${up} ]]; then
+		      USER_PROJECT=`extract_base_acct ${p}`
+		      break
+		  fi
+	      done
+	      if [[ -n ${USER_PROJECT} ]]; then
+		  break
+	      fi
+	  done
+	  unset IFS
+
+	  # If we find one show it as the project
+	  if [[ -n ${USER_PROJECT} ]]; then
+	      PROJECT=${USER_PROJECT}
+	  else
+	   # Else, cycle through all the users of the reservation and see if the user is part of it
+	      IFS=,
+	      for u in $USERS; do
+		  if [[ ${u} = ${show_user} ]]; then
+		      USER=${u}
+		      break
+		  fi
+	      done
+	      unset IFS
+	      if [[ -z ${USER} ]]; then
+		  # We're not in this reservation
+		  continue
+	      fi
+	     
+	  fi
+      fi
+
+      # Get the list of partitions which contain nodes from the reservation
+      QUEUES=`sinfo -h -n $NODES -o '%N|%P' | sort -t '|' -k 2 | awk -F '|' '/[[:alnum:]_\[,\-\]]+\|\w+/ {if (S==0) S=1; else printf ",";printf "%s",$2} END {printf "\n"}'`
+
+      # Filter by partition
+      if [[ -n $show_partition ]]; then
+	  IFS=,
+	  for q in $QUEUES; do
+	      if [[ ${q} = ${show_partition} ]]; then
+		  QUEUE=$q
+                  break
+	      fi
+          done
+	  unset IFS
+
+	  if [[ -z $QUEUE ]]; then
+	      continue
+	  fi
+      fi
+
+      # Try to extract one of the allowed users, projects or queues if none was set yet
+      if [[ -z $PROJECT ]]; then
+	  PROJECT=`echo ${PROJECTS%%,*}`
 	  PROJECT=`extract_base_acct $PROJECT`
+      fi
+
+      if [[ -z $USER ]]; then
+	  USER=`echo ${USERS%%,*}`
+      fi
+
+      if [[ -z $QUEUE ]]; then
+	  QUEUE=`echo ${QUEUES%%,*}`
+      fi
+
+      #Show a + sign if there are other users, projects or queues
+      if [[ -n $USER ]]; then
+	  if [[ $USERS = *,* ]]; then
+	      USER="${USER}+"
+	  fi
+      fi
+
+      if [[ -n $PROJECT ]]; then
+	  if [[ $PROJECTS = *,* ]]; then
+	      PROJECT="${PROJECT}+"
+	  fi
+      fi
+
+      if [[ -n $QUEUE ]]; then
+	  if [[ $QUEUES = *,* ]]; then
+	      QUEUE="${QUEUE}+"
+	  fi
       fi
 
       SLURMSTART=`echo $SLURMSTART | tr T ' '`
@@ -552,6 +668,9 @@ printf "\n";
 
       (( difftime = $UNIXSTART - current_time ))
       if [ $difftime -gt 0 ]; then
+	  if [[ ${stateful_show} -eq 1 ]] && [[ ${show_pending} -ne 1 ]]; then
+	      continue
+	  fi
 	  STATE="PEN"
 	  if [ $difftime -lt 86400 ]; then
 	      TIMESTART="`TZ=GMT date -d "$SLURMSTART" '+%Hh%M'`"
@@ -559,6 +678,9 @@ printf "\n";
 	      TIMESTART="`TZ=GMT date -d "$SLURMSTART" '+%b%d'`"
 	  fi
       else
+	  if [[ ${stateful_show} -eq 1 ]] && [[ ${show_running} -ne 1 ]]; then
+	      continue
+	  fi
 	  STATE="RUN"
 	  (( TIMESTART = - $difftime ))
 	  TIMESTART=$(shrink_time $TIMESTART)
