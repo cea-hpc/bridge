@@ -9,7 +9,11 @@
 	-- mpp: sort numerically by priority
 	-- msub: allow multiple -E
 	-- mpp: differentiate completing job
-	
+    -- bull(x)mpi-pin addons: use content of BRIDGE_CPUS_BINDING_WRAPPER
+       env var to indicate the name of the cpuspin.sh tool. Default to using
+       a tool name cpuspin.sh in the PATH. (it was previsouly statically defined
+       as /usr/local/bridge/dam/cpuspin.sh)
+
 * Changes in bridge-1.4.12
 ==========================
 	-- IntelMPI addon : now use direct srun execution when I_MPI_PMI_LIBRARY
