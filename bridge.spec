@@ -1,6 +1,6 @@
 Summary: Bridge CEA In-House Batch Environment
 Name: bridge
-Version: 1.4.14
+Version: 1.4.15
 Release: 1
 License: CeCILL License
 Group: System Environment/Base
@@ -189,6 +189,8 @@ rm -rf $RPM_BUILD_ROOT
 %endif
 
 %changelog
+* Wed Jun 27 2012 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.4.15-1
+- tag release 1.4.15-1 for usage on TGCC/TERA+ machines
 * Wed Jun 27 2012 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.4.14-1
 - tag release 1.4.14-1
 * Tue Nov 08 2011 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.4.12-1
