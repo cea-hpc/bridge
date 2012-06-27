@@ -183,7 +183,7 @@ function bridge_addon_mprun_spmd_pre_run {
 
     if [[ ${BRIDGE_CPUS_BINDING} == yes ]]
     then
-	spmd_run_args="/usr/local/bridge/dam/cpuspin.sh ${spmd_run_args}"
+	spmd_run_args="${BRIDGE_CPUS_BINDING_WRAPPER:-/usr/local/bridge/dam/cpuspin.sh} ${spmd_run_args}"
     fi
 
     return 0

@@ -1,0 +1,106 @@
+#
+# Addon that help to log the user command executed by mprun. It only prints
+# the trailing components once the basic mprun options have been processed.
+#
+# Parameters can be set using the following environment variable:
+#
+# BRIDGE_ADDON_LOGGER_CMD :        command to use to log the messages.
+#                                  default to "logger"
+# BRIDGE_ADDON_LOGGER_PRIORITY:    pass this value to the command using a -p option.
+#                                  useful to select the facility with logger.
+#                                  default is no particular priority.   
+# BRIDGE_ADDON_LOGGER_TAG:         pass this value to the command using a -t option.
+#                                  useful to select the tag with logger.
+#                                  default is "BRIDGE".
+#
+
+### MSUB ### MSUB ### MSUB ### MSUB ### MSUB ### MSUB ### MSUB ### MSUB ### MSUB ### MSUB 
+
+function bridge_addon_msub_setopt {
+    return 0
+}
+
+function bridge_addon_msub_getopt {    
+    return 0
+}
+
+function bridge_addon_msub_alteropt {
+    return 0
+}
+
+function bridge_addon_msub_alterscript {
+    return 0
+}
+
+### MPRUN ### MPRUN ### MPRUN ### MPRUN ### MPRUN ### MPRUN ### MPRUN ### MPRUN ### MPRUN 
+
+function bridge_addon_mprun_setopt {
+    return 0
+}
+
+function bridge_addon_mprun_getopt {
+    return 0
+}
+
+function bridge_addon_mprun_alteropt {
+
+    ## on se place en mode debug si souhaite
+    typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+	then
+	set -x
+    fi
+    
+    ## on incremente le niveau de log
+    typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+    
+    ## on ajoute une entete a la log
+    typeset LOGGER="${LOGGER} Logger Addon :"
+
+    ## on fixe la ligne de commande permettant de logger
+    typeset xlogger_cmd=${BRIDGE_ADDON_LOGGER_CMD:-logger}
+    typeset xlogger_args=
+    if [[ -n ${BRIDGE_ADDON_LOGGER_PRIORITY} ]]
+	then
+	xlogger_args="${xlogger_args} -p ${BRIDGE_ADDON_LOGGER_PRIORITY}"
+    fi
+    if [[ -n ${BRIDGE_ADDON_LOGGER_TAG:-BRIGDE} ]]
+	then
+	xlogger_args="${xlogger_args} -t ${BRIDGE_ADDON_LOGGER_TAG:-BRIDGE}"
+    fi
+    ${LOGGER} "logging using cmdline '${xlogger_cmd} ${xlogger_args}'"
+
+    ## on collecte des infos
+    xuid=$(id -u)
+    xuser=$(id -un)
+    xbatchid=${BRIDGE_MSUB_JOBID:--}
+
+    ## on print la ligne de log
+    if [[ ${BRIDGE_LOGGER_MPRUN_ALTEROPT} != 1 ]]
+	then
+	${xlogger_cmd} ${xlogger_args} "user=${xuser} batchid=${xbatchid}" \
+	    "$(basename ${bridge_mprun_cmd})_args=${bridge_mprun_args}"
+    fi
+    export BRIDGE_LOGGER_MPRUN_ALTEROPT=1
+
+    return 0
+
+}
+
+function bridge_addon_mprun_spmd_pre_allocate {
+    return 0
+}
+
+
+function bridge_addon_mprun_spmd_post_allocate {
+    return 0
+}
+
+
+function bridge_addon_mprun_spmd_pre_run {
+    return 0
+}
+
+function bridge_addon_mprun_spmd_post_run {
+    return 0
+}

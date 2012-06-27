@@ -65,8 +65,12 @@ if [[ ! -d ${BRIDGE_CONFDIR} ]]
     BRIDGE_CONFDIR=/etc
 fi
 #------------------------------------------------------------------------------------------------------------------
+# Make sure all bridge variables are defined particularly  ${BRIDGE_MPRUN_PROCID}
+# does not work ${BRIDGE_PROFILE_DIR}/${RESOURCE_MANAGER}.sh
+. ${BRIDGE_PROFILE_DIR}/slurm.sh
+#------------------------------------------------------------------------------------------------------------------
 # on fixe les options de base du script
-typeset BRIDGE_VTUNE_GETOPT_OPTIONS="dvho:O:R:n:"
+typeset BRIDGE_VTUNE_GETOPT_OPTIONS="dvho:O:R:n:t:"
 #------------------------------------------------------------------------------------------------------------------
 typeset BRIDGE_HOSTNAME=$(hostname 2>/dev/null)
 #------------------------------------------------------------------------------------------------------------------
@@ -87,9 +91,9 @@ typeset EXIT_STATUS=1
 #------------------------------------------------------------------------------------------------------------------
 # on fixe l'usage de la commande et le code retour par defaut
 #------------------------------------------------------------------------------------------------------------------
-typeset USAGE="usage : ${PROGNAME} [-dvh] [-o output_dir] [-n activity_name] [-O options] [-R rank] app [args..]
-
- ${PROGNAME} est un wrapper interne permettant de profiler une application parallele a l'aide de vtune\n"
+typeset USAGE="usage : ${PROGNAME} [-dvh] [-n activity-name] [-t analysis-type] [-O options] [-R rank] [-o output_dir] app [args..]
+ ${PROGNAME} profile une application parallele a l'aide de vtune 
+ default  : collect nehalem-general-exploration "
 ###################################################################################################################
 # On source les librairies communes utiles et on fixe les variables de log
 #------------------------------------------------------------------------------------------------------------------
@@ -103,12 +107,13 @@ typeset ERROR="bridge_printer ${DEFAULT_PRINTER_OPTIONS} -ft error Vtune Addon :
 ###################################################################################################################
 # On fixe les parametres du script
 #------------------------------------------------------------------------------------------------------------------
-typeset bridge_vtune_run_cmd=/opt/intel/vtune/bin/vtl
-typeset bridge_vtune_activity_cmd=/opt/intel/vtune/bin/ActivityController
-typeset bridge_vtune_options=
+typeset bridge_vtune_run_cmd=/opt/intel/vtune_amplifier_xe_2011/bin64/amplxe-cl
+typeset bridge_vtune_activity_cmd="/opt/intel/vtune_amplifier_xe_2011/bin64/amplxe-cl -command"
 #------------------------------------------------------------------------------------------------------------------
-typeset bridge_vtune_activity_name=
-typeset bridge_vtune_activity_options=
+#RGH default activity -collect
+typeset bridge_vtune_activity_name=-collect
+typeset bridge_vtune_activity_type=
+typeset bridge_vtune_activity_options=-no-auto-finalize
 typeset bridge_vtune_process_rank=all
 typeset bridge_vtune_output_dir=
 #------------------------------------------------------------------------------------------------------------------
@@ -152,6 +157,10 @@ do
 	  bridge_vtune_output_dir="${OPTARG}"
 	  ;;
       
+      t)
+	  bridge_vtune_activity_type="${OPTARG}"
+	  ;;
+      
       *) 
 	  show_usage
 	  exit 1
@@ -169,7 +178,7 @@ bridge_vtune_args="$@"
 # On se place en mode debug si necessaire
 #------------------------------------------------------------------------------------------------------------------
 if [[ "${BRIDGE_DEBUG_MODE}" = "yes" ]]
-    then
+then
     set -x
 fi
 ###################################################################################################################
@@ -186,11 +195,12 @@ bridge_readconf
 ###################################################################################################################
 # On verifie qu'au moins un argument est present sur la ligne de commande
 #------------------------------------------------------------------------------------------------------------------
-if [[ $# -lt 1 ]]
-    then
-    show_usage >&2
-    return 2
-fi
+
+if [[ $# -lt 1 ]]                                          
+then                                       
+    show_usage >&2                     
+    return 2                   
+fi  
 ###################################################################################################################
 
 
@@ -200,25 +210,35 @@ fi
 # on commence par sourcer le fichier de definition des variables d'environnement parallele
 . ${BRIDGE_MPRUN_PROFILE} 2>/dev/null
 #------------------------------------------------------------------------------------------------------------------
+
+#RGH la commande en ligne de vtune amplxe-cl ne gere pas la notion de projet 
+#juste un repertoire de resultat passe avec l option -r
 # on cree un projet par allocation
-typeset BRIDGE_VTUNE_PROJECT="project_${BRIDGE_MPRUN_JOBID}"
-typeset BRIDGE_VTUNE_PROJECT_DIR="${TMPDIR}/vtune/${BRIDGE_VTUNE_PROJECT}"
+#RGH typeset BRIDGE_VTUNE_PROJECT="project_${BRIDGE_MPRUN_JOBID}"
+#typeset BRIDGE_VTUNE_PROJECT="project_${SLURM_JOBID}"
+#typeset BRIDGE_VTUNE_PROJECT_DIR="${TMPDIR}/vtune/${BRIDGE_VTUNE_PROJECT}"
 # on verifie que les variables vtune sont fixees correctement
-if [[ -n ${VTUNE_USER_DIR} ]]
-    then
-    ${LOGGER} "surcharge de la variable d'environnement VTUNE_USER_DIR afin de garantir la coherence du projet resultat"
+#RGHif [[ -n ${VTUNE_USER_DIR} ]]
+#RGH    then
+#RGH    ${LOGGER} "surcharge de la variable d'environnement VTUNE_USER_DIR afin de garantir la coherence du projet resultat"
+#RGHfi
+#RGHexport VTUNE_USER_DIR=${BRIDGE_VTUNE_PROJECT_DIR}
+#RGH #${LOGGER} "VTUNE_USER_DIR=${BRIDGE_VTUNE_PROJECT_DIR}"
+if [[ -n ${bridge_vtune_output_dir} ]]
+then
+    export VTUNE_USER_DIR=${bridge_vtune_output_dir}/job${SLURM_JOB_ID}_node${SLURM_NODEID}
+else
+    export VTUNE_USER_DIR=$PWD/job${SLURM_JOB_ID}_node${SLURM_NODEID}
 fi
-export VTUNE_USER_DIR=${BRIDGE_VTUNE_PROJECT_DIR}
-${LOGGER} "VTUNE_USER_DIR=${BRIDGE_VTUNE_PROJECT_DIR}"
 #------------------------------------------------------------------------------------------------------------------
 # on cree un vtune global dir par job et par noeud
-if [[ -n ${VTUNE_GLOBAL_DIR} ]]
-    then
-    ${LOGGER} "surcharge de la variable d'environnement VTUNE_GLOBAL_DIR"
-fi
-VTUNE_GLOBAL_DIR="${BRIDGE_VTUNE_PROJECT_DIR}"
-VTUNE_GLOBAL_DIR="${VTUNE_GLOBAL_DIR}/job${BRIDGE_MPRUN_STEPID}_node${BRIDGE_MPRUN_NODEID}_task${BRIDGE_MPRUN_PROCID}/global_dir"
-${LOGGER} "VTUNE_GLOBAL_DIR=${VTUNE_GLOBAL_DIR}"
+#RGHif [[ -n ${VTUNE_GLOBAL_DIR} ]]
+#RGH   then
+#RGH    ${LOGGER} "surcharge de la variable d'environnement VTUNE_GLOBAL_DIR"
+#RGHfi
+#RGHVTUNE_GLOBAL_DIR="${BRIDGE_VTUNE_PROJECT_DIR}"
+#RGHVTUNE_GLOBAL_DIR="${VTUNE_GLOBAL_DIR}/job${BRIDGE_MPRUN_STEPID}_node${BRIDGE_MPRUN_NODEID}_task${BRIDGE_MPRUN_PROCID}/global_dir"
+#RGH${LOGGER} "VTUNE_GLOBAL_DIR=${VTUNE_GLOBAL_DIR}"
 #------------------------------------------------------------------------------------------------------------------
 # on regarde si une valeur d'identifiant de process est defini
 # si oui, on semble bien etre dans un job MPI, on continue
@@ -226,168 +246,180 @@ ${LOGGER} "VTUNE_GLOBAL_DIR=${VTUNE_GLOBAL_DIR}"
 typeset VTL_APP
 typeset VTL_ARGS
 if [[ -z ${BRIDGE_MPRUN_PROCID} ]]
-    then
+then
     ${ERROR} "ce programme doit etre execute au sein d'une application parallele"
     EXIT_STATUS=3
 else
-
     ## on compare le rang local et le process rank vtune demande
+    if [[ ${BRIDGE_MPRUN_PROCID} -eq 0 ]]
+    then
+        ${LOGGER} "Launching ${bridge_vtune_run_cmd} ${bridge_vtune_activity_name} ${bridge_vtune_activity_type}"
+    fi
     if [[ ${BRIDGE_MPRUN_PROCID} -eq ${bridge_vtune_process_rank} ]]
-	then
-
-	### on cree eventuellement le dir du projet
-	if [[ ! -d ${VTUNE_USER_DIR} ]]
-	    then
-	    ${LOGGER} "creating VTUNE_USER_DIR ..."
-	    mkdir -p ${VTUNE_USER_DIR}
-	    if [ $? -ne 0 ]
-		then
-		${ERROR} "unable to create VTUNE_USER_DIR. End of program"
-		EXIT_NOW=
-	    else
-		${LOGGER} "created with success"
-	    fi
-	fi
-
+    then
 	## on cree eventuellement le repertoire de travail
-	if [[ ! -d ${VTUNE_GLOBAL_DIR} ]]
-	    then
-	    ${LOGGER} "creating VTUNE_GLOBAL_DIR ..."
-	    mkdir -p ${VTUNE_GLOBAL_DIR}
-	    if [ $? -ne 0 ]
-		then
-		${ERROR} "unable to create VTUNE_GLOBAL_DIR. End of program"
-		EXIT_NOW=
-	    else
-		${LOGGER} "created with success"
-	    fi
-	fi
+#RGH	if [[ ! -d ${VTUNE_GLOBAL_DIR} ]]
+#RGH	    then
+#RGH	    ${LOGGER} "creating VTUNE_GLOBAL_DIR ..."
+#RGH	    mkdir -p ${VTUNE_GLOBAL_DIR}
+#RGH	    if [ $? -ne 0 ]
+#RGH		then
+#RGH		${ERROR} "unable to create VTUNE_GLOBAL_DIR. End of program"
+#RGH		EXIT_NOW=
+#RGH	    else
+#RGH		${LOGGER} "created with success"
+#RGH	    fi
+#RGH	fi
 
 	## on genere la ligne de commande a executer
-	VTL_APP=$1
+        VTL_APP=$1
 	if [ $# -gt 1 ]
-	    then
-	    shift
+	then
+    	    shift
 	    VTL_ARGS=$@
 	fi
 	${LOGGER} "command : ${VTL_APP}"
 	${LOGGER} "args : ${VTL_ARGS}"
-	if [[ -z ${bridge_vtune_activity_name} ]]
-	    then
-	    bridge_vtune_activity_name="job${BRIDGE_MPRUN_STEPID}_node${BRIDGE_MPRUN_NODEID}_task${BRIDGE_MPRUN_PROCID}"
+#RGH	if [[ -z ${bridge_vtune_activity_name} ]]
+#RGH    then
+#RGH	    bridge_vtune_activity_name="job${BRIDGE_MPRUN_STEPID}_node${BRIDGE_MPRUN_NODEID}_task${BRIDGE_MPRUN_PROCID}"
+#RGH	fi
+#RGH	${LOGGER} "activity name : ${bridge_vtune_activity_name}"
+	if [[ -z ${bridge_vtune_activity_type} ]]
+        then
+            bridge_vtune_activity_type="nehalem-general-exploration"
 	fi
-	${LOGGER} "activity name : ${bridge_vtune_activity_name}"
-	if [[ -z ${bridge_vtune_activity_options} ]]
+	    ${LOGGER} "activity type : ${bridge_vtune_activity_type}"
+
+## on agit en fonction du process rank demande
+    if [[ ${bridge_vtune_process_rank} == all ]]
+	then
+### on cree eventuellement le  user dir de l activite
+	if [[ ! -d ${VTUNE_USER_DIR}/fullsystem} ]]
+	then
+	    ${LOGGER} "creating VTUNE_USER_DIR ..."
+	    mkdir -p ${VTUNE_USER_DIR}/fullsystem
+	    if [ $? -ne 0 ]
 	    then
-	    bridge_vtune_activity_options="-c sampling"
-	fi
-	${LOGGER} "activity options : ${bridge_vtune_activity_options}"
-
-	## on agit en fonction du process rank demande
-	if [[ ${bridge_vtune_process_rank} == all ]]
-	    then
-
-	    ### pas beau et a change, on recupere la liste des cpus binde...
-	    BRIDGE_VTUNE_CPUSET=$(echo $(cat /dev/cpuset/rms_${RMS_RESOURCE}/job_${RMS_JOBID}_*/cpus 2>/dev/null) |tr ' ' ',')
-	    
-	    ### on demarre la collecte
-	    typeset counter=0
-	    ${bridge_vtune_run_cmd} project -d activity ${bridge_vtune_activity_name} \
-		-d 0 ${bridge_vtune_activity_options} \
-		-o "-cpu-mask ${BRIDGE_VTUNE_CPUSET}" run &
-	    until ${bridge_vtune_activity_cmd}  -status | grep -q "The Activity (${bridge_vtune_activity_name}) is running"
-	      do
-	      if [[ ${counter} -gt 15 ]]
-		  then
-		  touch ${VTUNE_USER_DIR}/ERROR
-		  ${ERROR} "unable to start vtune, launching app without profiler support"
-		  break;
-	      fi
-	      (( counter = counter +1 ))
-	      sleep 2
-	    done
-
-	    #### on lance l'appli
-	    touch ${VTUNE_USER_DIR}/GO
-	    ${VTL_APP} ${VTL_ARGS}
-	    
-	else
-
-	    if [[ -z ${VTL_ARGS} ]]
-		then
-		COMMAND="${bridge_vtune_run_cmd} project -d activity ${bridge_vtune_activity_name} \
-${bridge_vtune_activity_options} -app ${VTL_APP} -moi ${VTL_APP} run"
+	        ${ERROR} "unable to create VTUNE_USER_DIR. End of program"
+	        EXIT_NOW=
 	    else
-		COMMAND="${bridge_vtune_run_cmd} project -d activity ${bridge_vtune_activity_name} \
-${bridge_vtune_activity_options} -app ${VTL_APP},\'${VTL_ARGS}\' -moi ${VTL_APP} run"
+	        ${LOGGER} "created with success"
 	    fi
+    fi
+### pas beau et a change, on recupere la liste des cpus binde...
+###	BRIDGE_VTUNE_CPUSET=$(echo $(cat /dev/cpuset/slurm_${SLURMD_NODENAME}_${SLURM_JOBID}/cpus 2>/dev/null) |tr ' ' ',')
+	BRIDGE_VTUNE_CPUSET=$(echo $(cat /dev/cpuset/slurm${SLURM_JOBID}/slurm${SLURM_JOBID}.${SLURM_STEPID}_${SLURM_LOCALID}/cpus 2>/dev/null) |tr ' ' ',')
+### on demarre la collecte sur tout le systeme
+	typeset counter=0
+	${bridge_vtune_run_cmd} ${bridge_vtune_activity_name} \
+	${bridge_vtune_activity_type} ${bridge_vtune_activity_options} \
+	-cpu-mask ${BRIDGE_VTUNE_CPUSET} -analyze-system -r ${VTUNE_USER_DIR}/fullsystem --duration unlimited &
+#RGH amplxe-cl -command status devrait remplacer mais bug pas reconnue alors que dans le help
+#RGH	    until ${bridge_vtune_activity_cmd} status -r ${VTUNE_USER_DIR} | grep -q "The Activity (${bridge_vtune_activity_name}) is running"
+#RGH	      do
+#RGH	      if [[ ${counter} -gt 15 ]]
+#RGH		  then
+#RGH		  touch ${VTUNE_USER_DIR}/ERROR
+#RGH		  ${ERROR} "unable to start vtune, launching app without profiler support"
+#RGH		  break;
+#RGH	      fi
+#RGH	      (( counter = counter +1 ))
+#RGH	      sleep 2
+#RGH	    done
+#RGH        sleep 2 a changer /voir...
+	sleep 2
+#### on lance l'appli
+	touch ${VTUNE_USER_DIR}/GO
+	${VTL_APP} ${VTL_ARGS}
 
-	    touch ${VTUNE_USER_DIR}/GO
-	    ${COMMAND}
-	fi
-
-	STATUS=$?
-
-	### si vtune a bien demarre
-	if [[ ! -f ${VTUNE_USER_DIR}/ERROR ]]
+    else
+### on cree eventuellement le  user dir de l activite
+    if [[ ! -d ${VTUNE_USER_DIR}/task${BRIDGE_MPRUN_PROCID} ]]
+    then
+        ${LOGGER} "creating VTUNE_USER_DIR ..."
+	    mkdir -p ${VTUNE_USER_DIR}/task${BRIDGE_MPRUN_PROCID}
+	    if [ $? -ne 0 ]
 	    then
+	        ${ERROR} "unable to create VTUNE_USER_DIR. End of program"
+	        EXIT_NOW=
+        else
+            ${LOGGER} "created with success"
+        fi
+    fi
+    if [[ -z ${VTL_ARGS} ]]
+    then
+        COMMAND="${bridge_vtune_run_cmd} ${bridge_vtune_activity_name} \
+        ${bridge_vtune_activity_type} ${bridge_vtune_activity_options} -r ${VTUNE_USER_DIR}/task${BRIDGE_MPRUN_PROCID} ${VTL_APP}"
+    else
+        COMMAND="${bridge_vtune_run_cmd} ${bridge_vtune_activity_name} \
+        ${bridge_vtune_activity_type} ${bridge_vtune_activity_options} -r ${VTUNE_USER_DIR}/task${BRIDGE_MPRUN_PROCID} ${VTL_APP},\'${VTL_ARGS}\'"
+    fi
 
-	    #### on arrete un eventuel mode collecte globale
-	    if [[ ${bridge_vtune_process_rank} == all ]]
-		then
-		${bridge_vtune_activity_cmd} -stop
-	    fi
-	    
-	    #### on genere si ok les packages resultats
-	    typeset PACKAGE_FILENAME="vtune_${BRIDGE_VTUNE_PROJECT}_node${BRIDGE_MPRUN_NODEID}"
-	    if [[ -n ${bridge_vtune_output_dir} ]]
-		then
-		PACKAGE_FILENAME="${bridge_vtune_output_dir}/${PACKAGE_FILENAME}"
-	    fi
-	    COMMAND="${bridge_vtune_run_cmd} pack ${PACKAGE_FILENAME}"
-	    if [ -f "${PACKAGE_FILENAME}" ] || [ -f "${PACKAGE_FILENAME}.vxp" ]
-		then
-		rm -f ${PACKAGE_FILENAME} ${PACKAGE_FILENAME}.vxp
-	    fi
-	    ${COMMAND}
-	    
-	fi
-	
-	### on nettoie les repertoires de travail
-	rm -rf ${BRIDGE_VTUNE_PROJECT_DIR}
+    touch ${VTUNE_USER_DIR}/GO
+	        ${COMMAND}
+    fi
+
+    STATUS=$?
+###RGH si vtune a bien demarre
+##    if [[ ! -f ${VTUNE_USER_DIR}/ERROR ]]
+##    then
+#### on arrete un eventuel mode collecte globale
+	if [[ ! -f ${VTUNE_USER_DIR}/ERROR && ${bridge_vtune_process_rank} == all ]]
+  	then
+  	    ${bridge_vtune_activity_cmd} stop -r ${VTUNE_USER_DIR}/fullsystem 
+    fi
+#RGH
+#RGH        La finalization se  fait en fin de sampling ou via le gui	    
+#RGH	    #### on genere si ok les packages resultats
+#RGH 
+#RGH            typeset PACKAGE_FILENAME="vtune_${BRIDGE_VTUNE_PROJECT}_node${BRIDGE_MPRUN_NODEID}"
+#RGH            if [[ -n ${bridge_vtune_output_dir} ]]
+#RGH                then
+#RGH                PACKAGE_FILENAME="${bridge_vtune_output_dir}/${PACKAGE_FILENAME}"
+#RGH            fi
+#RGH            COMMAND="${bridge_vtune_run_cmd} pack ${PACKAGE_FILENAME}"
+#RGH            if [ -f "${PACKAGE_FILENAME}" ] || [ -f "${PACKAGE_FILENAME}.vxp" ]
+#RGH                then
+#RGH                rm -f ${PACKAGE_FILENAME} ${PACKAGE_FILENAME}.vxp
+#RGH            fi
+#RGH            ${COMMAND}
+#RGH 	### on nettoie les repertoires de travail
+#RGH    plus de repertoire de travail
+#RGH	rm -rf ${BRIDGE_VTUNE_PROJECT_DIR}
 	
     else
-
-	typeset TIMEOUT_FLAG=no
-	typeset counter=0
-	while  [[ ! -f ${VTUNE_USER_DIR}/GO ]] && [[ ! -f ${VTUNE_USER_DIR}/ERROR ]]
-	  do
-	  if [[ ${counter} -gt 40 ]]
-	      then
-	      TIMEOUT_FLAG=yes
-	      break
-	  fi
-	  (( counter = counter +1 ))
-	  sleep 2
-	done
-	if [[ ! -f ${VTUNE_USER_DIR}/ERROR ]] && [[ ${TIMEOUT_FLAG} == "no" ]]
-	    then
-	    #### on execute 
-	    $@
-	else
-	    ${ERROR} "probleme durant le demarrage de vtune"
-	fi
-
-	STATUS=$?
-
+    typeset TIMEOUT_FLAG=no
+    typeset counter=0
+    while  [[ ! -f ${VTUNE_USER_DIR}/GO ]] && [[ ! -f ${VTUNE_USER_DIR}/ERROR ]]
+    do
+        if [[ ${counter} -gt 40 ]]
+        then
+            TIMEOUT_FLAG=yes
+            break
+        fi
+        (( counter = counter +1 ))
+        sleep 2
+    done
+    if [[ ! -f ${VTUNE_USER_DIR}/ERROR ]] && [[ ${TIMEOUT_FLAG} == "no" ]]
+    then
+#### on execute
+        $@
+    else
+        ${ERROR} "probleme durant le demarrage de vtune"
     fi
     
-    EXIT_STATUS=$?
+    STATUS=$?
 
+    fi
+    if [[ ${BRIDGE_MPRUN_PROCID} -eq 0 ]]
+    then
+        ${LOGGER} " Terminating ${bridge_vtune_run_cmd} - Results in ${VTUNE_USER_DIR}"
+    fi
+    EXIT_STATUS=$?
+    rm -f ${VTUNE_USER_DIR}/GO
 fi
 ###################################################################################################################
-
-
 ###################################################################################################################
 # On sort
 #------------------------------------------------------------------------------------------------------------------

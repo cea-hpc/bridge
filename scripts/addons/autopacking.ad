@@ -83,9 +83,9 @@ function bridge_addon_msub_alteropt {
 		## si plusieurs valeur possibles, on prend la plus petite
 		if [[ -n ${BRIDGE_MSUB_QUEUE} ]]
 		then
-		    cpn=$(sinfo -ho "%c" -p ${BRIDGE_MSUB_QUEUE} 2>/dev/null | sort -n | head -n 1)
+		    cpn=$(sinfo -eho "%c" -p ${BRIDGE_MSUB_QUEUE} 2>/dev/null | sort -n | head -n 1)
 		else
-		    cpn=$(sinfo -ho "%c" 2>/dev/null | sort -n | head -n 1)
+		    cpn=$(sinfo -eho "%c" 2>/dev/null | sort -n | head -n 1)
 		fi
 		if [[ -z ${cpn} ]]
 		then
@@ -185,6 +185,11 @@ function bridge_addon_mprun_alteropt {
 	${LOGGER} "disabled by env var"
 	return 0
     fi
+    if [[ ${BRIDGE_MPRUN_ALLOCATION} == "yes" ]]
+    then
+	${LOGGER} "disabled as already started in an allocation"
+	return 0
+    fi
 
     ## do auto-selection only if necessary
     low_t=${BRIDGE_ADDON_AUTOPACKING_LOW_THRESHOLD}
@@ -222,11 +227,17 @@ function bridge_addon_mprun_alteropt {
 
 		## on detecte le nombre de cores par noeud de calcul
 		## si plusieurs valeur possibles, on prend la plus petite
+		## attention, si pas de partition definie, on prend la plus grande
+		## car notre partition par defaut a 32 cores et l'hybrid 8....
+		## il faudrait plutot deviner la partition par defaut avant !
 		if [[ -n ${BRIDGE_MPRUN_PARTITION} ]]
 		then
-		    cpn=$(sinfo -ho "%c" -p ${BRIDGE_MPRUN_PARTITION} 2>/dev/null | sort -n | head -n 1)
+		    cpn=$(sinfo -eho "%c" -p ${BRIDGE_MPRUN_PARTITION} 2>/dev/null | sort -n | head -n 1)
+		elif [[ -n ${bridge_mprun_partition} ]]
+		    then
+		    cpn=$(sinfo -eho "%c" -p ${bridge_mprun_partition} 2>/dev/null | sort -n | head -n 1)
 		else
-		    cpn=$(sinfo -ho "%c" 2>/dev/null | sort -n | head -n 1)
+		    cpn=$(sinfo -eho "%c" 2>/dev/null | sort -n | tail -n 1)
 		fi
 		if [[ -z ${cpn} ]]
 		then
