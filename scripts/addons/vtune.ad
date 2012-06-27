@@ -1,6 +1,6 @@
 function bridge_addon_mprun_setopt {
 
-    typeset MYGETOPTOPTION="d:R:o:O:"
+    typeset MYGETOPTOPTION="d:R:o:O:t:"
 
     echo "${BRIDGE_MPRUN_GETOPT_OPTIONS}" | grep -q ${MYGETOPTOPTION}
 
@@ -42,25 +42,25 @@ function bridge_addon_mprun_getopt {
 \t*) Vtune
 
 \t -d vtune : execution de l application en mode profiling avec Vtune
-\t            Les packages peuvent etre post-traites a l aide de l outil
-\t            cea_vtlec
-\t -o dir   : repertoire de stockage du ou des packages vtune a generer
+\t            defaut -collect nehalem-general-exploration
+\t            Les repertoires peuvent etre post-traites a l aide de l outil
+\t            amplxe-gui
+\t -o dir   : repertoire de stockage des resultats 
 \t            par defaut le repertoire courant est utilise
-\t            les packages sont de la forme project_RESID_nodeID
-\t -O \"..\"  : options a passer a vtune. le mode par defaut est equivalent
-\t            a -O \"-c sampling\"
+\t            repertoire/jobid_nodeid/rankid ou repertoire/jobid_nodeid/fullsystem
+\t -O \"..\"  : options  complementaires a passer a vtune
+\t -t \"..\"  : activity type si autre que nehalem-general-exploration souhaitee
 \t -R rank  : rank du process sur lequel accrocher vtune (0<=rank<nprocs)
 \t            par defaut, l ensemble des processus est collecte sur chaque
 \t            noeud (equivalent a rank=all)
-\t            En mode callgraph, il est necessaire de preciser un processus
-\t            particulier
 \t
-\t Les variables d'environnement suivantes peuvent aussi etre utilisees pour
+\t Les variables d'environnement correspondantes peuvent aussi etre utilisees pour
 \t parametrer le profiling:
 \t
 \t BRIDGE_MPRUN_ADDON_VTUNE : une valeur de 1 active le profiling
 \t BRIDGE_MPRUN_ADDON_VTUNE_PACKAGE_DIR
 \t BRIDGE_MPRUN_ADDON_VTUNE_ACTIVITY_OPTIONS
+\t BRIDGE_MPRUN_ADDON_VTUNE_ACTIVITY_NAME
 \t BRIDGE_MPRUN_ADDON_VTUNE_PROCESS_RANK
 \n"
     
@@ -95,6 +95,10 @@ function bridge_addon_mprun_getopt {
 
 	  O)
 	      BRIDGE_MPRUN_ADDON_VTUNE_ACTIVITY_OPTIONS="${OPTARG}"
+	      ;;
+
+	  t)
+	      BRIDGE_MPRUN_ADDON_VTUNE_ACTIVITY_NAME="${OPTARG}"
 	      ;;
 
 	  *)
@@ -157,6 +161,10 @@ function bridge_addon_mprun_spmd_pre_run {
 	if [[ -n ${BRIDGE_MPRUN_ADDON_VTUNE_PROCESS_RANK} ]] 
 	    then
 	    vtune_wrapper_args="${vtune_wrapper_args} -R ${BRIDGE_MPRUN_ADDON_VTUNE_PROCESS_RANK}"
+	fi
+	if [[ -n ${BRIDGE_MPRUN_ADDON_VTUNE_ACTIVITY_NAME} ]] 
+	    then
+	    vtune_wrapper_args="${vtune_wrapper_args} -t ${BRIDGE_MPRUN_ADDON_VTUNE_ACTIVITY_NAME}"
 	fi
 	${LOGGER} "Vtune addon : swapping current args '${spmd_run_args}' with '${vtune_wrapper} ${vtune_wrapper_args} -- ${spmd_run_args}'"
 	spmd_run_args="${vtune_wrapper} ${vtune_wrapper_args} -- ${spmd_run_args}"

@@ -60,6 +60,7 @@ function bridge_addon_msub_alterscript {
     
     ## on ajoute une entete a la log
     typeset LOGGER="${LOGGER} DAM Wrapper Addon :"
+    typeset ERROR="${ERROR} DAM Wrapper Addon :"
 
     ## on regarde si la queue demandee n'est pas exclue du mecanisme
     if [[ -n ${BRIDGE_MSUB_QUEUE} ]] && [[ -n ${BRIDGE_ADDON_DAM_WRAPPER_EXCLUDED_QUEUES} ]]
@@ -97,11 +98,14 @@ function bridge_addon_msub_alterscript {
 		typeset temp_scriptfile=$(bridge_tmpfile ${TMPDIR:-/tmp}/DAM_wrapper)
 		if [[ -n ${temp_scriptfile} ]]
 		    then
-		    
+
 		    ## on genere le fichier script ameliore
-		    sed -e '0,/#### SCRIPT BEGINS HERE ####/!d' ${BRIDGE_ADDON_DAM_WRAPPER_TEMPLATE} > ${temp_scriptfile}
-		    cat ${BRIDGE_MSUB_SCRIPTFILE} >> ${temp_scriptfile}
-		    sed -e '/#### SCRIPT ENDS HERE ####/,$!d' ${BRIDGE_ADDON_DAM_WRAPPER_TEMPLATE} >> ${temp_scriptfile}
+		    local_err=$(sed -e '0,/#### SCRIPT BEGINS HERE ####/!d' ${BRIDGE_ADDON_DAM_WRAPPER_TEMPLATE} 2>&1 > ${temp_scriptfile} && cat ${BRIDGE_MSUB_SCRIPTFILE} 2>&1 >> ${temp_scriptfile} && sed -e '/#### SCRIPT ENDS HERE ####/,$!d' ${BRIDGE_ADDON_DAM_WRAPPER_TEMPLATE} 2>&1 >> ${temp_scriptfile})
+		    if [[ $? -ne 0 ]]
+			then
+			${ERROR} "unable to generate an enhanced temporary script file, aborting : ${local_err:--}"
+			exit 28
+		    fi
 
 		    ## on remplace le script de base par le nouveau
 		    cat ${temp_scriptfile} > ${BRIDGE_MSUB_SCRIPTFILE}
@@ -118,7 +122,8 @@ function bridge_addon_msub_alterscript {
 		    \rm -f ${temp_scriptfile}
 
 		else
-		    ${LOGGER} "unable to create temporary script file"
+		    ${ERROR} "unable to create temporary script file, aborting"
+		    exit 28
 		fi
 
 	    else

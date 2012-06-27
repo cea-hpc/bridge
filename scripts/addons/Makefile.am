@@ -23,6 +23,7 @@ dist_addonscripts_DATA		=	autoexclusive.ad \
 					example.ad \
 					intelmpi-slurm.ad \
 					inter-para-limits.ad \
+					logger.ad \
 					mpmd-cluster.ad \
 					mpmd-ws.ad \
 					mvapich2-slurm.ad \
