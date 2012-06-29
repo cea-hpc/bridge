@@ -512,6 +512,12 @@ AWKSCRIPT='
                         printf("%s ", $i)
                         opt=1
                 }
+                else if ($i=="-S") {
+                        printf("OPTION_S=")
+                        i++
+                        printf("%s ", $i)
+                        opt=1
+                }
                 else if ($i=="-p" || $i=="-A") {
                         printf("OPTION_A=")
                         i++
