@@ -922,10 +922,6 @@ if [[ -n ${BRIDGE_MSUB_LICENSES} ]]
 fi
 export BRIDGE_MSUB_LICENSES
 # non interpreted extra parameters
-if [[ -n ${BRIDGE_MSUB_EXTRA_PARAMETERS} ]]
-    then
-    submit_args="${submit_args} -E \"${BRIDGE_MSUB_EXTRA_PARAMETERS}\""
-fi
 export BRIDGE_MSUB_EXTRA_PARAMETERS
 # mail information
 if [[ -n ${BRIDGE_MSUB_MAIL_INFO} ]]
@@ -947,8 +943,8 @@ export BRIDGE_MSUB_EXCLUSIVE
 #------------------------------------------------------------------------------------------------------------------
 if [[ ${EXIT_STATUS} -eq 0 ]]
     then
-    ${LOGGER} "${submit_cmd} ${submit_args} ${BRIDGE_MSUB_SCRIPTFILE}"
-    ${submit_cmd} ${submit_args} ${BRIDGE_MSUB_SCRIPTFILE}
+    ${LOGGER} "${submit_cmd} ${submit_args} -E \"${BRIDGE_MSUB_EXTRA_PARAMETERS}\" ${BRIDGE_MSUB_SCRIPTFILE}"
+    ${submit_cmd} ${submit_args} -E "${BRIDGE_MSUB_EXTRA_PARAMETERS}" ${BRIDGE_MSUB_SCRIPTFILE}
     EXIT_STATUS=$?
 fi
 ###################################################################################################################

@@ -188,7 +188,7 @@ function submit_cmd {
 	      return 0
 	      ;;
 	  E)
-	      extra_parameters="${OPTARG}"
+	      extra_parameters=${OPTARG}
 	      ;;
 	  @)
 	      mail_addr=${OPTARG%%:*}
