@@ -56,7 +56,8 @@ function spmd_allocate_cmd {
     typeset exit_status=0
 
     spmd_allocate_cmd=${spmd_allocate_cmd:-salloc}
-    spmd_allocate_options=${spmd_allocate_options:--Q -K}
+    spmd_allocate_options=${spmd_allocate_options:--K}
+    spmd_allocate_quiet=
     spmd_allocate_args=
     spmd_allocate_separator=${spmd_allocate_separator:---}
 
@@ -199,11 +200,18 @@ function spmd_allocate_cmd {
 	    spmd_allocate_options="${spmd_allocate_options} -J ${spmd_allocate_requestname}"
 	fi
 
+	## Check if we can use the quiet mode of SLURM
+	echo "${spmd_allocate_extra_parameters}" | egrep -qw '\-v+'
+	if [[ $? -ne 0 ]]
+	then
+	    spmd_allocate_quiet="-Q "
+	fi
+
         ## on export quelques variables d'environnement dont une indiquant que l'on 
 	## a deja fait une allocation afin d'eviter les boucles
 	export BRIDGE_MPRUN_ALLOCATION=yes
-	${LOGGER} "${spmd_allocate_cmd} ${spmd_allocate_options} ${spmd_allocate_extra_parameters} ${spmd_allocate_separator} ${spmd_allocate_args}"
-	eval ${spmd_allocate_cmd} ${spmd_allocate_options} ${spmd_allocate_extra_parameters} ${spmd_allocate_separator} ${spmd_allocate_args}
+	${LOGGER} "${spmd_allocate_cmd} ${spmd_allocate_quiet}${spmd_allocate_options} ${spmd_allocate_extra_parameters} ${spmd_allocate_separator} ${spmd_allocate_args}"
+	eval ${spmd_allocate_cmd} ${spmd_allocate_quiet}${spmd_allocate_options} ${spmd_allocate_extra_parameters} ${spmd_allocate_separator} ${spmd_allocate_args}
 	exit_status=$?
     fi
 

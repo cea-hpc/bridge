@@ -2,6 +2,7 @@
 ==========================
     -- cosmetic version corresponding to the merge of separate branches
         1.4.13 (TGCC) and 1.4.14 (TERA)
+    -- mprun can now specify -E '-v' with slurm (TGCC Mantis#292)
 
 * Changes in bridge-1.4.14
 ==========================
