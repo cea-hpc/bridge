@@ -58,15 +58,7 @@ function bridge_addon_msub_getopt {
 	  X)
 	      BRIDGE_MSUB_ADDON_X11=1
 	      BRIDGE_MSUB_ADDON_X11_MODE=batch
-	      ${LOGGER} "export enabled with mode=batch"
-	      case ${BATCH_SYSTEM} in
-		  slurm)
-		      if [[ ${SLURM_SPANK_X11} != "done" ]] || [[ -z ${SLURM_SPANK_X11} ]]
-		      then
-			  export SLURM_SPANK_X11=${BRIDGE_MSUB_ADDON_X11_MODE}	
-		      fi
-		      ;;
-	      esac
+	      ${LOGGER} "export enabled by command line parameter (mode=batch)"
 	      ;;
 	  
 	  *)
@@ -78,6 +70,60 @@ function bridge_addon_msub_getopt {
 }
 
 function bridge_addon_msub_alteropt {
+
+    ## on se place en mode debug si souhaite
+    typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+	then
+	set -x
+    fi
+    
+    ## on incremente le niveau de log
+    typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+    
+    ## on ajoute une entete a la log
+    typeset LOGGER="${LOGGER} X11 Addon :"
+    typeset ERROR="${ERROR} X11 Addon :"
+
+    ## si on a deja activer le X11 on ne cherche pas dans le fichier
+    if [[ ${BRIDGE_MSUB_ADDON_X11} == 0 ]] || \
+	[[ ${BRIDGE_MSUB_ADDON_X11_MODE} != batch ]]
+    then
+
+	## on parse le script msub
+	X11_AWKSCRIPT='
+/^#MSUB/ {
+        opt=0
+        for(i=2; i<=NF; i++)
+                if ($i=="-X") {
+                        printf("BRIDGE_MSUB_ADDON_X11=1 ; BRIDGE_MSUB_ADDON_X11_MODE=batch ")
+                        opt=1
+                }
+        if ($opt==1) { printf("; ") }
+ }
+'
+	X11_ARGEXP=`${AWK:-awk} "$X11_AWKSCRIPT" < ${BRIDGE_MSUB_SCRIPTFILE}`
+	if [[ -n ${X11_ARGEXP} ]]
+	then
+	    ${LOGGER} "export enabled by '#MSUB -X' pragma in input script (mode=batch)"
+	fi
+	eval $X11_ARGEXP
+    fi
+
+    ## si le X11 est active, on fixe les options pour SLURM si necessaire
+    if [[ ${BRIDGE_MSUB_ADDON_X11} == 1 ]] && \
+	[[ ${BRIDGE_MSUB_ADDON_X11_MODE} == batch ]]
+    then
+	case ${BATCH_SYSTEM} in
+	    slurm)
+		if [[ ${SLURM_SPANK_X11} != "done" ]] || [[ -z ${SLURM_SPANK_X11} ]]
+		then
+		    export SLURM_SPANK_X11=${BRIDGE_MSUB_ADDON_X11_MODE}	
+		fi
+		;;
+	esac
+    fi
+
     return 0
 }
 
