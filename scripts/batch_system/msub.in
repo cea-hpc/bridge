@@ -207,7 +207,7 @@ Addons :
 # on appelle les fonctions mprun_setopt des differents addons afin d'initialiser le format du getopt en prenant en
 # compte leurs besoins
 #------------------------------------------------------------------------------------------------------------------
-typeset in_args="$@"
+typeset in_args=$*
 bridge_addons_call_function bridge_addon_msub_setopt
 #------------------------------------------------------------------------------------------------------------------
 # Analyse des options de la ligne de commande (priorite 1)
@@ -948,7 +948,7 @@ export BRIDGE_MSUB_EXCLUSIVE
 if [[ ${EXIT_STATUS} -eq 0 ]]
     then
     ${LOGGER} "${submit_cmd} ${submit_args} ${BRIDGE_MSUB_SCRIPTFILE}"
-    eval ${submit_cmd} ${submit_args} ${BRIDGE_MSUB_SCRIPTFILE}
+    ${submit_cmd} ${submit_args} ${BRIDGE_MSUB_SCRIPTFILE}
     EXIT_STATUS=$?
 fi
 ###################################################################################################################

@@ -132,7 +132,7 @@ function spmd_allocate_cmd {
       esac
     done
     shift ${OPTIND}-1 2>/dev/null
-    spmd_allocate_args="$@"
+    spmd_allocate_args=$*
 
     # on log un message si on est au sein d'une allocation
     if [[ ${BRIDGE_MPRUN_ALLOCATION} == yes ]]
@@ -211,7 +211,7 @@ function spmd_allocate_cmd {
 	## a deja fait une allocation afin d'eviter les boucles
 	export BRIDGE_MPRUN_ALLOCATION=yes
 	${LOGGER} "${spmd_allocate_cmd} ${spmd_allocate_quiet}${spmd_allocate_options} ${spmd_allocate_extra_parameters} ${spmd_allocate_separator} ${spmd_allocate_args}"
-	eval ${spmd_allocate_cmd} ${spmd_allocate_quiet}${spmd_allocate_options} ${spmd_allocate_extra_parameters} ${spmd_allocate_separator} ${spmd_allocate_args}
+	${spmd_allocate_cmd} ${spmd_allocate_quiet}${spmd_allocate_options} ${spmd_allocate_extra_parameters} ${spmd_allocate_separator} ${spmd_allocate_args}
 	exit_status=$?
     fi
 
@@ -311,7 +311,7 @@ function spmd_run_cmd {
       esac
     done
     shift ${OPTIND}-1 2>/dev/null
-    spmd_run_args="$@"
+    spmd_run_args=$*
 
     # on log un message si on est au sein d'une allocation
     if [[ ${BRIDGE_MPRUN_ALLOCATION} == yes ]]
@@ -437,7 +437,7 @@ function spmd_run_cmd {
 	fi
 	
 	${LOGGER} $(echo "${spmd_run_cmd} ${spmd_run_options} ${spmd_run_extra_parameters} ${spmd_run_separator} ${spmd_run_args}")
-	eval ${spmd_run_cmd} ${spmd_run_options} ${spmd_run_extra_parameters} ${spmd_run_separator} ${spmd_run_args}
+	${spmd_run_cmd} ${spmd_run_options} ${spmd_run_extra_parameters} ${spmd_run_separator} ${spmd_run_args}
 
 	exit_status=$?
     fi

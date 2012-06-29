@@ -5,6 +5,8 @@
     -- mprun can now specify -E '-v' with slurm (TGCC Mantis#292)
     -- add "#MSUB -S ..." pragma support in batch script (TGCC Mantis#270)
     -- add "#MSUB -X" pragma support in batch script (TGCC Mantis#270)
+    -- ensure proper management of msub/mprun parameters including ';' 
+       characters (TGCC Mantis#277))
 
 * Changes in bridge-1.4.14
 ==========================

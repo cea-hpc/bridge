@@ -55,7 +55,7 @@ function bridge_addons_call_function {
 	  typeset +f ${subfunc} >/dev/null 2>&1
 	  if [[ $? -eq 0 ]]
 	      then
-	      eval ${subfunc} $@
+	      ${subfunc} $*
 	  else
 	      ${LOGGER} "function ${subfunc} not defined in addon \"${addon}\", skipping"
 	      true
