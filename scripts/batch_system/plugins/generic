@@ -70,7 +70,7 @@ function submit_cmd {
     typeset local_submit_cmd=${bridge_msub_cmd:-echo submit}
     typeset local_submit_args=${bridge_msub_args}
 
-    while getopts r:o:e:s:A:N:n:c:m:t:M:T:L:q:S:KVW option
+    while getopts r:o:e:s:A:N:n:c:m:t:M:T:L:q:S:KVWE:@:a: option
       do
       case ${option} in
 	  
@@ -129,6 +129,19 @@ function submit_cmd {
 	      echo ${VERSION}
 	      return 0
 	      ;;
+	  E)
+	      extra_parameters="${OPTARG}"
+	      ;;
+	  @)
+	      mail_addr=${OPTARG%%:*}
+	      if [[ ${OPTARG} != ${mail_addr} ]]
+		  then
+		  mail_info=${OPTARG#*:}
+	      fi
+	      ;;
+	  a)
+              LOCAL_ARGEXP1="$LOCAL_ARGEXP1""after_jobs=${OPTARG}; "
+              ;;
 	  *)
 	      exit_status=255
 	      break
@@ -152,6 +165,16 @@ function submit_cmd {
     if [[ ${same_request_at_same_time_flag} -ne 0 ]]
 	then
 	local_submit_args="${local_submit_args} -W"
+    fi
+    ## on fixe les informations concernant le mail
+    if [[ -n ${mail_addr} ]]
+    then
+	${LOGGER} "skipping unsupported option -@ ..."
+    fi
+    ## on fixe les dependances de jobs
+    if [[ -n ${after_jobs} ]]
+    then
+	${LOGGER} "skipping unsupported option -a ${after_jobs}"
     fi
     if [[ -n ${requested_start_time} ]]
 	then

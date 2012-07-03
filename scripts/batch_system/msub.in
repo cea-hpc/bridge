@@ -66,7 +66,7 @@ fi
 #------------------------------------------------------------------------------------------------------------------
 # on fixe les options de base du script, utilisees par les addons pour parser les lignes de commandes
 #------------------------------------------------------------------------------------------------------------------
-typeset BRIDGE_MSUB_GETOPT_OPTIONS="dvVDhe:o:r:s:p:T:N:n:c:M:wWKm:t:L:q:P:S:E:@:xA:"
+typeset BRIDGE_MSUB_GETOPT_OPTIONS="dvVDhe:o:r:s:p:T:N:n:c:M:wWKm:t:L:q:P:S:E:@:xA:a:"
 #------------------------------------------------------------------------------------------------------------------
 typeset BRIDGE_HOSTNAME=$(hostname 2>/dev/null)
 #------------------------------------------------------------------------------------------------------------------
@@ -181,6 +181,10 @@ typeset USAGE="usage : ${PROGNAME} [-dvhV] \\
                  will send a mail to jdoe at the begining and the end of the job
                  default behavior depends of the underlying batch system
 
+ -a jobid[,..] : put an \"after\" dependency on the set of jobs defined as the argument.
+                 The submitted job will only be started when the jobs corresponding to
+                 the provided ids are terminated.
+
  script        : batch script to execute (default is read from stdin)
 
 Comments :
@@ -263,6 +267,7 @@ do
       P) ARGEXP1="$ARGEXP1""OPTION_P=$OPTARG; ";;
       E) ARGEXP1="$ARGEXP1""OPTION_E+=\"$OPTARG \"; ";;
       @) ARGEXP1="$ARGEXP1""OPTION_at=\"$OPTARG\"; ";;
+      a) ARGEXP1="$ARGEXP1""OPTION_a=\"$OPTARG\"; ";;
       x) ARGEXP1="$ARGEXP1""OPTION_x=yes; ";;
       *)
 	  if [[ -n ${OPTARG} ]]
@@ -713,6 +718,8 @@ export BRIDGE_MSUB_LICENSES="${OPTION_L}"
 export BRIDGE_MSUB_EXTRA_PARAMETERS="${OPTION_E}"
 # mail information
 export BRIDGE_MSUB_MAIL_INFO="${OPTION_at}"
+# dependency information
+export BRIDGE_MSUB_AFTER_JOBS=${OPTION_a}
 # exclusive parameter
 export BRIDGE_MSUB_EXCLUSIVE="${OPTION_x:-no}"
 ###################################################################################################################
@@ -927,6 +934,11 @@ export BRIDGE_MSUB_EXTRA_PARAMETERS
 if [[ -n ${BRIDGE_MSUB_MAIL_INFO} ]]
     then
     submit_args="${submit_args} -@ ${BRIDGE_MSUB_MAIL_INFO}"
+fi
+# dependency information
+if [[ -n ${BRIDGE_MSUB_AFTER_JOBS} ]]
+then
+    submit_args="${submit_args} -a ${BRIDGE_MSUB_AFTER_JOBS}"
 fi
 export BRIDGE_MSUB_MAIL_INFO
 # exclusive allocation

@@ -79,7 +79,7 @@ function submit_cmd {
     
     ## on lit les parametres en entree et on les places dans une variable
     ## de stockage, elle seront utilisees ulterieurement
-    while getopts r:o:e:s:A:N:n:c:m:t:M:T:L:q:S:KVWE:@: option
+    while getopts r:o:e:s:A:N:n:c:m:t:M:T:L:q:S:KVWE:@:a: option
       do
       case ${option} in
 	  r)
@@ -149,6 +149,9 @@ function submit_cmd {
 		  mail_info=${OPTARG#*:}
 	      fi
 	      ;;
+	  a)
+              LOCAL_ARGEXP1="$LOCAL_ARGEXP1""after_jobs=${OPTARG}; "
+              ;;
 	  *)
 	      exit_status=255
 	      break
@@ -282,6 +285,12 @@ function submit_cmd {
 	esac
     fi
     
+    ## on fixe les dependances de jobs
+    if [[ -n ${after_jobs} ]]
+    then
+	${LOGGER} "skipping unsupported option -a ${after_jobs}"
+    fi
+
     ## on fixe la date de depart de l'execution
     if [[ -n ${requested_start_time} ]]
 	then

@@ -9,6 +9,9 @@
        characters (TGCC Mantis#277))
     -- mdel: correct a bug preventing from deleting several jobs at a time
     -- mdel: translate the usage message in english
+    -- msub: add a new option "-a jobid[,jobid,...]" to let define the set
+       of jobs to wait for their termination before executing the submitted
+       one
 
 * Changes in bridge-1.4.14
 ==========================

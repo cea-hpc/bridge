@@ -120,6 +120,7 @@ function submit_cmd {
     typeset extra_parameters=
     typeset mail_info=""
     typeset mail_addr=""
+    typeset after_jobs=
     typeset exclusive=no
     
     ## on recupere les infos sur la version de slurm utilisee
@@ -127,7 +128,7 @@ function submit_cmd {
 
     ## on lit les parametres en entree et on les places dans une variable
     ## de stockage, elle seront utilisees ulterieurement
-    while getopts r:o:e:s:A:N:n:c:m:t:M:T:L:q:S:KVWE:@:x option
+    while getopts r:o:e:s:A:N:n:c:m:t:M:T:L:q:S:KVWE:@:a:x option
       do
       case ${option} in
 	  r)
@@ -197,6 +198,10 @@ function submit_cmd {
 		  mail_info=${OPTARG#*:}
 	      fi
 	      ;;
+	  a)
+              after_jobs=$(echo ${OPTARG} | tr ',' ':')
+              LOCAL_ARGEXP1="$LOCAL_ARGEXP1""after_jobs=${after_jobs}; "
+              ;;
 	  x)
 	      exclusive=yes
 	      ;;
@@ -269,24 +274,31 @@ function submit_cmd {
 
     ## option -P singleton supportee depuis la v1.3.10
     if [[ ${same_request_at_same_time_flag} -eq 0 ]] ; then
+	if [[ -n ${after_jobs} ]]
+	then
+	    ${LOGGER} "ignoring \"-a ...\" option as -w takes precedence"
+	fi
 	typeset put_singleton=1
 	if [[ ${slurm_major} -eq 1 ]] && [[ ${slurm_minor} -eq 3 ]] && [[ ${slurm_release} -ge 10 ]]
-	    then
+	then
 	    put_singleton=1
 	elif [[ ${slurm_major} -eq 1 ]] && [[ ${slurm_minor} -gt 3 ]]
-	    then
+	then
 	    put_singleton=1
 	elif [[ ${slurm_major} -gt 1 ]]
-	    then
+	then
 	    put_singleton=1
 	fi
 	if [[ ${put_singleton} -eq 1 ]]
-	    then
+	then
 	    extra_parameters="$(echo ${extra_parameters} \
             | awk '/.*/{a=gsub("(--dependency|-P)[= ]?[:a-zA-Z0-9,*]*","&,singleton");if(a==0) {print $0" --dependency=singleton"} else {print $0} }')"
 	else
 	    ${LOGGER} "singleton concept not supported, skipping"
 	fi
+    elif [[ -n ${after_jobs} ]]
+    then
+        local_submit_args="${local_submit_args} -d afterany:${after_jobs}"
     fi
 
     ## on fixe les informations concernant le mail
