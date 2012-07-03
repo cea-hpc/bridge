@@ -61,22 +61,22 @@ typeset EXIT_STATUS=1
 #------------------------------------------------------------------------------------------------------------------
 # on fixe l'usage de la commande et le code retour par defaut
 #------------------------------------------------------------------------------------------------------------------
-typeset USAGE="Usage : ${PROGNAME} [-dvhV] [-k] [-K] [-s signal] [-r allocid] batchid
+typeset USAGE="Usage : ${PROGNAME} [-dvhV] [-k] [-K] [-s signal] [-r allocid] batchid [batchid ...]
 
- ${PROGNAME} fournit une interface unifiee pour la suppression et/ou le signalement des applications Batch
+ ${PROGNAME} is the CCC unified interface to cancel and/or signal Batch jobs.
 
-        -h          : affiche ce message
-        -d          : augmente le niveau de debug
-        -v          : augmente le niveau de verbosite
-        -V          : affiche la version du produit et de l'application et se termine
+        -h          : print this message
+        -d          : increase debug level
+        -v          : increase verbosity
+        -V          : print application version
 
-        -k          : mode kill
-        -K          : mode kill avec suppression de toute reference dans le systeme de Batch
+        -k          : kill mode
+        -K          : kill mode with removal of any references to the job in the batch system (if supported)
 
-        -s signal   : transmet le signal 'signal'
-        -r allocid  : action a accomplir sur l'allocation sous-jacente d'ID 'allocid'
+        -s signal   : sent signal 'signal'
+        -r allocid  : perform the action on the attached allocation of ID 'allocid' (if supported)
 
-        batchid     : ID de la session Batch concernee
+        batchid     : ID of the batch job to cancel/signal
 "
 #------------------------------------------------------------------------------------------------------------------
 typeset del_cmd=bsdel_cmd
@@ -144,7 +144,7 @@ fi
 ###################################################################################################################
 # On verifie qu'au moins un batchid a ete specifie
 #------------------------------------------------------------------------------------------------------------------
-if [ $# -ne 1 ]
+if [ $# -lt 1 ]
     then
     echo "${USAGE}" >&2
     return 255

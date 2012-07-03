@@ -7,6 +7,8 @@
     -- add "#MSUB -X" pragma support in batch script (TGCC Mantis#270)
     -- ensure proper management of msub/mprun parameters including ';' 
        characters (TGCC Mantis#277))
+    -- mdel: correct a bug preventing from deleting several jobs at a time
+    -- mdel: translate the usage message in english
 
 * Changes in bridge-1.4.14
 ==========================
