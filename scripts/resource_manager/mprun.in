@@ -243,10 +243,11 @@ do
 	  if [[ -n ${OPTARG} ]]
 	      then
 	      addonoption="${option}:"
-	      in_args="${in_args} -${option} \"${OPTARG}\""
+              args_array+=("-${option}")
+              args_array+=("${OPTARG}")
 	  else
 	      addonoption=${option}
-	      in_args="${in_args} -${option}"
+	      args_array+=("-${option}")
 	  fi
 	  echo ${BRIDGE_MPRUN_GETOPT_OPTIONS} | grep -q  ${addonoption}
 	  if [[ $? -eq 0 ]]
@@ -265,7 +266,7 @@ shift `expr $OPTIND - 1`
 bridge_mprun_args=$*
 #------------------------------------------------------------------------------------------------------------------
 # on appelle les functions mprun_getopt des differents addons avec les arguments d'entree
-bridge_addons_call_function bridge_addon_mprun_getopt ${in_args}
+bridge_addons_call_function bridge_addon_mprun_getopt "${args_array[@]}"
 ###################################################################################################################
 
 
