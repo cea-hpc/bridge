@@ -6,6 +6,7 @@
 # 
 #\********************************************************************************************************************/
 
+
 function bridge_addon_mprun_setopt {
 
     typeset MYGETOPTOPTION="f:"
@@ -37,9 +38,9 @@ function bridge_addon_mprun_getopt {
     typeset LOGGER="${LOGGER} MPMD Addon :"
 
     ## par defaut, on desactive le mode MPMD
-    if [[ -z ${BRIDGE_MPRUN_ADDON_MPMD} ]]
+    if [[ -z ${BRIDGE_MPRUN_ADDON_MPMD_SCRIPT} ]]
 	then
-	BRIDGE_MPRUN_ADDON_MPMD=
+	BRIDGE_MPRUN_ADDON_MPMD_SCRIPT=
     fi
 
     ## on fixe le message d'aide a afficher si demande
@@ -61,14 +62,16 @@ function bridge_addon_mprun_getopt {
 	      ;;
 
 	  f)
-	      BRIDGE_MPRUN_ADDON_MPMD=${OPTARG}
+	      BRIDGE_MPRUN_ADDON_MPMD_SCRIPT=${OPTARG}
+	      BRIDGE_MPRUN_ADDON_MPMD_STAGE=1
 	      ;;
 
 	  *)
 	      ;;
       esac
     done
-    export BRIDGE_MPRUN_ADDON_MPMD
+    export BRIDGE_MPRUN_ADDON_MPMD_SCRIPT
+    export BRIDGE_MPRUN_ADDON_MPMD_STAGE
     
     return ${exit_status}
 }
@@ -88,18 +91,18 @@ function bridge_addon_mprun_alteropt {
     
     ## on ajoute une entete a la log
     typeset LOGGER="${LOGGER} MPMD Addon :"
-    
-    if [[ -n ${BRIDGE_MPRUN_ADDON_MPMD} ]]
+
+    if [[ ${BRIDGE_MPRUN_ADDON_MPMD_STAGE} -eq 1 ]]
 	then
 	
-	if [[ ! -r ${BRIDGE_MPRUN_ADDON_MPMD} ]]
+	if [[ ! -r ${BRIDGE_MPRUN_ADDON_MPMD_SCRIPT} ]]
 	    then
-	    ${ERROR} "MPMD Addon : invalid task file ${BRIDGE_MPRUN_ADDON_MPMD}"
+	    ${ERROR} "MPMD Addon : invalid task file ${BRIDGE_MPRUN_ADDON_MPMD_SCRIPT}"
 	else
-	    ${LOGGER} "using tasks file ${BRIDGE_MPRUN_ADDON_MPMD}"
+	    ${LOGGER} "using tasks file ${BRIDGE_MPRUN_ADDON_MPMD_SCRIPT}"
 	    
 	    typeset temporary_file=
-	    temporary_file=$(bridge_tmpfile ${BRIDGE_MPRUN_ADDON_MPMD})
+	    temporary_file=$(bridge_tmpfile ${BRIDGE_MPRUN_ADDON_MPMD_SCRIPT})
 	    
 	    if [[ -z ${temporary_file} ]]
 		then
@@ -116,9 +119,9 @@ function bridge_addon_mprun_alteropt {
 		typeset NBTASK
 		typeset CMD
 		echo "#!/bin/ksh" > ${temporary_file}
-		echo "if [[ -n \${BRIDGE_MPRUN_ADDON_MPMD} ]]" >> ${temporary_file}
+		echo "if [[ \${BRIDGE_MPRUN_ADDON_MPMD_STAGE} -eq 1 ]]" >> ${temporary_file}
 		echo "  then" >> ${temporary_file}
-		echo "  export BRIDGE_MPRUN_ADDON_MPMD=" >> ${temporary_file}
+		echo "  export BRIDGE_MPRUN_ADDON_MPMD_STAGE=2" >> ${temporary_file}
 		echo "  ${BRIDGE_MPRUN_CMD} ${temporary_file}" >> ${temporary_file}
 		echo "  rm -f ${temporary_file}" >> ${temporary_file}
 		echo "  exit \$?" >> ${temporary_file}
@@ -131,11 +134,12 @@ function bridge_addon_mprun_alteropt {
 if [[ \${BRIDGE_MPRUN_RANKID} -lt ${NBTASK_CUMUL} ]]
 then
 echo "task=\${BRIDGE_MPRUN_RANKID} , cmd = ${CMD}"
+#BRIDGE-MPMDv1-TASK-MARKER
 ${CMD}
 exit \$?
 fi
 EOF
-		done < ${BRIDGE_MPRUN_ADDON_MPMD}
+		done < ${BRIDGE_MPRUN_ADDON_MPMD_SCRIPT}
 		
 		## on force maintenant l'allocation
 		bridge_mprun_allocation=yes
