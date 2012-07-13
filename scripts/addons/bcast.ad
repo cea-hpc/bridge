@@ -7,7 +7,7 @@
 
 function is_bcast_needed {
     typeset need_broadcast=0
-    typeset analyzed_file="$*"
+    typeset analyzed_file="$@"
     if [[ ${BRIDGE_BROADCAST_MODE} -eq 1 ]] && [[ -n ${BRIDGE_BROADCAST_INCLUDE_PATTERN} ]]
     then
 	typeset exec_file=$(which ${analyzed_file%% *})
@@ -37,12 +37,12 @@ function is_bcast_needed {
 
 
 function compute_bcast_name {
-    typeset analyzed_file="$*"
+    typeset analyzed_file="$@"
     echo "/tmp/$(id -un)_${analyzed_file##*\/}_$$_${SLURM_JOBID}"
 }
 
 function do_bcast {
-    typeset orig_file="$*"
+    typeset orig_file="$@"
     typeset dst_file=$(compute_bcast_name $orig_file)
     ${LOGGER} "broadcasting ${orig_file} to remote:${dst_file} ..."
     sbcast -Cfp ${orig_file} ${dst_file}

@@ -263,7 +263,7 @@ done
 #------------------------------------------------------------------------------------------------------------------
 # on supprime les options de la ligne courante et on sauvegarde le resultat
 shift `expr $OPTIND - 1`
-bridge_mprun_args=$*
+bridge_mprun_args="$@"
 #------------------------------------------------------------------------------------------------------------------
 # on appelle les functions mprun_getopt des differents addons avec les arguments d'entree
 bridge_addons_call_function bridge_addon_mprun_getopt "${args_array[@]}"

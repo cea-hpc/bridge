@@ -132,7 +132,7 @@ function spmd_allocate_cmd {
       esac
     done
     shift ${OPTIND}-1 2>/dev/null
-    spmd_allocate_args=$*
+    spmd_allocate_args="$@"
 
     # on log un message si on est au sein d'une allocation
     if [[ ${BRIDGE_MPRUN_ALLOCATION} == yes ]]
@@ -311,7 +311,7 @@ function spmd_run_cmd {
       esac
     done
     shift ${OPTIND}-1 2>/dev/null
-    spmd_run_args=$*
+    spmd_run_args="$@"
 
     # on log un message si on est au sein d'une allocation
     if [[ ${BRIDGE_MPRUN_ALLOCATION} == yes ]]
