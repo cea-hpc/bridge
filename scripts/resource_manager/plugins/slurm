@@ -399,7 +399,7 @@ function spmd_run_cmd {
                    unset LS_COLORS
                    SLURM_VARS="$(srun $SLURM_REQ env | egrep  'SLURM_NPROCS|SLURM_TASKS_PER_NODE|SLURM_CPUS_PER_TASK' | sort | uniq | sed 's/(/\\(/g' | sed 's/)/\\)/g')"
                    if [ "$SLURM_VARS" != "" ] ; then
-                      spmd_run_cmd="$SLURM_VARS BRIDGE_MPRUN_NCORE=\$SLURM_CPUS_PER_TASK mpirun --bind-to-none" 
+                      spmd_run_cmd="eval $SLURM_VARS BRIDGE_MPRUN_NCORE=\$SLURM_CPUS_PER_TASK mpirun --bind-to-none" 
 		   # on fait une pause car le cpuset cree par le srun precedent est en cours
                    # de suppression sur les noeuds d'execution
 		   # si on lance le deuxieme job trop vite, le cpuset ne sera pas recree car existant deja
@@ -412,10 +412,6 @@ function spmd_run_cmd {
 
             else
                  
-            if [[ -n ${spmd_run_ncore} ]]
-            then
-                spmd_run_cmd="SLURM_CPUS_PER_TASK=${spmd_run_ncore} ${spmd_run_cmd}"
-            fi
 	    ## openmpi seems to use a bad SLURM env value to guess the number
 	    ## of processes to start, we force the np value to avoid problems
 	    ## we use the input parameter or SLURM_NPROCS if defined and not
@@ -436,8 +432,16 @@ function spmd_run_cmd {
           fi
 	fi
 	
-	${LOGGER} $(echo "${spmd_run_cmd} ${spmd_run_options} ${spmd_run_extra_parameters} ${spmd_run_separator} ${spmd_run_args}")
-	${spmd_run_cmd} ${spmd_run_options} ${spmd_run_extra_parameters} ${spmd_run_separator} ${spmd_run_args}
+	## as we remove the eval in front of the execution, we can no longer use spmd_run_cmd="VARNAME=value ${spmd_run_cmd}"
+	## to modify the behavior of spmd_run_cmd. As a result, we have to have different execution paths...
+	if [[ -n ${spmd_run_ncore} ]] && [[ ${spmd_run_cmd} == "mpirun" ]]
+        then
+	    ${LOGGER} $(echo "SLURM_CPUS_PER_TASK=${spmd_run_ncore} ${spmd_run_cmd} ${spmd_run_options} ${spmd_run_extra_parameters} ${spmd_run_separator} ${spmd_run_args}")
+	    SLURM_CPUS_PER_TASK=${spmd_run_ncore} ${spmd_run_cmd} ${spmd_run_options} ${spmd_run_extra_parameters} ${spmd_run_separator} ${spmd_run_args}
+	else
+	    ${LOGGER} $(echo "${spmd_run_cmd} ${spmd_run_options} ${spmd_run_extra_parameters} ${spmd_run_separator} ${spmd_run_args}")
+	    ${spmd_run_cmd} ${spmd_run_options} ${spmd_run_extra_parameters} ${spmd_run_separator} ${spmd_run_args}
+        fi
 
 	exit_status=$?
     fi

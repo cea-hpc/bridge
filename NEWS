@@ -1,5 +1,6 @@
 * Changes in bridge-1.4.15
 ==========================
+    -- correct a bug in msub/mprun management of -c parameter with SLURM
     -- enable broadcasting of binaries in mpmd mode 
     -- improve handling of whitespaces in parameters
     -- cosmetic version corresponding to the merge of separate branches
