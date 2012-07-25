@@ -678,49 +678,58 @@ function bsdel_cmd {
     fi
     
     ## on transmet le signal demande
-    if [[ -n ${signal} ]]
+    for job in "$@"
+    do
+	if [[ -n ${signal} ]]
 	then
-	signal=$(echo ${signal} | sed 's/SIG//')
-	kill_args="-s ${signal} -b"
-    fi
+	    signal=$(echo ${signal} | sed 's/SIG//')
 
-    case "${signal}" in
-
-	SUSP)
-	    kill_cmd="scontrol suspend"
-	    kill_args=""
-	    ;;
-
-	CONT)
-	    kill_cmd="scontrol resume"
-	    kill_args=""
-	    ;;
-
-	TERM|KILL)
-	    # slurm ne supprime pas un job pending
-	    # si on tente d'envoyer un signal TERM ou KILL
-	    if [[ -n $(squeue --state=PENDING -ho %i -j $@ 2>/dev/null) ]]
+	    ${BRIDGE_RMASTAT_CMD} -r $job -o batchid | grep -q $job
+	    if [[ $? -eq 0 ]]
 	    then
-		${LOGGER} "Command : scancel --state=PENDING $@"
-		scancel --state=PENDING $@ >/dev/null 2>&1
-		exit_status=$?
-		if [[ ${exit_status} -eq 0 ]]
-		then
-		    return ${exit_status}
-		fi
+		# It's a batch job, signal the batch script to allow graceful termination
+		kill_args="-s ${signal} -b"
+	    else
+		kill_args="-s ${signal}"
 	    fi
-	    ;;
+	fi
 
-    esac
+	case "${signal}" in
+	    SUSP)
+		kill_cmd="scontrol suspend"
+		kill_args=""
+		;;
 
-    ${LOGGER} "Command : ${kill_cmd} ${kill_args} $@"
-    LOCAL_ERROR=$(${kill_cmd} ${kill_args} $@ 2>&1)
-    exit_status=$?
-    if [[ ${exit_status} -ne 0 ]]
+	    CONT)
+		kill_cmd="scontrol resume"
+		kill_args=""
+		;;
+
+	    TERM|KILL)
+		# slurm ne supprime pas un job pending
+		# si on tente d'envoyer un signal TERM ou KILL
+		if [[ -n $(squeue --state=PENDING -ho %i -j $job 2>/dev/null) ]]
+		then
+		    ${LOGGER} "Command : scancel --state=PENDING $job"
+		    scancel --state=PENDING $job >/dev/null 2>&1
+		    last_exit_status=$?
+		    if [[ ${last_exit_status} -eq 0 ]]
+		    then
+			continue
+		    fi
+		fi
+		;;
+	esac
+
+	${LOGGER} "Command : ${kill_cmd} ${kill_args} $job"
+	LOCAL_ERROR=$(${kill_cmd} ${kill_args} $job 2>&1)
+	last_exit_status=$?
+	if [[ ${last_exit_status} -ne 0 ]]
 	then
-	${ERROR} ${LOCAL_ERROR}
-    fi
-
+	    ${ERROR} ${LOCAL_ERROR}
+	    exit_status=$last_exit_status
+	fi
+    done
     ## on renvoie le code de retour
     return ${exit_status}
 }

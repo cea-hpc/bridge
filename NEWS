@@ -1,5 +1,6 @@
 * Changes in bridge-1.4.15
 ==========================
+    -- let mdel kill interactive jobs
     -- handle empty lines in mpmd scripts
     -- add BRIDGE_BROADCAST_LOCAL_CP
     -- correct a bug in msub/mprun management of -c parameter with SLURM
