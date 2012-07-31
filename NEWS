@@ -1,5 +1,6 @@
 * Changes in bridge-1.4.15
 ==========================
+    -- fix a few bugs in BRIDGE_BROADCAST_LOCAL_CP
     -- let mdel kill interactive jobs
     -- handle empty lines in mpmd scripts
     -- add BRIDGE_BROADCAST_LOCAL_CP

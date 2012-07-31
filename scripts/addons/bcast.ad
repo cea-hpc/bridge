@@ -7,7 +7,6 @@
 
 #Returns 0 if no broadcast is required, 1 for sbcast based bcast, 2 for srun/cp based bcast
 function is_bcast_needed {
-    typeset need_broadcast=0
     typeset analyzed_file="$@"
     if [[ ${BRIDGE_BROADCAST_MODE} -eq 1 ]] && [[ -n ${BRIDGE_BROADCAST_INCLUDE_PATTERN} ]]
     then
@@ -16,8 +15,8 @@ function is_bcast_needed {
 	if [[ $? -ne 0 ]]
 	then
 	    ${LOGGER} "avoiding to broadcast ${exec_file} because of inclusion pattern \"${BRIDGE_BROADCAST_INCLUDE_PATTERN}\""
+	    return 0
 	else
-	    need_broadcast=1
 	    ${LOGGER} "broadcasting ${exec_file} because of inclusion pattern \"${BRIDGE_BROADCAST_INCLUDE_PATTERN}\""
 	fi
     elif [[ ${BRIDGE_BROADCAST_MODE} -eq 1 ]] && [[ -n ${BRIDGE_BROADCAST_EXCLUDE_PATTERN} ]]
@@ -27,24 +26,35 @@ function is_bcast_needed {
 	if [[ $? -eq 0 ]]
 	then
 	    ${LOGGER} "avoiding to broadcast ${exec_file} because of exclusion pattern \"${BRIDGE_BROADCAST_EXCLUDE_PATTERN}\""
+	    return 0
 	else
-	    need_broadcast=1
 	    ${LOGGER} "broadcasting ${exec_file} because of exclusion pattern \"${BRIDGE_BROADCAST_EXCLUDE_PATTERN}\""
 	fi
     fi
 
-    if [[ ${BRIDGE_BROADCAST_MODE} -eq 1 ]] && [[ -z ${BRIDGE_BROADCAST_LOCAL_CP} ]] && [[ -n ${BRIDGE_BROADCAST_LOCAL_CP_INCLUDE_PATTERN} ]]
+    if [[ -n ${BRIDGE_BROADCAST_LOCAL_CP} ]]
     then
-       typeset exec_file=$(which ${spmd_run_args%% *})
+	if [[ ${BRIDGE_BROADCAST_LOCAL_CP} -eq 0 ]]
+	then
+	    return 1
+	elif [[ ${BRIDGE_BROADCAST_LOCAL_CP} -eq 1 ]]
+	then
+	    return 2
+	fi
+    fi
+
+    if [[ -n ${BRIDGE_BROADCAST_LOCAL_CP_INCLUDE_PATTERN} ]]
+    then
+       typeset exec_file=$(which ${analyzed_file%% *})
        which ${exec_file} 2>/dev/null | egrep -q "${BRIDGE_BROADCAST_LOCAL_CP_INCLUDE_PATTERN}"
        if [[ $? -eq 0 ]]
        then
            ${LOGGER} "broadcasting ${exec_file} using parallel local cp because of inclusion pattern \"${BRIDGE_BROADCAST_LOCAL_CP_INCLUDE_PATTERN}\""
-	   need_broadcast=2
+	   return 2
        fi
     fi
 
-    return $need_broadcast
+    return 1
 }
 
 
@@ -65,7 +75,7 @@ function do_bcast {
     if [[ ${requested_mode} -eq 2 ]]
     then
         ${LOGGER} "broadcasting ${orig_file} to remote:${dst_file} using parallel local cp ..."
-        srun -w $SLURM_NODELIST -n $SLURM_NNODES cp -p ${orig_file} ${dst_file}
+        srun --input none -w $SLURM_NODELIST -n $SLURM_NNODES cp -p ${orig_file} ${dst_file}
     else
         ${LOGGER} "broadcasting ${orig_file} to remote:${dst_file} ..."
         sbcast -Cfp ${orig_file} ${dst_file}
