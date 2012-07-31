@@ -123,6 +123,7 @@ function bridge_addon_mprun_alteropt {
 	
 	export DDT_NO_TIMEOUT=1
 	export DDT_PROCESS_TIMEOUT=0
+	export BRIDGE_BROADCAST_MODE=0
 
 	## on fixe le flag indiquant qu'on a fait le boulot
 	## afin de ne pas boucler
