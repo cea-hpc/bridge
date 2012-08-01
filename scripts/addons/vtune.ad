@@ -41,27 +41,15 @@ function bridge_addon_mprun_getopt {
     typeset USAGE="\
 \t*) Vtune
 
-\t -d vtune : execution de l application en mode profiling avec Vtune
-\t            defaut -collect nehalem-general-exploration
-\t            Les repertoires peuvent etre post-traites a l aide de l outil
-\t            amplxe-gui
-\t -o dir   : repertoire de stockage des resultats 
-\t            par defaut le repertoire courant est utilise
-\t            repertoire/jobid_nodeid/rankid ou repertoire/jobid_nodeid/fullsystem
-\t -O \"..\"  : options  complementaires a passer a vtune
-\t -t \"..\"  : activity type si autre que nehalem-general-exploration souhaitee
-\t -R rank  : rank du process sur lequel accrocher vtune (0<=rank<nprocs)
-\t            par defaut, l ensemble des processus est collecte sur chaque
-\t            noeud (equivalent a rank=all)
-\t
-\t Les variables d'environnement correspondantes peuvent aussi etre utilisees pour
-\t parametrer le profiling:
-\t
-\t BRIDGE_MPRUN_ADDON_VTUNE : une valeur de 1 active le profiling
-\t BRIDGE_MPRUN_ADDON_VTUNE_PACKAGE_DIR
-\t BRIDGE_MPRUN_ADDON_VTUNE_ACTIVITY_OPTIONS
-\t BRIDGE_MPRUN_ADDON_VTUNE_ACTIVITY_NAME
-\t BRIDGE_MPRUN_ADDON_VTUNE_PROCESS_RANK
+\t -d vtune   : profile with vtune
+\t -R rank    : select a process rank to profile (0<=rank<nprocs)
+\t              default: profile all ranks on each node (system-wide profiling)
+\t -t \"..\"    : select an activity
+\t              default: nehalem-general-exploration
+\t              use 'amplxe-cl -help collect' to get a list of activities
+\t -o dir     : select the output directory (use amplxe-gui to visualize)
+\t              default: current directory
+\t -O \"..\"    : pass additional options to vtune
 \n"
     
     ## on fixe le status de sortie par defaut

@@ -107,8 +107,8 @@ typeset ERROR="bridge_printer ${DEFAULT_PRINTER_OPTIONS} -ft error Vtune Addon :
 ###################################################################################################################
 # On fixe les parametres du script
 #------------------------------------------------------------------------------------------------------------------
-typeset bridge_vtune_run_cmd=/opt/intel/vtune_amplifier_xe_2011/bin64/amplxe-cl
-typeset bridge_vtune_activity_cmd="/opt/intel/vtune_amplifier_xe_2011/bin64/amplxe-cl -command"
+typeset bridge_vtune_run_cmd=${BRIDGE_VTUNE_RUN_CMD:-"amplxe-cl"}
+typeset bridge_vtune_activity_cmd=${BRIDGE_VTUNE_ACTIVITY_CMD:-"amplxe-cl -command"}
 #------------------------------------------------------------------------------------------------------------------
 #RGH default activity -collect
 typeset bridge_vtune_activity_name=-collect
@@ -406,7 +406,7 @@ else
 #### on execute
         $@
     else
-        ${ERROR} "probleme durant le demarrage de vtune"
+        ${ERROR} "Vtune did not start successfully"
     fi
     
     STATUS=$?
