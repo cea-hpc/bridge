@@ -378,7 +378,7 @@ if [[ ${BRIDGE_MPRUN_LOOP} -eq 1 ]]
     fi
 
     ## on fixe en fonction de l'environnement puis par le defaut
-    if [[ -z ${bridge_mprun_partition} ]]
+    if [[ -z ${bridge_mprun_partition} ]]  && [[ ${BRIDGE_MPRUN_ALLOCATION} != yes ]]
 	then
 	if [[ -n ${BRIDGE_MPRUN_PARTITION} ]]
 	    then
