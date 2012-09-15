@@ -6,4 +6,4 @@ AM_LDFLAGS	=	-pthread
 
 SUBDIRS		=	lib plugins src scripts etc
 
-EXTRA_DIST	=	bridge.spec NEWS
+EXTRA_DIST	=	bridge.spec NEWS COPYING
