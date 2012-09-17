@@ -41,11 +41,9 @@ DIST_COMMON = $(dist_addonscripts_DATA) $(dist_addonscripts_SCRIPTS) \
 	$(srcdir)/vtune.sh.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/bridge.m4 \
-	$(top_srcdir)/m4/libtool.m4 $(top_srcdir)/m4/lsf.m4 \
-	$(top_srcdir)/m4/ltoptions.m4 $(top_srcdir)/m4/ltsugar.m4 \
-	$(top_srcdir)/m4/ltversion.m4 $(top_srcdir)/m4/lt~obsolete.m4 \
-	$(top_srcdir)/m4/nqsII.m4 $(top_srcdir)/m4/slurm.m4 \
-	$(top_srcdir)/m4/torque.m4 $(top_srcdir)/configure.ac
+	$(top_srcdir)/m4/lsf.m4 $(top_srcdir)/m4/nqsII.m4 \
+	$(top_srcdir)/m4/slurm.m4 $(top_srcdir)/m4/torque.m4 \
+	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(install_sh) -d
@@ -224,6 +222,7 @@ dist_addonscripts_DATA = autoexclusive.ad \
 					autodefmem.ad \
 					autoaccount.ad \
 					bcast.ad \
+					bridge-profile.ad \
 					bullmpi-slurm.ad \
 					bullmpi-slurm-direct.ad \
 					bullmpi-slurm-pin.ad \
@@ -236,19 +235,21 @@ dist_addonscripts_DATA = autoexclusive.ad \
 					example.ad \
 					intelmpi-slurm.ad \
 					inter-para-limits.ad \
+					logger.ad \
 					mpmd-cluster.ad \
 					mpmd-ws.ad \
 					mvapich2-slurm.ad \
 					mvapich-slurm.ad \
 					openmpi-slurm.ad \
 					qos.ad \
+					spank-stats.ad \
 					tagoutput.ad \
 					totalview.ad \
 					vtune.ad \
 					wrapper-DAM.ad \
 					x11.ad
 
-dist_addonscripts_SCRIPTS = vtune.sh
+dist_addonscripts_SCRIPTS = vtune.sh spank-stats.sh
 all: all-am
 
 .SUFFIXES:
