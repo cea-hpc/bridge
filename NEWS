@@ -1,26 +1,31 @@
+* Changes in bridge-1.5.0
+=========================
+	-- add GPL licensing information and headers
+	-- RPM specfile : now compile by default in TGCC style (ccc_*)
+
 * Changes in bridge-1.4.15
 ==========================
-    -- mprun will no longer try to assign a wrong partition inside an allocation
-    -- Adapt the vtune addon to the TGCC environment
-    -- fix a few bugs in BRIDGE_BROADCAST_LOCAL_CP
-    -- let mdel kill interactive jobs
-    -- handle empty lines in mpmd scripts
-    -- add BRIDGE_BROADCAST_LOCAL_CP
-    -- correct a bug in msub/mprun management of -c parameter with SLURM
-    -- enable broadcasting of binaries in mpmd mode 
-    -- improve handling of whitespaces in parameters
-    -- cosmetic version corresponding to the merge of separate branches
-        1.4.13 (TGCC) and 1.4.14 (TERA)
-    -- mprun can now specify -E '-v' with slurm (TGCC Mantis#292)
-    -- add "#MSUB -S ..." pragma support in batch script (TGCC Mantis#270)
-    -- add "#MSUB -X" pragma support in batch script (TGCC Mantis#270)
-    -- ensure proper management of msub/mprun parameters including ';' 
-       characters (TGCC Mantis#277))
-    -- mdel: correct a bug preventing from deleting several jobs at a time
-    -- mdel: translate the usage message in english
-    -- msub: add a new option "-a jobid[,jobid,...]" to let define the set
-       of jobs to wait for their termination before executing the submitted
-       one
+	-- mprun will no longer try to assign a wrong partition inside an allocation
+    	-- Adapt the vtune addon to the TGCC environment
+    	-- fix a few bugs in BRIDGE_BROADCAST_LOCAL_CP
+    	-- let mdel kill interactive jobs
+    	-- handle empty lines in mpmd scripts
+    	-- add BRIDGE_BROADCAST_LOCAL_CP
+    	-- correct a bug in msub/mprun management of -c parameter with SLURM
+    	-- enable broadcasting of binaries in mpmd mode 
+    	-- improve handling of whitespaces in parameters
+    	-- cosmetic version corresponding to the merge of separate branches
+           1.4.13 (TGCC) and 1.4.14 (TERA)
+    	-- mprun can now specify -E '-v' with slurm (TGCC Mantis#292)
+    	-- add "#MSUB -S ..." pragma support in batch script (TGCC Mantis#270)
+    	-- add "#MSUB -X" pragma support in batch script (TGCC Mantis#270)
+    	-- ensure proper management of msub/mprun parameters including ';' 
+       	   characters (TGCC Mantis#277))
+    	-- mdel: correct a bug preventing from deleting several jobs at a time
+    	-- mdel: translate the usage message in english
+    	-- msub: add a new option "-a jobid[,jobid,...]" to let define the set
+       	   of jobs to wait for their termination before executing the submitted
+       	   one
 
 * Changes in bridge-1.4.14
 ==========================
@@ -40,7 +45,7 @@
 	-- Addons: add logger.ad to log using logger the user trailing command
 	   executed by mprun
 
-* Changes in bridge-1.4.13 (ongoing)
+* Changes in bridge-1.4.13
 ==========================
 	-- addons: add autodefmem addon
 	-- addons: add autoaccount addon

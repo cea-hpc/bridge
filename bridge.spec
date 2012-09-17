@@ -1,12 +1,11 @@
 Summary: Bridge CEA In-House Batch Environment
 Name: bridge
-Version: 1.4.15
-Release: 6
-License: CeCILL License
+Version: 1.5.0
+Release: 1
+License: GPL License
 Group: System Environment/Base
 URL: http://
 Source0: %{name}-%{version}.tar.gz
-#Patch0: %{name}-%{version}-slurm-2.1.patch
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
 
 ### Thanks to slurm packagers
@@ -35,6 +34,11 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
 %define tera 1
 %endif
 %endif
+
+#
+# Revert to using TGCC preferences by default
+#
+%define tgcc 1
 
 #
 # Set Tera options if requested
@@ -115,7 +119,6 @@ Plugins that provides Slurm access accross the CEA Batch systems Bridge
 
 %prep
 %setup -n %{name}-%{version}
-#%patch0 -p1
 
 %build
 autoreconf -fvi
@@ -189,6 +192,8 @@ rm -rf $RPM_BUILD_ROOT
 %endif
 
 %changelog
+* Mon Sep 17 2012 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.5.0-1
+- tag release 1.5.0-1 with GPL licensing information
 * Mon Aug 20 2012 Francois Diakhate <francois.diakhate@cea.fr> - 1.4.15-6
 - tag release 1.4.15-6
 * Fri Jul 27 2012 Francois Diakhate <francois.diakhate@cea.fr> - 1.4.15-5
@@ -254,4 +259,3 @@ rm -rf $RPM_BUILD_ROOT
 - Add a patch to use /etc as a default config directory
 * Mon Dec 15 2008 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 
 - Initial build.
-
