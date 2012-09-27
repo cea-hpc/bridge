@@ -1,5 +1,7 @@
 * Changes in bridge-1.4.16 (ongoing)
 ==========================
+	-- relax_affintiy.ad: add a new addon to use slurm-relax-affinity
+	   logic in bridge. Require slurm-relax-affinity RPM.
 	-- spank-stats.ad: improve the addon logic
 	-- bcast.ad: add broadcast mode using parallel local cp to speed
 	   up broadcasting an executable stored in lustre.

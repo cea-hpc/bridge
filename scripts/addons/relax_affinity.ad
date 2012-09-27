@@ -1,0 +1,151 @@
+#################################################################################
+#
+# Addon for slurm-relax-affinity support in Bridge
+# Requires to install slurm-relax-affintiy RPM on the login/compute nodes
+# 
+# Variables defined to configure the behavior :
+#
+# BRIDGE_RELAX_AFFINITY_LOCALIDS : default is unset
+#################################################################################
+
+#################################################################################
+# MSUB SLURM-RELAX-AFFINITY support
+#--------------------------------------------------------------------------------
+function bridge_addon_msub_setopt {
+    return 0
+}
+
+function bridge_addon_msub_getopt {
+    return 0
+}
+
+function bridge_addon_msub_alteropt {
+    return 0
+}
+
+function bridge_addon_msub_alterscript {
+    return 0
+}
+#################################################################################
+
+
+#################################################################################
+# MPRUN SLURM-RELAX-AFFINITY support
+#--------------------------------------------------------------------------------
+function bridge_addon_mprun_setopt {
+	 
+    # This addon only provides env variable as a mean to enable/disable/configure
+    # it.
+    return 0
+
+}
+
+function bridge_addon_mprun_getopt {
+    
+    ## on se place en mode debug si souhaite
+    typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+	then
+	set -x
+    fi
+    
+    ## on incremente le niveau de log
+    typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+    
+    ## on ajoute une entete a la log
+    typeset LOGGER="${LOGGER} slurm-relax-affinity Addon :"
+    typeset ERROR="${ERROR} slurm-relax-affinity Addon :"
+
+    ## on fixe le message d'aide a afficher si demande
+    typeset USAGE="\
+\t*) slurm-relax-affinity\n
+\t\t BRIDGE_RELAX_AFFINITY_LOCALIDS environment variable that can be used to specify the
+\t\t set of tasks per node that need to access all the allocated cores
+\t\t Example: export BRIDGE_RELAX_AFFINITY_LOCALIDS=0,1\n"
+
+    ## on fixe le status de sortie par defaut
+    typeset exit_status=0
+    
+    ## on parse les arguments
+    while getopts ${BRIDGE_MPRUN_GETOPT_OPTIONS} option
+      do
+      case ${option} in
+	  
+	  h)
+	      echo -e "${USAGE}" >&2
+	      return 0
+	      ;;
+	  
+	  *)
+	      ;;
+      esac
+    done
+
+    return ${exit_status:-1}
+}
+
+function bridge_addon_mprun_alteropt {
+
+    return 0
+
+}
+
+function bridge_addon_mprun_spmd_pre_allocate {
+
+    return 0
+
+}
+
+function bridge_addon_mprun_spmd_post_allocate {
+
+    return 0
+
+}
+
+function bridge_addon_mprun_spmd_pre_run {
+
+    ## on se place en mode debug si souhaite
+    typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+	then
+	set -x
+    fi
+    
+    ## on incremente le niveau de log
+    typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+    
+    ## on ajoute une entete a la log
+    typeset LOGGER="${LOGGER} slurm-relax-affinity Addon :"
+    typeset ERROR="${ERROR} slurm-relax-affinity Addon :"
+
+    ## on active le 
+    if [[ -n ${BRIDGE_RELAX_AFFINITY_LOCALIDS} ]]
+    then
+	case ${RESOURCE_MANAGER} in
+            slurm)
+		RELAX_PROLOG=$(rpm -ql slurm-relax-affinity 2>/dev/null| grep prolog)
+		if [[ -z ${RELAX_PROLOG} ]]
+		then
+		    ${LOGGER} "unable to find slurm-relax-affinity prolog, check that the RPM is correctly installed"
+		else
+		    export SLURM_TASK_PROLOG=${RELAX_PROLOG}
+		    export RELAX_AFFINITY_LOCALIDS=${BRIDGE_RELAX_AFFINITY_LOCALIDS}
+		    ${LOGGER} "enabling by setting SLURM_TASK_PROLOG=${RELAX_PROLOG} and RELAX_AFFINITY_LOCALIDS=${BRIDGE_RELAX_AFFINITY_LOCALIDS} in environment"
+		fi
+		;;
+	    *)
+		${ERROR} "not supported with ${RESOURCE_MANAGER}"
+		;;
+	esac
+    fi
+
+    return 0
+
+}
+
+function bridge_addon_mprun_spmd_post_run {
+
+    return 0
+    
+}
+#################################################################################
