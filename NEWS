@@ -1,6 +1,7 @@
 * Changes in bridge-1.4.16 (ongoing)
 ==========================
-
+	-- bcast.ad: add broadcast mode using parallel local cp to speed
+	   up broadcasting an executable stored in lustre.
 	-- DDT addon: set BRIDGE_BROADCAST_MODE=0 to avoid broadcasting 
 	   binaries (not well supported by DDT)
 
