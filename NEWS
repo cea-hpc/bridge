@@ -1,5 +1,6 @@
 * Changes in bridge-1.4.15
 ==========================
+    -- add autocarto addon
     -- mprun will no longer try to assign a wrong partition inside an allocation
     -- Adapt the vtune addon to the TGCC environment
     -- fix a few bugs in BRIDGE_BROADCAST_LOCAL_CP
