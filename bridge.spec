@@ -1,7 +1,7 @@
 Summary: Bridge CEA In-House Batch Environment
 Name: bridge
 Version: 1.4.15
-Release: 6
+Release: 7
 License: CeCILL License
 Group: System Environment/Base
 URL: http://
