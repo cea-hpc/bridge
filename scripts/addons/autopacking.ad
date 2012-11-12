@@ -6,7 +6,7 @@
 # BRIDGE_ADDON_AUTOPACKING_LOW_THRESHOLD
 # BRIDGE_ADDON_AUTOPACKING_HIGH_THRESHOLD
 #
-# BRIDGE_ADDON_AUTOPACKING_DISABLE can be set to avoid using the autopacking 
+# BRIDGE_ADDON_AUTOPACKING_DISABLE can be set to avoid using the autopacking
 # mechanism (default value 0 means use it)
 ################################################################################
 
@@ -43,10 +43,10 @@ function bridge_addon_msub_alteropt {
     then
 	set -x
     fi
-    
+
     ## on incremente le niveau de log
     typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
-    
+
     ## on ajoute une entete a la log
     typeset LOGGER="${LOGGER} DAM Auto-Packing Addon :"
 
@@ -84,6 +84,9 @@ function bridge_addon_msub_alteropt {
 		if [[ -n ${BRIDGE_MSUB_QUEUE} ]]
 		then
 		    cpn=$(sinfo -eho "%c" -p ${BRIDGE_MSUB_QUEUE} 2>/dev/null | sort -n | head -n 1)
+		elif [[ -n ${BRIDGE_MSUB_DEFAULT_QUEUE} ]]
+		then
+		     cpn=$(sinfo -eho "%c" -p ${BRIDGE_MSUB_DEFAULT_QUEUE} 2>/dev/null | sort -n | head -n 1)
 		else
 		    cpn=$(sinfo -eho "%c" 2>/dev/null | sort -n | head -n 1)
 		fi
@@ -95,7 +98,7 @@ function bridge_addon_msub_alteropt {
 		    ${LOGGER} "detected nb of cores per node is ${cpn}"
 		fi
 
-		# on calcul le nombre de cores max par noeud pour le job 
+		# on calcul le nombre de cores max par noeud pour le job
 		# en prenant en compte le nombre de cores par tache demande
 		cpt=${BRIDGE_MSUB_NCORE:-1}
 		(( tpn = cpn / cpt ))
@@ -104,12 +107,12 @@ function bridge_addon_msub_alteropt {
 		then
 		    ${LOGGER} "detected nb of usable cores per node is ${cpn}"
 		fi
-		
+
 		# si le nombre de coeurs utilisable par noeud est nul, on return
 		# il y a un probleme avec la specification de ressources, on laisse
 		# le gestionnaire de ressources voir si il s'en sort
 		if [[ ${cpn} -eq 0 ]]
-		then  
+		then
 		    return 0
 		fi
 
@@ -172,10 +175,10 @@ function bridge_addon_mprun_alteropt {
     then
 	set -x
     fi
-    
+
     ## on incremente le niveau de log
     typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
-    
+
     ## on ajoute une entete a la log
     typeset LOGGER="${LOGGER} DAM Auto-Packing Addon :"
 
@@ -234,8 +237,11 @@ function bridge_addon_mprun_alteropt {
 		then
 		    cpn=$(sinfo -eho "%c" -p ${BRIDGE_MPRUN_PARTITION} 2>/dev/null | sort -n | head -n 1)
 		elif [[ -n ${bridge_mprun_partition} ]]
-		    then
+		then
 		    cpn=$(sinfo -eho "%c" -p ${bridge_mprun_partition} 2>/dev/null | sort -n | head -n 1)
+		elif [[ -n ${BRIDGE_MPRUN_DEFAULT_PARTITION} ]]
+		then
+		    cpn=$(sinfo -eho "%c" -p ${BRIDGE_MPRUN_DEFAULT_PARTITION} 2>/dev/null | sort -n | head -n 1)
 		else
 		    cpn=$(sinfo -eho "%c" 2>/dev/null | sort -n | tail -n 1)
 		fi
@@ -247,7 +253,7 @@ function bridge_addon_mprun_alteropt {
 		    ${LOGGER} "detected nb of cores per node is ${cpn}"
 		fi
 
-		# on calcul le nombre de cores max par noeud pour le job 
+		# on calcul le nombre de cores max par noeud pour le job
 		# en prenant en compte le nombre de cores par tache demande
 		cpt=${bridge_mprun_ncore:-1}
 		(( tpn = cpn / cpt ))
@@ -261,7 +267,7 @@ function bridge_addon_mprun_alteropt {
 		# il y a un probleme avec la specification de ressources, on laisse
 		# le gestionnaire de ressources voir si il s'en sort
 		if [[ ${cpn} -eq 0 ]]
-		then  
+		then
 		    return 0
 		fi
 
