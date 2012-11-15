@@ -22,6 +22,8 @@
     -- msub: add a new option "-a jobid[,jobid,...]" to let define the set
        of jobs to wait for their termination before executing the submitted
        one
+    -- now use %R instead of %P in wrapped SLURM sinfo -o "" command
+       (backported from 1.4.16)
 
 * Changes in bridge-1.4.14
 ==========================
