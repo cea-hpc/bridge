@@ -1,14 +1,15 @@
 #################################################################################
 #
-# Addon for spank-stats support in Bridge
+# Addon for slurm-relax-affinity support in Bridge
+# Requires to install slurm-relax-affintiy RPM on the login/compute nodes
 # 
 # Variables defined to configure the behavior :
 #
-# BRIDGE_MPRUN_ADDON_SPANK_STATS_FREQ : default is 30 secondes
+# BRIDGE_RELAX_AFFINITY_LOCALIDS : default is unset
 #################################################################################
 
 #################################################################################
-# MSUB SPANK-STATS support
+# MSUB SLURM-RELAX-AFFINITY support
 #--------------------------------------------------------------------------------
 function bridge_addon_msub_setopt {
     return 0
@@ -29,19 +30,12 @@ function bridge_addon_msub_alterscript {
 
 
 #################################################################################
-# MPRUN SPANK-STATS support
+# MPRUN SLURM-RELAX-AFFINITY support
 #--------------------------------------------------------------------------------
 function bridge_addon_mprun_setopt {
-
-    typeset MYGETOPTOPTION="S"
-
-    echo "${BRIDGE_MPRUN_GETOPT_OPTIONS}" | grep -q ${MYGETOPTOPTION}
-
-    if [ $? -ne 0 ]
-	then
-	BRIDGE_MPRUN_GETOPT_OPTIONS="${BRIDGE_MPRUN_GETOPT_OPTIONS}${MYGETOPTOPTION}"
-    fi
-
+	 
+    # This addon only provides env variable as a mean to enable/disable/configure
+    # it.
     return 0
 
 }
@@ -59,14 +53,16 @@ function bridge_addon_mprun_getopt {
     typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
     
     ## on ajoute une entete a la log
-    typeset LOGGER="${LOGGER} Spank-stats Addon :"
-    typeset ERROR="${ERROR} Spank-stats Addon :"
+    typeset LOGGER="${LOGGER} slurm-relax-affinity Addon :"
+    typeset ERROR="${ERROR} slurm-relax-affinity Addon :"
 
     ## on fixe le message d'aide a afficher si demande
     typeset USAGE="\
-\t*) Spank-stats
-\t\t -S : collect and print statistics at the end of the job\n"
-    
+\t*) slurm-relax-affinity\n
+\t\t BRIDGE_RELAX_AFFINITY_LOCALIDS environment variable that can be used to specify the
+\t\t set of tasks per node that need to access all the allocated cores
+\t\t Example: export BRIDGE_RELAX_AFFINITY_LOCALIDS=0,1\n"
+
     ## on fixe le status de sortie par defaut
     typeset exit_status=0
     
@@ -78,11 +74,6 @@ function bridge_addon_mprun_getopt {
 	  h)
 	      echo -e "${USAGE}" >&2
 	      return 0
-	      ;;
-
-	  S)
-	      BRIDGE_MPRUN_ADDON_SPANK_STATS=1
-	      ${LOGGER} "enabled"
 	      ;;
 	  
 	  *)
@@ -124,30 +115,23 @@ function bridge_addon_mprun_spmd_pre_run {
     typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
     
     ## on ajoute une entete a la log
-    typeset LOGGER="${LOGGER} Spank-stats Addon :"
-    typeset ERROR="${ERROR} Spank-stats Addon :"
+    typeset LOGGER="${LOGGER} slurm-relax-affinity Addon :"
+    typeset ERROR="${ERROR} slurm-relax-affinity Addon :"
 
-    ## on active la prise de statistiques si le parametre est fixe ou bien si la variable
-    ## BRIDGE_MPRUN_ADDON_SPANK_SILENT_STATS est fixee a 1. Dans ce dernier cas, les stats ne
-    ## seront pas affichees en find de step, seulement stockees pour un usage futur.
-    if [[ -n ${BRIDGE_MPRUN_ADDON_SPANK_STATS} ]] || [[ ${BRIDGE_MPRUN_ADDON_SPANK_SILENT_STATS} == "1" ]]
+    ## on active le 
+    if [[ -n ${BRIDGE_RELAX_AFFINITY_LOCALIDS} ]]
     then
 	case ${RESOURCE_MANAGER} in
             slurm)
-		# only print statistics when asked on command line
-		if [[ -n ${BRIDGE_MPRUN_ADDON_SPANK_STATS} ]]
-		    then
-		    export SPANK_STATS_DIGEST=1
-		    export SLURM_EPILOG=${BRIDGE_ADDON_SCRIPTSDIR}/$(bridge_command_enhance spank-stats.sh)
+		RELAX_PROLOG=$(rpm -ql slurm-relax-affinity 2>/dev/null| grep prolog)
+		if [[ -z ${RELAX_PROLOG} ]]
+		then
+		    ${LOGGER} "unable to find slurm-relax-affinity prolog, check that the RPM is correctly installed"
+		else
+		    export SLURM_TASK_PROLOG=${RELAX_PROLOG}
+		    export RELAX_AFFINITY_LOCALIDS=${BRIDGE_RELAX_AFFINITY_LOCALIDS}
+		    ${LOGGER} "enabling by setting SLURM_TASK_PROLOG=${RELAX_PROLOG} and RELAX_AFFINITY_LOCALIDS=${BRIDGE_RELAX_AFFINITY_LOCALIDS} in environment"
 		fi
-		case ${spmd_run_cmd} in
-		    srun)
-			spmd_run_options="${spmd_run_options} --stats=${BRIDGE_MPRUN_ADDON_SPANK_STATS_FREQ:-30}"
-			;;
-		    *)
-			${LOGGER} "nothing to do with a spmd_run_cmd of ${spmd_run_cmd}"
-			;;
-		esac
 		;;
 	    *)
 		${ERROR} "not supported with ${RESOURCE_MANAGER}"
