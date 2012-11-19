@@ -456,7 +456,7 @@ function mpinfo_print_status {
       echo "PARTITION    STATUS   TOTAL   DOWN    USED    FREE    TOTAL   DOWN    USED    FREE     MpC  CpN SpN CpS TpC"
       echo "---------    ------   ------  ------  ------  ------  ------  ------  ------  ------   ---- --- --- --- ---"
     fi
-    ${cmd} -eo "%P %a %C %F %m %X %Y %Z %c %N" -h | sort -nr -k 3 | while read PARTITION STATE CPUS_STATE NODES_STATE MEMPERNODE SOCKETSPERNODE CORESPERSOCKET THREADSPERCORE CPUSPERNODE NODES
+    ${cmd} -eo "%R %a %C %F %m %X %Y %Z %c %N" -h | sort -nr -k 3 | while read PARTITION STATE CPUS_STATE NODES_STATE MEMPERNODE SOCKETSPERNODE CORESPERSOCKET THREADSPERCORE CPUSPERNODE NODES
     do
 	if [[ ${cmd} == "sinfo" ]] && [[ -n ${BRIDGE_MPSTAT_EXCLUDED_PARTITIONS} ]]
 	then
