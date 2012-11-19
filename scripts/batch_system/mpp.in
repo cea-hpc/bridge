@@ -618,7 +618,7 @@ printf "\n";
       fi
 
       # Get the list of partitions which contain nodes from the reservation
-      QUEUES=`sinfo -h -n $NODES -o '%N|%P' | sort -t '|' -k 2 | awk -F '|' '/[[:alnum:]_\[,\-\]]+\|\w+/ {if (S==0) S=1; else printf ",";printf "%s",$2} END {printf "\n"}'`
+      QUEUES=`sinfo -h -n $NODES -o '%N|%R' | sort -t '|' -k 2 | awk -F '|' '/[[:alnum:]_\[,\-\]]+\|\w+/ {if (S==0) S=1; else printf ",";printf "%s",$2} END {printf "\n"}'`
 
       # Filter by partition
       if [[ -n $show_partition ]]; then
