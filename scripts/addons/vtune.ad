@@ -119,6 +119,7 @@ function bridge_addon_mprun_getopt {
     export BRIDGE_MPRUN_ADDON_VTUNE_PACKAGE_DIR
     export BRIDGE_MPRUN_ADDON_VTUNE_ACTIVITY_OPTIONS
     export BRIDGE_MPRUN_ADDON_VTUNE_PROCESS_RANK
+    export BRIDGE_MPRUN_ADDON_VTUNE_ACTIVITY_NAME
 
     return ${exit_status}
 }

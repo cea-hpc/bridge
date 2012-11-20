@@ -1,0 +1,164 @@
+
+## MSUB
+function bridge_addon_msub_setopt {
+    return 0
+}
+
+function bridge_addon_msub_getopt {
+    typeset USAGE="\
+\t*) Cartofile addon
+\t This addon automatically applies a cartofile for jobs on the selected partition
+\t The behaviour may be tuned with the following environment variables
+\t BRIDGE_ADDON_CARTO_PARTITION  : Partition for which a cartofile will be used
+\t                                 Set to 'none' to disable
+\t BRIDGE_ADDON_CARTO_FILE       : Cartofile path
+\n"
+
+    while getopts ${BRIDGE_MSUB_GETOPT_OPTIONS} option
+      do
+      case ${option} in
+
+	  h)
+	      echo -e "${USAGE}" >&2
+	      return 0
+	      ;;
+
+	  *)
+	      ;;
+      esac
+    done
+    return 0
+}
+
+
+function bridge_addon_msub_alteropt {
+    ## on se place en mode debug si souhaite
+    typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+	then
+	set -x
+    fi
+
+    ## on incremente le niveau de log
+    typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+
+    ## on ajoute une entete a la log
+    typeset LOGGER="${LOGGER} Bridge AutoCarto Addon :"
+
+    if [[ -n ${BRIDGE_MSUB_QUEUE} ]]; then
+	typeset selected_queue=${BRIDGE_MSUB_QUEUE}
+    else
+	typeset selected_queue=${BRIDGE_MSUB_DEFAULT_QUEUE}
+    fi
+
+    if [[ -z ${selected_queue} ]]; then
+    	${LOGGER} "unable to determine used queue: skipping"
+	return 0
+    fi
+
+    if [[ ${selected_queue} == ${BRIDGE_ADDON_CARTO_PARTITION} ]]; then
+    	${LOGGER} "using cartofile $BRIDGE_ADDON_CARTO_FILE for queue ${selected_queue}"
+	export OMPI_MCA_carto_file_path=$BRIDGE_ADDON_CARTO_FILE
+	export OMPI_MCA_carto=file
+    else
+	${LOGGER} "not using cartofile for queue ${selected_queue}"
+    fi
+
+    return 0
+}
+
+function bridge_addon_msub_alterscript {
+    return 0
+}
+
+
+
+##MPRUN
+function bridge_addon_mprun_setopt {
+    return 0
+}
+
+function bridge_addon_mprun_getopt {
+    typeset USAGE="\
+\t*) Cartofile addon
+\t This addon automatically applies a cartofile for jobs on the selected partition
+\t The behaviour may be tuned with the following environment variables
+\t BRIDGE_ADDON_CARTO_PARTITION  : Partition for which a cartofile will be used
+\t                                 Set to 'none' to disable
+\t BRIDGE_ADDON_CARTO_FILE       : Cartofile path
+\n"
+
+    while getopts ${BRIDGE_MPRUN_GETOPT_OPTIONS} option
+      do
+      case ${option} in
+
+	  h)
+	      echo -e "${USAGE}" >&2
+	      return 0
+	      ;;
+
+	  *)
+	      ;;
+      esac
+    done
+    return 0
+}
+
+function bridge_addon_mprun_alteropt {
+    ## on se place en mode debug si souhaite
+    typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+	then
+	set -x
+    fi
+
+    ## on incremente le niveau de log
+    typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+
+    ## on ajoute une entete a la log
+    typeset LOGGER="${LOGGER} Bridge AutoCarto Addon :"
+
+    if [[ "${BRIDGE_MPRUN_ALLOCATION}" == yes ]] then
+        ${LOGGER} "wrapping allocation detected: skipping"
+    	return 0
+    fi
+
+    if [[ -n ${bridge_mprun_partition} ]]; then
+	typeset selected_partition=${bridge_mprun_partition}
+    else
+	typeset selected_partition=${BRIDGE_MPRUN_DEFAULT_PARTITION}
+    fi
+
+    if [[ -z ${selected_partition} ]]; then
+    	${LOGGER} "unable to determine used partition: skipping"
+	return 0
+    fi
+
+    if [[ ${selected_partition} == ${BRIDGE_ADDON_CARTO_PARTITION} ]]; then
+    	${LOGGER} "using cartofile $BRIDGE_ADDON_CARTO_FILE for partition ${selected_partition}"
+	export OMPI_MCA_carto_file_path=$BRIDGE_ADDON_CARTO_FILE
+	export OMPI_MCA_carto=file
+    else
+	${LOGGER} "not using cartofile for partition ${selected_partition}"
+    fi
+
+    return 0
+}
+
+function bridge_addon_mprun_spmd_pre_allocate {
+    return 0
+}
+
+
+function bridge_addon_mprun_spmd_post_allocate {
+    return 0
+}
+
+
+function bridge_addon_mprun_spmd_pre_run {
+    return 0
+}
+
+function bridge_addon_mprun_spmd_post_run {
+    return 0
+}
