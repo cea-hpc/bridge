@@ -24,10 +24,13 @@
 #
 # Addon for spank-stats support in Bridge
 # 
+# Variables defined to configure the behavior :
+#
+# BRIDGE_MPRUN_ADDON_SPANK_STATS_FREQ : default is 30 secondes
 #################################################################################
 
 #################################################################################
-# MSUB QOS support
+# MSUB SPANK-STATS support
 #--------------------------------------------------------------------------------
 function bridge_addon_msub_setopt {
     return 0
@@ -48,7 +51,7 @@ function bridge_addon_msub_alterscript {
 
 
 #################################################################################
-# MPRUN QOS support
+# MPRUN SPANK-STATS support
 #--------------------------------------------------------------------------------
 function bridge_addon_mprun_setopt {
 
@@ -114,35 +117,6 @@ function bridge_addon_mprun_getopt {
 
 function bridge_addon_mprun_alteropt {
 
-    ## on se place en mode debug si souhaite
-    typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
-    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
-	then
-	set -x
-    fi
-    
-    ## on incremente le niveau de log
-    typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
-    
-    ## on ajoute une entete a la log
-    typeset LOGGER="${LOGGER} QOS Addon :"
-    typeset ERROR="${ERROR} QOS Addon :"
-
-    ## on active la QOS
-    if [[ -n ${BRIDGE_MPRUN_ADDON_SPANK_STATS} ]]
-    then
-	case ${RESOURCE_MANAGER} in
-            slurm)
-		export SLURM_EPILOG=${BRIDGE_ADDON_SCRIPTSDIR}/$(bridge_command_enhance spank-stats.sh)
-		export SPANK_STATS_DIGEST=1
-		spmd_run_options="${spmd_run_options} --stats=30"
-		;;
-	    *)
-		${ERROR} "not supported with ${RESOURCE_MANAGER}"
-		;;
-	esac
-    fi
-
     return 0
 
 }
@@ -160,6 +134,48 @@ function bridge_addon_mprun_spmd_post_allocate {
 }
 
 function bridge_addon_mprun_spmd_pre_run {
+
+    ## on se place en mode debug si souhaite
+    typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+	then
+	set -x
+    fi
+    
+    ## on incremente le niveau de log
+    typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+    
+    ## on ajoute une entete a la log
+    typeset LOGGER="${LOGGER} Spank-stats Addon :"
+    typeset ERROR="${ERROR} Spank-stats Addon :"
+
+    ## on active la prise de statistiques si le parametre est fixe ou bien si la variable
+    ## BRIDGE_MPRUN_ADDON_SPANK_SILENT_STATS est fixee a 1. Dans ce dernier cas, les stats ne
+    ## seront pas affichees en find de step, seulement stockees pour un usage futur.
+    if [[ -n ${BRIDGE_MPRUN_ADDON_SPANK_STATS} ]] || [[ ${BRIDGE_MPRUN_ADDON_SPANK_SILENT_STATS} == "1" ]]
+    then
+	case ${RESOURCE_MANAGER} in
+            slurm)
+		# only print statistics when asked on command line
+		if [[ -n ${BRIDGE_MPRUN_ADDON_SPANK_STATS} ]]
+		    then
+		    export SPANK_STATS_DIGEST=1
+		    export SLURM_EPILOG=${BRIDGE_ADDON_SCRIPTSDIR}/$(bridge_command_enhance spank-stats.sh)
+		fi
+		case ${spmd_run_cmd} in
+		    srun)
+			spmd_run_options="${spmd_run_options} --stats=${BRIDGE_MPRUN_ADDON_SPANK_STATS_FREQ:-30}"
+			;;
+		    *)
+			${LOGGER} "nothing to do with a spmd_run_cmd of ${spmd_run_cmd}"
+			;;
+		esac
+		;;
+	    *)
+		${ERROR} "not supported with ${RESOURCE_MANAGER}"
+		;;
+	esac
+    fi
 
     return 0
 

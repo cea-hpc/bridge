@@ -288,12 +288,14 @@ function bridge_addon_mprun_spmd_pre_run {
 	export BRIDGE_BROADCAST_ORIGINAL_CMD=${exec_file}
 	typeset dst_file=$(compute_bcast_name "$exec_file")
 	do_bcast $bcast_mode ${exec_file}
+
 	if [[ $? -ne 0 ]]
 	then
 	    ${LOGGER} "failure of broadcast ... staying in standard mode"
 	else
 	    ${LOGGER} "swapping executables ..."
 	    spmd_run_args="${dst_file} ${exec_args}"
+	    BRIDGE_BROADCAST_MODE=0
 	fi
 
     fi

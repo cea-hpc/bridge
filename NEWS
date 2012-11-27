@@ -3,6 +3,17 @@
 	-- add GPL licensing information and headers
 	-- RPM specfile : now compile by default in TGCC style (ccc_*)
 
+* Changes in bridge-1.4.16
+==========================
+	-- now use %R instead of %P in wrapped SLURM sinfo -o "" command
+	-- relax_affintiy.ad: add a new addon to use slurm-relax-affinity
+	   logic in bridge. Require slurm-relax-affinity RPM.
+	-- spank-stats.ad: improve the addon logic
+	-- bcast.ad: add broadcast mode using parallel local cp to speed
+	   up broadcasting an executable stored in lustre.
+	-- DDT addon: set BRIDGE_BROADCAST_MODE=0 to avoid broadcasting 
+	   binaries (not well supported by DDT)
+
 * Changes in bridge-1.4.15
 ==========================
 	-- add autocarto addon
