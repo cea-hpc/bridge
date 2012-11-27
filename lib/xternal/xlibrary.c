@@ -93,6 +93,18 @@ void _update_index(const void* node,const VISIT method,const int depth);
 /* used to manage item into the tree (add, remove, balance,...) */
 int _cmp_item_by_reference(const void* p1,const void* p2);
 
+/* local functions */
+int xlibrary_get_item_nolock(xlibrary_t* library,
+			     char* reference,
+			     void* item,
+			     size_t item_size);
+int xlibrary_remove_item_nolock(xlibrary_t* library,
+				char* reference);
+int xlibrary_add_item_nolock(xlibrary_t* library,
+			     char* reference,
+			     void* item,
+			     size_t item_size);
+
 /**/
 int
 xlibrary_init(xlibrary_t* library,
@@ -709,8 +721,6 @@ _update_index(const void* node,const VISIT method,const int depth){
   xfreelist_item_t* item;
   xlibrary_item_t* litem;
   xlibrary_t* library;
-
-  xlibrary_item_t* pitem;
 
   if(method==leaf || method==postorder){
 

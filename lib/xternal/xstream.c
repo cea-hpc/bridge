@@ -34,6 +34,7 @@
 
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/time.h>
 
 #include <fcntl.h>
 #include <sys/poll.h>
@@ -45,7 +46,6 @@ extern int errno;
 
 #include "xstream.h"
 
-#define STR_ERROR_SIZE 512
 #define DUMP_ERROR(e,s,S) { char* rc=strerror_r((int)e,(char*)s,(size_t)S); \
   if(rc==0) \
     { \
@@ -91,8 +91,6 @@ xstream_create(const char* hostname,
 {
   char* function_name="xstream_create";
   INIT_DEBUG2_MARK();
-
-  char str_error[STR_ERROR_SIZE];
 
   int sock;
   int authorization;
@@ -200,10 +198,8 @@ xstream_connect(const char* hostname,
   char* function_name="xstream_connect";
   INIT_DEBUG2_MARK();
 
-  char str_error[STR_ERROR_SIZE];
-
   int sock;
-  int sock_flags;
+  int sock_flags = 0;
 
   struct addrinfo* ai;
   struct addrinfo* aitop;
@@ -231,7 +227,6 @@ xstream_connect(const char* hostname,
   status=getaddrinfo(hostname,servicename,&hints,&aitop);
   if(status){
     ERROR("getaddrinfo (%s:%s) failed : %s",hostname,servicename,gai_strerror(status));
-    close(sock);
     return XERROR_STREAM_GETADDRINFO_FAILED;
   }
   else{
@@ -363,8 +358,6 @@ xstream_accept(int socket){
   struct sockaddr_in remote_addr;
   socklen_t addrlen;
 
-  char str_error[STR_ERROR_SIZE];
-
   int fstatus=XERROR;
   
   addrlen=sizeof(remote_addr);
@@ -401,8 +394,6 @@ xstream_listen(int socket,int backlog){
   char* function_name="xstream_listen";
   INIT_DEBUG2_MARK();
 
-  char str_error[STR_ERROR_SIZE];
-  
   fstatus=listen(socket,backlog);
   if(fstatus!=0){
     ERROR("error while specifying stream listening queue length : %s",strerror(errno));
@@ -427,7 +418,7 @@ int xstream_send_timeout(int socket,char* buffer,size_t length,int timeout){
 
   char test;
 
-  int sock_flags;
+  int sock_flags=0;
   int nonblock=0;
   struct pollfd ufds;
 
@@ -699,7 +690,7 @@ int xstream_receive_msg_timeout(int socket,char** buffer,size_t* length,int time
   size_t mlen;
   
   /* receive message length */
-  fstatus=xstream_receive_timeout(socket,&nlength,sizeof(uint32_t),timeout);
+  fstatus=xstream_receive_timeout(socket,(char*)&nlength,sizeof(uint32_t),timeout);
   if(fstatus){
     ERROR("unable to receive message length");
   }

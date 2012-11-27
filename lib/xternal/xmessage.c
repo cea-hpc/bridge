@@ -28,6 +28,8 @@
 #include <rpc/types.h>
 #include <rpc/xdr.h>
 
+#include <string.h>
+
 #include <errno.h>
 extern int errno;
 

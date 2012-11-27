@@ -23,6 +23,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <stdio.h>
+#include <string.h>
 
 #include <pthread.h>
 
@@ -64,6 +65,9 @@
 
 /* main header */
 #include "xqueue.h"
+
+/* local functions */
+int xqueue_get_length(xqueue_t* queue,int* length);
 
 int
 xqueue_init(xqueue_t* queue,unsigned int default_length,size_t item_size){
@@ -438,9 +442,6 @@ xqueue_wait_4_emptiness(xqueue_t* queue){
   int fstatus=-1;
   char* function_name="xqueue_wait_4_emptiness";
   INIT_DEBUG_MARK();
-
-  xfreelist_item_t* item;
-  xfreelist_t* freelist;
 
   int empty_flag=0;
   int queue_length;
