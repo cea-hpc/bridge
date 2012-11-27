@@ -233,6 +233,32 @@ int bridge_rangelist_incremente_size(bridge_rangelist_t* array);
 int bridge_rangelist_add_range(bridge_rangelist_t* array,bridge_range_t* r);
 /*!
  * \ingroup BATCH_MANAGER
+ * \brief Add a rangelist to a bridge ranges array
+ * The range will be merge with already existing ranges if required
+ * and resulting ranges will be sorted
+ *
+ * \param array pointer on a bridge ranges array structure to use for add-on
+ * \param rlin rangelist that will be added to the array
+ *
+ * \retval  0 operation successfully done
+ * \retval -1 operation failed
+*/
+int bridge_rangelist_add_rangelist(bridge_rangelist_t* array,
+				   bridge_rangelist_t* rlin);
+/*!
+ * \ingroup BATCH_MANAGER
+ * \brief Remove a rangelist from a bridge ranges array
+ *
+ * \param array pointer on a bridge ranges array structure to use
+ * \param rlin rangelist that will be removed to the array
+ *
+ * \retval  0 operation successfully done
+ * \retval -1 operation failed
+*/
+int bridge_rangelist_remove_rangelist(bridge_rangelist_t* array,
+				      bridge_rangelist_t* rlin);
+/*!
+ * \ingroup BATCH_MANAGER
  * \brief Add a list of values to a bridge ranges array
  * The range will be merge with already existing ranges if required
  * and resulting ranges will be sorted

@@ -38,6 +38,10 @@
 #define DEBUG3_LOGGER xdebug3
 #define ERROR_LOGGER xerror
 
+/* local functions */
+int _bridge_common_string_get_token_common(char* string,char* separators_list,
+					   int* p_token_nb,int token_id,
+					   char** p_token);
 
 /*
   ----------------------------------------------------------------------------------------------------------------
@@ -96,10 +100,6 @@ int bridge_common_string_get_tokens_quantity(char* string,char* separators_list,
 */
 int bridge_common_string_appends_and_extends(char** p_io_string,size_t* p_current_length,size_t inc_length,char* string2append,char* separator){
   int fstatus=-1;
-
-  int status;
-
-  char* output=NULL;
 
   size_t new_output_length;
   size_t new_string_length;

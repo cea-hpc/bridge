@@ -116,7 +116,7 @@ bridge_idlist_get_compacted_string(bridge_idlist_t* idlist,char** p_string)
   int brackets_flag;
 
   char* range_string;
-  size_t range_string_size,range_string_default_size;
+  size_t range_string_size;
 
   char* ranges_string;
   size_t ranges_string_size;
@@ -125,7 +125,7 @@ bridge_idlist_get_compacted_string(bridge_idlist_t* idlist,char** p_string)
   size_t output_string_size=1024;
 
   long int ids_nb;
-  long int i,j;
+  long int i;
 
   long int from,to;
 
@@ -156,11 +156,11 @@ bridge_idlist_get_compacted_string(bridge_idlist_t* idlist,char** p_string)
 	      to=idlist->rangelist.array[i].to;
 	      if(from==to)
 		{
-		  snprintf(range_string,range_string_size,"%u",from);
+		  snprintf(range_string,range_string_size,"%ld",from);
 		}
 	      else
 		{
-		  snprintf(range_string,range_string_size,"%u-%u",from,to);
+		  snprintf(range_string,range_string_size,"%ld-%ld",from,to);
 		}
 	      fstatus=bridge_common_string_appends_and_extends(&ranges_string,&ranges_string_size,range_string_size,range_string,",");
 	      if(fstatus!=0)
@@ -220,7 +220,7 @@ bridge_idlist_get_extended_string(bridge_idlist_t* idlist,char** p_string)
 	{
 	  for(j=idlist->rangelist.array[i].from;j<=idlist->rangelist.array[i].to;j++)
 	    {
-	      snprintf(id_string,id_string_size,"%u",j);
+	      snprintf(id_string,id_string_size,"%ld",j);
 	      fstatus=bridge_common_string_appends_and_extends(&output_string,&output_string_size,id_string_size,id_string," ");
 	      if(fstatus!=0)
 		fstatus=-1;

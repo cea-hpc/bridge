@@ -68,7 +68,6 @@ int bridge_load_batch_system(bridge_manager_t* p_manager,
 
   int fstatus=1;
 
-  size_t name_length;
   size_t lib_length;
 
   /* Check that lib name and file are present */
@@ -348,7 +347,6 @@ int bridge_load_rm_system(bridge_manager_t* p_manager,
 
   int fstatus=1;
   
-  size_t name_length;
   size_t lib_length;
   
   /* Check that lib name and file are present */
@@ -622,8 +620,6 @@ int bridge_manager_load_conf(bridge_manager_t* p_manager,
   int i;
   char* block_name;
   
-  int value;
-
   char* pointer;
 
   /* Parse configuration file */
@@ -737,7 +733,6 @@ int bridge_manager_load_conf(bridge_manager_t* p_manager,
 int bridge_init_manager(bridge_manager_t* p_manager){
 
   int fstatus=-1;
-  int status;
 
   char* pointer;
   char* conffile;

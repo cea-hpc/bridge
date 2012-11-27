@@ -31,6 +31,7 @@
 #include <search.h>
 
 #include <limits.h>
+#include <ctype.h>
 
 #include "bridge.h"
 #include "bridge_common.h"
@@ -42,6 +43,9 @@
 #define ERROR_LOGGER xerror
 
 #define MAX_LONG_INT_STRING_SIZE      128
+
+/* local functions */
+int bridge_nodelist_remove_nodes(bridge_nodelist_t* nodelist,char* list);
 
 /*!
  * \ingroup BRIDGE_COMMON
@@ -669,9 +673,6 @@ int bridge_nodelist_add_nodes(bridge_nodelist_t* nodelist,char* list){
   char* token;
 
   bridge_nodelist_t wlist;
-
-  bridge_nodelist_t** pnlist;
-  bridge_nodepattern_t token_pattern;
   
   if(bridge_common_string_get_tokens_quantity(list," ",&token_nb)==0){
     token=NULL;
@@ -729,9 +730,6 @@ int bridge_nodelist_remove_nodes(bridge_nodelist_t* nodelist,char* list){
 
   bridge_nodelist_t wlist;
 
-  bridge_nodelist_t** pnlist;
-  bridge_nodepattern_t token_pattern;
-  
   if(bridge_common_string_get_tokens_quantity(list," ",&token_nb)==0){
     token=NULL;
     for(i=1;i<=token_nb;i++){
@@ -816,7 +814,6 @@ long int bridge_nodelist_non_recursive_nodes_quantity(bridge_nodelist_t* nodelis
 long int bridge_nodelist_nodes_quantity(bridge_nodelist_t* nodelist){
 
   long int quantity;
-  long int i;
 
   bridge_nodelist_t* nlist;
 
@@ -924,7 +921,7 @@ int bridge_nodelist_get_compacted_string(bridge_nodelist_t* nodelist,char** p_st
   int brackets_flag;
 
   char* range_string;
-  size_t range_string_size,range_string_default_size;
+  size_t range_string_size;
 
   char* ranges_string;
   size_t ranges_string_size;
@@ -933,7 +930,7 @@ int bridge_nodelist_get_compacted_string(bridge_nodelist_t* nodelist,char** p_st
   size_t output_string_size=1024;
 
   long int nodes_nb;
-  long int i,j;
+  long int i;
 
   long int from,to;
 

@@ -25,13 +25,17 @@
 #include <stdio.h>
 
 #include <string.h>
-
 #include <limits.h>
+#include <ctype.h>
 
 #include "bridge_common.h"
 
 #define DEFAULT_RANGELIST_SIZE       16
 #define DEFAULT_RANGELIST_INC_SIZE    8
+
+/* local functions */
+int bridge_rangelist_intersects(bridge_rangelist_t* a1,bridge_rangelist_t* a2);
+int bridge_rangelist_includes(bridge_rangelist_t* a1,bridge_rangelist_t* a2);
 
 int
 bridge_range_set(bridge_range_t* r1,long int v1,long int v2)
@@ -322,7 +326,6 @@ bridge_rangelist_remove_range(bridge_rangelist_t* array,bridge_range_t* rin)
   bridge_range_t* pr;
   bridge_range_t r;
   bridge_range_t wr1;
-  bridge_range_t wr2;
   bridge_rangelist_t work_array;
 
   if(array->ranges_nb==0)
@@ -571,10 +574,12 @@ bridge_rangelist_show(bridge_rangelist_t* array)
 {
   long int id;
   fprintf(stdout,"----------------------------------\n");
-  fprintf(stdout,"Ranges nb : %u\n",array->ranges_nb);
+  fprintf(stdout,"Ranges nb : %ld\n",array->ranges_nb);
   for(id=0;id<array->ranges_nb;id++)
     {
-      fprintf(stdout,"[%u-%u]\n",array->array[id].from,array->array[id].to);
+      fprintf(stdout,"[%ld-%ld]\n",array->array[id].from,array->array[id].to);
     }
   fprintf(stdout,"----------------------------------\n");
+
+  return 0;
 }
