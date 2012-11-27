@@ -371,7 +371,7 @@ bridge_get_rep_create_message(bridge_get_rep_t* bgr,xmessage_t* msg){
 
     xdrmem_create(&xdr,buffer,length,XDR_ENCODE);
 
-    if(!xdr_u_long(&xdr,&(bgr->used_time))){
+    if(!xdr_u_long(&xdr,(unsigned long*)&(bgr->used_time))){
       ERROR("unable to marshall used time");
       fstatus=-3;
     }

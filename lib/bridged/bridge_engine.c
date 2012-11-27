@@ -96,7 +96,6 @@ bridge_engine_init(bridge_engine_t* engine,
 		   char* debugfile,
 		   int debuglevel){
   int fstatus=-1;
-  char* function_name="bridge_engine_init";
   
   if(
      primary_address == NULL ||
@@ -165,17 +164,12 @@ int
 bridge_engine_init_from_config_file(bridge_engine_t* engine,char* conf_file){
   int fstatus=-1;
 
-  char* function_name="bridge_engine_init";
-
   config_file_t config;
   int block_nb;
 
   char* loglevel_string;
   char* debuglevel_string;
   char* timeout_string;
-
-  char* worker_string;
-  char* queue_string;
 
   int i;
 

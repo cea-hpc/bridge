@@ -77,7 +77,6 @@ bridge_api_process_request(char* conf_file,xmessage_t* req,xmessage_t* rep){
   /* bridged server options */
   char* server;
   char* port;
-  char* principal;
   int retry;
   int max_retries=3;
   time_t timeout=15;
@@ -91,7 +90,7 @@ bridge_api_process_request(char* conf_file,xmessage_t* req,xmessage_t* rep){
   char* rcv_buffer;
   size_t rcv_length;
 
-  int rstatus;
+  int rstatus = BRIDGE_ERROR;
 
   xmessage_t ack;
   char* ack_buffer;

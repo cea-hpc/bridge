@@ -34,6 +34,7 @@
 
 #include <string.h>
 
+#include "xternal/xlibrary.h"
 #include "bridged/bridge_rus.h"
 
 #include "xternal/xlogger.h"
@@ -150,7 +151,6 @@ bridge_rus_record_init(bridge_rus_record_t* record,char* id)
     retval = 0 ;
   }
 
- done:
   EXIT_DEBUG2_MARK(retval);
   return retval;
 }
@@ -373,7 +373,7 @@ bridge_rus_mgr_synchronise(bridge_rus_mgr_t* rus,unsigned long * items_nb)
 	/* extract id, used time and usable time */
 	used_time=0;
 	usable_time=0;
-	if(sscanf(line,"%s %u %u\n",id,&used_time,&usable_time)!=3){
+	if(sscanf(line,"%s %lu %lu\n",id,&used_time,&usable_time)!=3){
 	  size_t l=strnlen(line,127);
 	  line[l-1]='\0';
 	  ERROR("error during synchronisation, skipping invalid line '%s'",
