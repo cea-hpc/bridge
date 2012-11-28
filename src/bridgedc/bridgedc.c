@@ -128,7 +128,7 @@ int main(int argc,char** argv){
     fstatus = bridgedapi_get(conf_file_string,batchid,rmid,
 			     &usable,&used,&halt);
     if ( fstatus == 0 ) {
-      fprintf(stdout,"used=%u usable=%u halt=%u\n",
+      fprintf(stdout,"used=%ld usable=%ld halt=%ld\n",
 	      used,usable,halt);
     }
     else {
