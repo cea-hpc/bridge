@@ -26,6 +26,7 @@
 
 #include <string.h>
 
+#include "xternal/xlogger.h"
 #include "bridged_engine.h"
 
 #include "confparse/config_parsing.h"
@@ -99,7 +100,6 @@ bridged_engine_init(bridged_engine_t* engine,
 		    int worker_nb,
 		    int queue_size){
   int fstatus=-1;
-  char* function_name="bridged_engine_init";
   
   /* check input parameters */
   if(
@@ -144,7 +144,7 @@ bridged_engine_init(bridged_engine_t* engine,
   engine->debuglevel=debuglevel;
 
   engine->worker_nb=worker_nb;
-  engine->queue_size=queue_size;char* default_bridged_conf_file = BRIDGED_CONF ;
+  engine->queue_size=queue_size;
 
   /* check engine structure parameters validity */
   if(
@@ -184,8 +184,6 @@ bridged_engine_init(bridged_engine_t* engine,
 int
 bridged_engine_init_from_config_file(bridged_engine_t* engine,char* conf_file){
   int fstatus=-1;
-
-  char* function_name="bridged_engine_init";
 
   config_file_t config;
   int block_nb;

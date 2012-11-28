@@ -180,9 +180,6 @@ void * worker_main_function(void* p_args){
 
   time_t start,end;
 
-  char* buffer;
-  size_t length;
-
   wargs=(bridged_worker_args_t*)p_args;
   if(wargs!=NULL){
 
@@ -273,7 +270,6 @@ int bridged_main_loop(bridged_engine_t* engine){
   int status;
 
   int i;
-  int socket;
 
   bridge_rus_mgr_t rus_mgr;
 

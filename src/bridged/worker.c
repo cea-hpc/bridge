@@ -183,11 +183,9 @@ int worker_process_get_request(void* p_args,int stream,xmessage_t* req){
   char* buffer;
   size_t length;
 
-  int success_flag=0;
-
-  time_t used_time;
-  time_t usable_time;
-  time_t halt_time;
+  time_t used_time = 0;
+  time_t usable_time = 0;
+  time_t halt_time = 0;
 
   error_message=generic_error_message;
 
@@ -313,7 +311,6 @@ int worker_process_request(void* p_args,int socket){
   xmessage_t req;
 
   int rstatus=0;
-  char ack;
   
   wargs=(bridged_worker_args_t*)p_args;
   if(wargs==NULL){
