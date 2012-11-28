@@ -36,6 +36,10 @@
 /* local functions */
 int display_classic_bridge_rm_partition_on_file_stream(FILE * stream,
 						       bridge_rm_partition_t* rmp);
+int display_by_fields_bridge_rm_partition_on_file_stream(FILE * stream,
+							 bridge_rm_partition_t* rmp,
+							 char* output_fields,
+							 char* separator);
 
 // name,desc,partition,state,reason,priority,user,uid,gid,
 // subtime,starttime,endtime,susptime,etime,atime,stime,utime,
@@ -335,12 +339,12 @@ int main(int argc,char** argv){
     if(status==0){
       fstatus=0;
       if(classic_mode){
-	display_classic_bridge_rm_partition_on_file_stream(stdout,NULL,long_flag);
+	display_classic_bridge_rm_partition_on_file_stream(stdout,NULL);
 	for(partition_id=0;partition_id<partitions_nb;partition_id++){
 	  partition=partitions_array+partition_id;
 	  if(active_only_flag && partition->state==BRIDGE_RM_PARTITION_STATE_OUT)
 	    continue;
-	  display_classic_bridge_rm_partition_on_file_stream(stdout,partition,long_flag);
+	  display_classic_bridge_rm_partition_on_file_stream(stdout,partition);
 	  bridge_clean_rm_partition(&manager,partition);
 	}
       }
@@ -525,10 +529,7 @@ int display_by_fields_bridge_rm_partition_on_file_stream(FILE * stream,bridge_rm
 
   int token_nb;
 
-  char* string_a;
-
   char* state;
-  char* nodelist;
 
   if(separator==NULL)
     separator=" ";

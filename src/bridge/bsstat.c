@@ -32,6 +32,11 @@
 
 #define PROG_VERSION  "1.0.1"
 
+/* local functions */
+int display_new_classic_bridge_batch_session_on_file_stream(FILE * stream,
+							    bridge_batch_session_t* bs,
+							    int long_flag);
+
 /*!
  * \brief display batch session informations on file stream in an extended form 
  * \internal
@@ -69,11 +74,6 @@ int display_classic_bridge_batch_session_on_file_stream(FILE * stream,bridge_bat
  * \retval -1 on failure
  */
 int display_by_fields_bridge_batch_session_on_file_stream(FILE * stream,bridge_batch_session_t* bs,char* output_fields,char* separator);
-
-/* local functions */
-int display_new_classic_bridge_batch_session_on_file_stream(FILE * stream,
-							    bridge_batch_session_t* bs,
-							    int long_flag);
 
 /*!
  * \brief test if output fields required parallel informations
@@ -611,8 +611,7 @@ int display_new_classic_bridge_batch_session_on_file_stream(FILE * stream,bridge
   }
   else{
     char batchid[32] ;
-    sprintf(batchid,"%s",bs->batch_id != NULL ? bs->batch_id : "unknown",
-                            bs->submit_hostname != NULL ? bs->submit_hostname : "unknown");
+    sprintf(batchid,"%s",bs->batch_id != NULL ? bs->batch_id : "unknown");
 
     char status[4];
     switch(bs->state){
@@ -785,8 +784,6 @@ int display_by_fields_bridge_batch_session_on_file_stream(FILE * stream,bridge_b
   char* token=NULL;
 
   int token_nb;
-
-  char* string_a;
 
   char* nodelist;
 

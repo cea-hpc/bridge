@@ -38,6 +38,10 @@
 int display_classic_bridge_rm_allocation_on_file_stream(FILE * stream,
 							bridge_rm_allocation_t* rm,
 							int long_flag);
+int display_by_fields_bridge_rm_allocation_on_file_stream(FILE * stream,
+							  bridge_rm_allocation_t* rm,
+							  char* output_fields,
+							  char* separator);
 
 // name,desc,partition,state,reason,priority,user,uid,gid,
 // subtime,starttime,endtime,susptime,etime,atime,stime,utime,
@@ -734,8 +738,6 @@ int display_by_fields_bridge_rm_allocation_on_file_stream(FILE * stream,bridge_r
   char* token=NULL;
 
   int token_nb;
-
-  char* nodelist;
 
   if(separator==NULL)
     separator=" ";

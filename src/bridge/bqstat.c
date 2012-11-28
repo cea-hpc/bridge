@@ -78,7 +78,6 @@ int main(int argc,char **argv){
   bridge_manager_t manager;
 
   bridge_batch_queue_t* p_batch_queue_array=NULL;
-  bridge_batch_queue_t* p_batch_queue=NULL;
   int batch_queue_nb=0;
   int i;
   int verbosity=0;
