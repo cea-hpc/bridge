@@ -29,10 +29,12 @@
 
 #include <limits.h>
 #include <time.h>
+#include <ctype.h>
 
 #include <slurm/slurm.h>
 #include <pwd.h>
 
+#include "xternal/xlogger.h"
 #include "bridge/bridge.h"
 
 #define DEBUG_LOGGER xdebug
@@ -43,6 +45,18 @@
 #ifndef JOB_STATE_BASE
 #define JOB_STATE_BASE 0x00ff
 #endif
+
+/* local functions */
+int get_rm_allocations_base(bridge_rm_manager_t * p_rm_manager,
+			    bridge_rm_allocation_t ** p_rm_allocations,
+			    int* p_rm_allocations_nb,
+			    char* rm_allocations_rm_id,
+			    char* username,
+			    char* rm_partition,
+			    char* intersectingNodes,
+			    char* includingNodes,
+			    int terminated_flag,
+			    time_t begin_eventTime,time_t end_eventTime);
 
 /*
 ####################################################################################################
@@ -87,7 +101,7 @@ init_rm_manager(bridge_rm_manager_t* p_manager){
   
   /* get slurm API version */
   api_version=slurm_api_version();
-  snprintf(version,128,"%d.%d.%d",
+  snprintf(version,128,"%ld.%ld.%ld",
 	   SLURM_VERSION_MAJOR(api_version),
 	   SLURM_VERSION_MINOR(api_version),
 	   SLURM_VERSION_MICRO(api_version));
@@ -634,11 +648,9 @@ get_rm_allocations_base(bridge_rm_manager_t * p_rm_manager,
 			time_t begin_eventTime,time_t end_eventTime){
 
   int fstatus=-1;
-  int status=0;
 
   /* Defines bridge variables */
   bridge_rm_allocation_t* allocations;
-  bridge_rm_allocation_t* allocation;
   int real_allocations_nb=0;
   int nb_allocations;
   int out_flag;
@@ -707,34 +719,34 @@ get_rm_allocations_base(bridge_rm_manager_t * p_rm_manager,
 	      {
 		allocations[real_allocations_nb].state=BRIDGE_RM_ALLOCATION_STATE_PENDING;
 	      }
-	    else if(js==JOB_RUNNING || js & JOB_COMPLETING)
+	    else if( js == JOB_RUNNING || (js & JOB_COMPLETING))
 	      {
 		if ( pji->batch_flag )
 		  allocations[real_allocations_nb].state=BRIDGE_RM_ALLOCATION_STATE_ALLOCATED;
 		else
 		  allocations[real_allocations_nb].state=BRIDGE_RM_ALLOCATION_STATE_INUSE;
 	      }
-	    else if(js==JOB_SUSPENDED)
+	    else if(js == JOB_SUSPENDED)
 	      {
 		allocations[real_allocations_nb].state=BRIDGE_RM_ALLOCATION_STATE_SUSPENDED;
 	      }
-	    else if(js==JOB_COMPLETE | JOB_COMPLETING)
+	    else if(js == (JOB_COMPLETE | JOB_COMPLETING))
 	      {
 		allocations[real_allocations_nb].state=BRIDGE_RM_ALLOCATION_STATE_COMPLETED;
 	      }
-	    else if(js==JOB_CANCELLED | JOB_COMPLETING)
+	    else if(js == (JOB_CANCELLED | JOB_COMPLETING))
 	      {
 		allocations[real_allocations_nb].state=BRIDGE_RM_ALLOCATION_STATE_CANCELLED;
 	      }
-	    else if(js==JOB_FAILED | JOB_COMPLETING)
+	    else if(js == (JOB_FAILED | JOB_COMPLETING))
 	      {
 		allocations[real_allocations_nb].state=BRIDGE_RM_ALLOCATION_STATE_CANCELLED;
 	      }
-	    else if(js==JOB_TIMEOUT | JOB_COMPLETING)
+	    else if(js == (JOB_TIMEOUT | JOB_COMPLETING))
 	      {
 		allocations[real_allocations_nb].state=BRIDGE_RM_ALLOCATION_STATE_TIMEOUT;
 	      }
-	    else if(js==JOB_NODE_FAIL | JOB_COMPLETING)
+	    else if(js == (JOB_NODE_FAIL | JOB_COMPLETING))
 	      {
 		allocations[real_allocations_nb].state=BRIDGE_RM_ALLOCATION_STATE_NODE_FAILURE;
 	      }
@@ -940,17 +952,17 @@ get_rm_allocations_base(bridge_rm_manager_t * p_rm_manager,
 int
 init_rm_node(bridge_rm_manager_t * p_rm_manager,
 	     bridge_rm_node_t* p_rm_node){
-
+	return 0;
 }
 
 int clean_rm_node(bridge_rm_manager_t * p_rm_manager,
 		  bridge_rm_node_t* p_rm_node){
-
+	return 0;
 }
 
 int get_rm_nodes(bridge_rm_manager_t * p_rm_manager,
 		 bridge_rm_node_t** p_rm_nodes,
 		 int* p_rm_nodes_nb,
 		 char* rm_node_name){
-
+	return 0;
 }
