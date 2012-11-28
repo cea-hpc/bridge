@@ -28,6 +28,7 @@
 #include <string.h>
 #include <time.h>
 
+#include "xternal/xlogger.h"
 #include "bridge/bridge.h"
 
 #define DEBUG_LOGGER xdebug

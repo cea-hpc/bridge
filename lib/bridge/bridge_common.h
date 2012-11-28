@@ -628,6 +628,19 @@ bridge_common_condensed2extended_nodelist(char* src_list,char** p_dst_list);
 int
 bridge_common_extended2condensed_nodelist(char* src_list,char** p_dst_list);
 /*!
+ * \ingroup BRIDGE_COMMON
+ * \brief Check if two nodes list intersect
+ *
+ * \param first_list first nodes list
+ * \param second_list second nodes list
+ *
+ * \retval  0 nodes lists don't intersect
+ * \retval  1 nodes lists intersect
+*/
+int
+bridge_nodelist_intersects(bridge_nodelist_t* first_list,
+			   bridge_nodelist_t* second_list);
+/*!
  * @}
 */
 

@@ -27,7 +27,9 @@
 
 #include <string.h>
 #include <time.h>
+#include <ctype.h>
 
+#include "xternal/xlogger.h"
 #include "bridge/bridge.h"
 
 #define DEBUG_LOGGER xdebug
@@ -37,6 +39,11 @@
 
 #include <slurm/slurm.h>
 
+/* local functions */
+int check_batch_manager_validity(bridge_batch_manager_t* p_batch_manager);
+int clean_batch_manager(bridge_batch_manager_t* p_batch_manager);
+
+
 int
 init_batch_manager(bridge_batch_manager_t* p_batch_manager)
 {
@@ -45,9 +52,6 @@ init_batch_manager(bridge_batch_manager_t* p_batch_manager)
 	slurm_ctl_conf_t * pscc;
 	long api_version;
 	char version[128];
-
-	char* cluster_name;
-	char* master_name;
 
 	size_t mll;
 
@@ -60,7 +64,7 @@ init_batch_manager(bridge_batch_manager_t* p_batch_manager)
 
 	  /* get slurm API version */
 	api_version=slurm_api_version();
-	snprintf(version,128,"%d.%d.%d",
+	snprintf(version,128,"%ld.%ld.%ld",
 		 SLURM_VERSION_MAJOR(api_version),
 		 SLURM_VERSION_MINOR(api_version),
 		 SLURM_VERSION_MICRO(api_version));
@@ -130,8 +134,10 @@ init_batch_manager(bridge_batch_manager_t* p_batch_manager)
 		p_batch_manager->masters_list = (char*) 
 			malloc(mll*sizeof(char));
 		if (p_batch_manager->masters_list != NULL) {
-			snprintf(p_batch_manager->masters_list,mll,"%s %s",
-				pscc->control_machine,pscc->backup_controller);
+			snprintf(p_batch_manager->masters_list[0],
+				 mll,"%s %s",
+				 pscc->control_machine,
+				 pscc->backup_controller);
 			
 		}
 

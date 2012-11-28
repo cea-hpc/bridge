@@ -31,6 +31,7 @@
 #include <string.h>
 
 #include <stdint.h>
+#include <ctype.h>
 
 #include "batch_common.h"
 
@@ -81,8 +82,6 @@ int extract_mem(char* statusline,char* header,uint32_t* i)
 
 int extract_float(char* statusline,char* header,float* load)
 {
-	char* p;
-	char* e;
 	char* field;
 
 	if ( extract_field(statusline,header,&field) == 0 ) {
@@ -102,7 +101,7 @@ int extract_cores(char* line,uint32_t* i)
 	char* noe;
 	char* moe;
 	char* eoe;
-	char c,d;
+	char c,d = '\0';
 
 	uint32_t core;
 	uint32_t node;
@@ -200,12 +199,11 @@ int convert_mem(char* field,uint32_t* i)
 
 int convert_time(char* field,time_t* t)
 {
-	char unit[3];
-	time_t time,hour,min,sec;
+	time_t hour,min,sec;
 	
 	
 	
-	if ( sscanf(field,"%u:%u:%u",&hour,&min,&sec) == 3 ) {
+	if ( sscanf(field,"%lu:%lu:%lu",&hour,&min,&sec) == 3 ) {
 		*t = hour*3600 + min*60 + sec ;
 		return 0;
 	}
