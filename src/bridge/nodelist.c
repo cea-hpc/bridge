@@ -26,6 +26,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#include <string.h>
+
 #include "bridge/bridge.h"
 
 #define PROG_VERSION  "1.0.1"
@@ -51,9 +53,6 @@ int main(int argc,char** argv){
     "\t-e\t\t\tShow extended nodes list\n"
     "\t-n\t\t\tShow nodes quantity\n"
     "\t-V\t\t\tPrint bridge and app versions and exit\n";
-
-  char* output_fields=NULL;
-  char* separator=NULL;
 
   char * optstring="hcenV";
   char option;
@@ -107,7 +106,7 @@ int main(int argc,char** argv){
     char* output_string;
 
     if(enum_mode){
-      fprintf(stream,"%u\n",bridge_nodelist_nodes_quantity(&nodelist));
+      fprintf(stream,"%ld\n",bridge_nodelist_nodes_quantity(&nodelist));
     }
     else if(!extended_mode){
       if(bridge_nodelist_get_compacted_string(&nodelist,&output_string)==0){

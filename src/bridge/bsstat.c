@@ -26,6 +26,7 @@
 #include <string.h>
 
 #include <limits.h>
+#include <time.h>
 
 #include "bridge/bridge.h"
 
@@ -69,6 +70,10 @@ int display_classic_bridge_batch_session_on_file_stream(FILE * stream,bridge_bat
  */
 int display_by_fields_bridge_batch_session_on_file_stream(FILE * stream,bridge_batch_session_t* bs,char* output_fields,char* separator);
 
+/* local functions */
+int display_new_classic_bridge_batch_session_on_file_stream(FILE * stream,
+							    bridge_batch_session_t* bs,
+							    int long_flag);
 
 /*!
  * \brief test if output fields required parallel informations
@@ -94,9 +99,8 @@ int main(int argc,char **argv){
   bridge_manager_t manager;
 
   bridge_batch_session_t* p_batch_session_array=NULL;
-  bridge_batch_session_t* p_batch_session=NULL;
   int batch_sessions_nb;
-  int i,j;
+  int i;
 
   int with_parallel_infos=1;
 
@@ -156,8 +160,8 @@ int main(int argc,char **argv){
   char* output_fields=NULL;
   char* separator=NULL;
 
-  time_t begin_eventTime;
-  time_t end_eventTime;
+  time_t begin_eventTime = 0;
+  time_t end_eventTime = 0;
   char* date;
   int date_nb;
 
@@ -246,7 +250,7 @@ int main(int argc,char **argv){
 	    begin_eventTime=strtol(date,(char**)NULL,10);
 	    free(date);
 	    date=NULL;
-	    if(end_eventTime!=LONG_MIN && end_eventTime!=LONG_MAX){	    
+	    if(begin_eventTime!=LONG_MIN && begin_eventTime!=LONG_MAX){	    
 	      if(bridge_common_string_get_token(optarg,":",2,&date)==0){
 		end_eventTime=strtol(date,(char**)NULL,10);
 		free(date);
@@ -427,8 +431,6 @@ int main(int argc,char **argv){
 
 int display_bridge_batch_session_on_file_stream(FILE * stream,bridge_batch_session_t* bs){
 
-  int i;
-
   char time_string[128];
   char* nodelist;
   
@@ -555,10 +557,11 @@ int display_bridge_batch_session_on_file_stream(FILE * stream,bridge_batch_sessi
 
   /* batch session sequential time limit */
   if((bs->system_time+bs->user_time)>0)
-    fprintf(stream,"Seq time used \t: %d (system:%d,user:%d)\n",bs->system_time+bs->user_time,bs->system_time,bs->user_time);
+    fprintf(stream,"Seq time used \t: %ld (system:%ld,user:%ld)\n",
+	    bs->system_time+bs->user_time,bs->system_time,bs->user_time);
   else
     fprintf(stream,"Seq time used \t: 0\n");
-  fprintf(stream,"Seq time limit \t: %d\n",bs->seq_time_limit);
+  fprintf(stream,"Seq time limit \t: %ld\n",bs->seq_time_limit);
 
   /* Mem used */
   fprintf(stream,"Seq mem used \t: %u\n",bs->seq_mem_used);
@@ -566,8 +569,8 @@ int display_bridge_batch_session_on_file_stream(FILE * stream,bridge_batch_sessi
   fprintf(stream,"Seq mem limit \t: %u\n",bs->seq_mem_limit);
 
   /* batch session parallel time limit */
-  fprintf(stream,"Par time used \t: %d\n",bs->par_time_used);
-  fprintf(stream,"Par time limit \t: %d\n",bs->par_time_limit);
+  fprintf(stream,"Par time used \t: %ld\n",bs->par_time_used);
+  fprintf(stream,"Par time limit \t: %ld\n",bs->par_time_limit);
 
   /* batch session memory limit */
   fprintf(stream,"Par mem used \t: %u\n",bs->par_mem_used);
@@ -588,6 +591,7 @@ int display_bridge_batch_session_on_file_stream(FILE * stream,bridge_batch_sessi
     fprintf(stream,
 	  "-------------------------------------------------------\n");
 
+    return 0;
 }
 
 int display_new_classic_bridge_batch_session_on_file_stream(FILE * stream,bridge_batch_session_t* bs,int long_flag){
@@ -644,7 +648,7 @@ int display_new_classic_bridge_batch_session_on_file_stream(FILE * stream,bridge
 
     /* Long version 'classic' display */
     if (long_flag) {
-      fprintf(stream,"%-7s  %-10.10s %-16.16s %-9s %-7s %6d %-12s %-12s %-.3s %8u %8u %7u %6d %s\n",
+      fprintf(stream,"%-7s  %-10.10s %-16.16s %-9s %-7s %6d %-12s %-12s %-.3s %8ld %8ld %7u %6d %s\n",
               batchid,
               bs->username != NULL ? bs->username : "unknown",
 	      project,
@@ -663,7 +667,7 @@ int display_new_classic_bridge_batch_session_on_file_stream(FILE * stream,bridge
     /* Short version 'classic' display */
    
      else {
-      fprintf(stream,"%-7s  %-8.8s %-10.10s %-16.16s %-9s %-7s %6d %-12s %-12s %-.3s %8u %8u %7u %6d\n",
+      fprintf(stream,"%-7s  %-8.8s %-10.10s %-16.16s %-9s %-7s %6d %-12s %-12s %-.3s %8ld %8ld %7u %6d\n",
               batchid,
               bs->name != NULL ? bs->name : "unknown",
               bs->username != NULL ? bs->username : "unknown",
@@ -730,7 +734,7 @@ int display_classic_bridge_batch_session_on_file_stream(FILE * stream,bridge_bat
     }
     /* Long version 'classic' display */
     if (long_flag) {
-      fprintf(stream,"%-19s %-8.8s %10s@%-12s %9u %.3s  %8u %8u %8u %8u %7u %7u  %4d  %4d %s\n",
+      fprintf(stream,"%-19s %-8.8s %10s@%-12s %9u %.3s  %8ld %8ld %8ld %8ld %7u %7u  %4d  %4d %s\n",
 	      batchid,
 	      bs->username != NULL ? bs->username : "unknown",
 	      (bs->queue != NULL ? bs->queue : "NA"),
@@ -749,7 +753,7 @@ int display_classic_bridge_batch_session_on_file_stream(FILE * stream,bridge_bat
     }
     /* Short version 'classic' display */
     else {
-      fprintf(stream,"%-19s %-8.8s  %-8.8s %10s@%-12s %9d %-.3s  %8u %8u %8u %8u %7u %7u  %4d  %4d\n",
+      fprintf(stream,"%-19s %-8.8s  %-8.8s %10s@%-12s %9d %-.3s  %8ld %8ld %8ld %8ld %7u %7u  %4d  %4d\n",
 	      batchid,
 	      bs->name != NULL ? bs->name : "unknown",
 	      bs->username != NULL ? bs->username : "unknown",
@@ -891,7 +895,7 @@ int display_by_fields_bridge_batch_session_on_file_stream(FILE * stream,bridge_b
 	/* SUBMISSION TIME */
 	else if(strcmp(token,"subtime")==0){
 	  if(bs->submit_time!=INVALID_TIME_VALUE){
-	    fprintf(stream,"%u",bs->submit_time);
+	    fprintf(stream,"%ld",bs->submit_time);
 	  }
 	  else
 	    fprintf(stream,"-");
@@ -924,7 +928,7 @@ int display_by_fields_bridge_batch_session_on_file_stream(FILE * stream,bridge_b
 	/* START TIME */
 	else if(strcmp(token,"starttime")==0){
 	  if(bs->start_time!=INVALID_TIME_VALUE){
-	    fprintf(stream,"%u",bs->start_time);
+	    fprintf(stream,"%ld",bs->start_time);
 	  }
 	  else
 	    fprintf(stream,"-");
@@ -932,26 +936,26 @@ int display_by_fields_bridge_batch_session_on_file_stream(FILE * stream,bridge_b
 	/* END TIME */
 	else if(strcmp(token,"endtime")==0){
 	  if(bs->end_time!=INVALID_TIME_VALUE){
-	    fprintf(stream,"%u",bs->end_time);
+	    fprintf(stream,"%ld",bs->end_time);
 	  }
 	  else
 	    fprintf(stream,"-");
 	}
 	/* SEQ USER TIME USED */
 	else if(strcmp(token,"useqtimeused")==0){
-	  fprintf(stream,"%u",bs->user_time);
+	  fprintf(stream,"%ld",bs->user_time);
 	}
 	/* SEQ SYSTEM TIME USED */
 	else if(strcmp(token,"sseqtimeused")==0){
-	  fprintf(stream,"%u",bs->system_time);
+	  fprintf(stream,"%ld",bs->system_time);
 	}
 	/* SEQ TIME USED */
 	else if(strcmp(token,"seqtimeused")==0){
-	  fprintf(stream,"%u",bs->user_time+bs->system_time);
+	  fprintf(stream,"%ld",bs->user_time+bs->system_time);
 	}
 	/* SEQ TIME LIMITE */
 	else if(strcmp(token,"seqtimelim")==0){
-	  fprintf(stream,"%u",bs->seq_time_limit);
+	  fprintf(stream,"%ld",bs->seq_time_limit);
 	}
 	/* SEQ MEM USED */
 	else if(strcmp(token,"seqmemused")==0){
@@ -963,11 +967,11 @@ int display_by_fields_bridge_batch_session_on_file_stream(FILE * stream,bridge_b
 	}
 	/* PAR TIME USED */
 	else if(strcmp(token,"partimeused")==0){
-	  fprintf(stream,"%u",bs->par_time_used);
+	  fprintf(stream,"%ld",bs->par_time_used);
 	}
 	/* PAR TIME LIMITE */
 	else if(strcmp(token,"partimelim")==0){
-	  fprintf(stream,"%u",bs->par_time_limit);
+	  fprintf(stream,"%ld",bs->par_time_limit);
 	}
 	/* PAR MEM USED */
 	else if(strcmp(token,"parmemused")==0){

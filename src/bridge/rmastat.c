@@ -24,12 +24,20 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#include <string.h>
+#include <math.h>
+
 #include <limits.h>
 #include <time.h>
 
 #include "bridge/bridge.h"
 
 #define PROG_VERSION  "1.0.1"
+
+/* local functions */
+int display_classic_bridge_rm_allocation_on_file_stream(FILE * stream,
+							bridge_rm_allocation_t* rm,
+							int long_flag);
 
 // name,desc,partition,state,reason,priority,user,uid,gid,
 // subtime,starttime,endtime,susptime,etime,atime,stime,utime,
@@ -48,7 +56,6 @@
 int display_rm_allocation_on_file_stream(FILE* stream,bridge_rm_allocation_t* p_allocation){
   int fstatus=-1;
 
-  float temp;
   struct tm * time_value;
 
   char* nodelist;
@@ -292,8 +299,6 @@ int main(int argc,char** argv){
   char* progname;
   char* cb_version;
 
-  FILE* output_stream=stdout;
-
   int classic_mode=0;
   int long_flag=0;
   int verbosity=0;
@@ -351,8 +356,8 @@ int main(int argc,char** argv){
   char* separator=NULL;
 
   int finished_jobs_flag=0;
-  time_t begin_eventTime;
-  time_t end_eventTime;
+  time_t begin_eventTime = 0;
+  time_t end_eventTime = 0;
   char* date;
   int date_nb;
 
@@ -431,7 +436,7 @@ int main(int argc,char** argv){
 	    begin_eventTime=strtol(date,(char**)NULL,10);
 	    free(date);
 	    date=NULL;
-	    if(end_eventTime!=LONG_MIN && end_eventTime!=LONG_MAX){	    
+	    if(begin_eventTime!=LONG_MIN && begin_eventTime!=LONG_MAX){	    
 	      if(bridge_common_string_get_token(optarg,":",2,&date)==0){
 		end_eventTime=strtol(date,(char**)NULL,10);
 		free(date);
@@ -570,11 +575,7 @@ int main(int argc,char** argv){
 int display_classic_bridge_rm_allocation_on_file_stream(FILE * stream,bridge_rm_allocation_t* rm,int long_flag){
   int fstatus=0;
 
-  float temp;
-  struct tm * time_value;
-
   char* interspace="  ";
-  char* nodelist;
   
   char* output_string;
   char* state;
@@ -701,8 +702,8 @@ int display_classic_bridge_rm_allocation_on_file_stream(FILE * stream,bridge_rm_
 	fprintf(stream,"Job(s) %s on ",output_string);
 	free(output_string);
       }
-      else
-	fprintf(stream,"");
+      /* else */
+      /* 	fprintf(stream,""); */
 
 
     if(bridge_nodelist_get_compacted_string(&(rm->nodelist),&output_string)==0){
@@ -733,8 +734,6 @@ int display_by_fields_bridge_rm_allocation_on_file_stream(FILE * stream,bridge_r
   char* token=NULL;
 
   int token_nb;
-
-  char* string_a;
 
   char* nodelist;
 
@@ -859,7 +858,7 @@ int display_by_fields_bridge_rm_allocation_on_file_stream(FILE * stream,bridge_r
 	/* SUBMISSION TIME */
 	else if(strcmp(token,"subtime")==0){
 	  if(rm->submit_time!=INVALID_TIME_VALUE){
-	    fprintf(stream,"%u",rm->submit_time);
+	    fprintf(stream,"%ld",rm->submit_time);
 	  }
 	  else
 	    fprintf(stream,"-");
@@ -867,7 +866,7 @@ int display_by_fields_bridge_rm_allocation_on_file_stream(FILE * stream,bridge_r
 	/* START TIME */
 	else if(strcmp(token,"starttime")==0){
 	  if(rm->start_time!=INVALID_TIME_VALUE){
-	    fprintf(stream,"%u",rm->start_time);
+	    fprintf(stream,"%ld",rm->start_time);
 	  }
 	  else
 	    fprintf(stream,"-");
@@ -875,7 +874,7 @@ int display_by_fields_bridge_rm_allocation_on_file_stream(FILE * stream,bridge_r
 	/* END TIME */
 	else if(strcmp(token,"endtime")==0){
 	  if(rm->end_time!=INVALID_TIME_VALUE){
-	    fprintf(stream,"%u",rm->end_time);
+	    fprintf(stream,"%ld",rm->end_time);
 	  }
 	  else
 	    fprintf(stream,"-");
@@ -883,7 +882,7 @@ int display_by_fields_bridge_rm_allocation_on_file_stream(FILE * stream,bridge_r
 	/* SUBMISSION TIME */
 	else if(strcmp(token,"susptime")==0){
 	  if(rm->suspend_time!=INVALID_TIME_VALUE){
-	    fprintf(stream,"%u",rm->suspend_time);
+	    fprintf(stream,"%ld",rm->suspend_time);
 	  }
 	  else
 	    fprintf(stream,"-");
@@ -891,7 +890,7 @@ int display_by_fields_bridge_rm_allocation_on_file_stream(FILE * stream,bridge_r
 	/* ELAPSED TIME */
 	else if(strcmp(token,"etime")==0){
 	  if(rm->elapsed_time!=INVALID_TIME_VALUE){
-	    fprintf(stream,"%u",rm->elapsed_time);
+	    fprintf(stream,"%ld",rm->elapsed_time);
 	  }
 	  else
 	    fprintf(stream,"-");
@@ -899,7 +898,7 @@ int display_by_fields_bridge_rm_allocation_on_file_stream(FILE * stream,bridge_r
 	/* ALLOCATED TIME */
 	else if(strcmp(token,"atime")==0){
 	  if(rm->allocated_time!=INVALID_TIME_VALUE){
-	    fprintf(stream,"%u",rm->allocated_time);
+	    fprintf(stream,"%ld",rm->allocated_time);
 	  }
 	  else
 	    fprintf(stream,"-");
@@ -907,7 +906,7 @@ int display_by_fields_bridge_rm_allocation_on_file_stream(FILE * stream,bridge_r
 	/* SYSTEM TIME */
 	else if(strcmp(token,"stime")==0){
 	  if(rm->system_time!=INVALID_TIME_VALUE){
-	    fprintf(stream,"%u",rm->system_time);
+	    fprintf(stream,"%ld",rm->system_time);
 	  }
 	  else
 	    fprintf(stream,"-");
@@ -915,7 +914,7 @@ int display_by_fields_bridge_rm_allocation_on_file_stream(FILE * stream,bridge_r
 	/* USER TIME */
 	else if(strcmp(token,"utime")==0){
 	  if(rm->user_time!=INVALID_TIME_VALUE){
-	    fprintf(stream,"%u",rm->user_time);
+	    fprintf(stream,"%ld",rm->user_time);
 	  }
 	  else
 	    fprintf(stream,"-");

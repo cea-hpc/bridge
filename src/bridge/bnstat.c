@@ -78,12 +78,9 @@ int main(int argc,char **argv){
   bridge_manager_t manager;
 
   bridge_batch_node_t* p_batch_node_array=NULL;
-  bridge_batch_node_t* p_batch_node=NULL;
   int batch_node_nb=0;
-  int i,j;
+  int i;
   int verbosity=0;
-
-  FILE* output_stream=stdout;
 
   char* node_name=NULL;
 
@@ -247,8 +244,6 @@ int main(int argc,char **argv){
 
 
 int display_bridge_batch_node_on_file_stream(FILE* stream,bridge_batch_node_t* bq){
-
-  int i;
   
   fprintf(stream,
 	  "-------------------------------------------------------\n");

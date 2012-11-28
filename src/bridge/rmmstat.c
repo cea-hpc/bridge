@@ -70,19 +70,13 @@ int display_by_fields_bridge_rm_manager_on_file_stream(FILE* stream,bridge_rm_ma
 int main(int argc,char **argv){
 
   int fstatus=-1;
-  int status;
 
   char* progname;
   char* cb_version;
 
   bridge_manager_t manager;
 
-  int i,j;
   int verbosity=0;
-
-  FILE* output_stream=stdout;
-
-  char* node_name=NULL;
 
   char* options_desc=
     "\t-h\t\t\tPrint this message\n"
@@ -203,8 +197,6 @@ int main(int argc,char **argv){
 
 
 int display_bridge_rm_manager_on_file_stream(FILE* stream,bridge_rm_manager_t* rm){
-
-  int i;
   
   fprintf(stream,
 	  "-------------------------------------------------------\n");

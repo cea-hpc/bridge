@@ -80,10 +80,8 @@ int main(int argc,char **argv){
   bridge_batch_queue_t* p_batch_queue_array=NULL;
   bridge_batch_queue_t* p_batch_queue=NULL;
   int batch_queue_nb=0;
-  int i,j;
+  int i;
   int verbosity=0;
-
-  FILE* output_stream=stdout;
 
   char* queue_name=NULL;
 
@@ -256,8 +254,6 @@ int main(int argc,char **argv){
 
 int display_bridge_batch_queue_on_file_stream(FILE* stream,bridge_batch_queue_t* bq){
 
-  int i;
-  
   fprintf(stream,
 	  "-------------------------------------------------------\n");
   if(bq->name!=NULL)
@@ -326,12 +322,12 @@ int display_bridge_batch_queue_on_file_stream(FILE* stream,bridge_batch_queue_t*
   fprintf(stream,"  SSUSPENDED \t\t: %u\n",bq->syssuspended_jobs_nb);
 
   if(bq->seq_time_min!=NO_LIMIT)
-    fprintf(stream,"Seq time min \t\t: %u\n",bq->seq_time_min);
+    fprintf(stream,"Seq time min \t\t: %ld\n",bq->seq_time_min);
   else
     fprintf(stream,"Seq time min \t\t: -\n");
 
   if(bq->seq_time_max!=NO_LIMIT)
-    fprintf(stream,"Seq time max \t\t: %u\n",bq->seq_time_max);
+    fprintf(stream,"Seq time max \t\t: %ld\n",bq->seq_time_max);
   else
     fprintf(stream,"Seq time max \t\t: -\n");
 
@@ -346,12 +342,12 @@ int display_bridge_batch_queue_on_file_stream(FILE* stream,bridge_batch_queue_t*
     fprintf(stream,"Seq mem max \t\t: -\n");
 
   if(bq->par_time_min!=NO_LIMIT)
-    fprintf(stream,"Par time min \t\t: %u\n",bq->par_time_min);
+    fprintf(stream,"Par time min \t\t: %ld\n",bq->par_time_min);
   else
     fprintf(stream,"Par time min \t\t: -\n");
 
   if(bq->par_time_max!=NO_LIMIT)
-    fprintf(stream,"Par time max \t\t: %u\n",bq->par_time_max);
+    fprintf(stream,"Par time max \t\t: %ld\n",bq->par_time_max);
   else
     fprintf(stream,"Par time max \t\t: -\n");
 
@@ -397,10 +393,10 @@ int display_classic_bridge_batch_queue_on_file_stream(FILE * stream,bridge_batch
     else {
 
       if(bq->par_time_min!=NO_LIMIT)
-	fprintf(stream,"time_limit>%u ",bq->par_time_min-1);
+	fprintf(stream,"time_limit>%ld ",bq->par_time_min-1);
 
       if(bq->par_time_max!=NO_LIMIT)
-	fprintf(stream,"time_limit<%u ",bq->par_time_max+1);
+	fprintf(stream,"time_limit<%ld ",bq->par_time_max+1);
 
       if(bq->par_mem_min!=NO_LIMIT)
 	fprintf(stream,"mem_limit>%u ",bq->par_mem_min-1);
@@ -548,14 +544,14 @@ int display_by_fields_bridge_batch_queue_on_file_stream(FILE* stream,bridge_batc
 	/* Queue minimum sequential time */
 	else if(strcmp(token,"minseqtime")==0){
 	  if(bq->seq_time_min!=NO_LIMIT)
-	    fprintf(stream,"%u",bq->seq_time_min);
+	    fprintf(stream,"%ld",bq->seq_time_min);
 	  else
 	    fprintf(stream,"-");
 	}
 	/* Queue max sequential time */
 	else if(strcmp(token,"maxseqtime")==0){
 	  if(bq->seq_time_max!=NO_LIMIT)
-	    fprintf(stream,"%u",bq->seq_time_max);
+	    fprintf(stream,"%ld",bq->seq_time_max);
 	  else
 	    fprintf(stream,"-");
 	}
@@ -577,14 +573,14 @@ int display_by_fields_bridge_batch_queue_on_file_stream(FILE* stream,bridge_batc
 	/* Queue minimum parallele time */
 	else if(strcmp(token,"minpartime")==0){
 	  if(bq->par_time_min!=NO_LIMIT)
-	    fprintf(stream,"%u",bq->par_time_min);
+	    fprintf(stream,"%ld",bq->par_time_min);
 	  else
 	    fprintf(stream,"-");
 	}
 	/* Queue max parallele time */
 	else if(strcmp(token,"maxpartime")==0){
 	  if(bq->par_time_max!=NO_LIMIT)
-	    fprintf(stream,"%u",bq->par_time_max);
+	    fprintf(stream,"%ld",bq->par_time_max);
 	  else
 	    fprintf(stream,"-");
 	}

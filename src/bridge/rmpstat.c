@@ -24,12 +24,18 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#include <string.h>
+
 #include <limits.h>
 #include <time.h>
 
 #include "bridge/bridge.h"
 
 #define PROG_VERSION  "1.0.1"
+
+/* local functions */
+int display_classic_bridge_rm_partition_on_file_stream(FILE * stream,
+						       bridge_rm_partition_t* rmp);
 
 // name,desc,partition,state,reason,priority,user,uid,gid,
 // subtime,starttime,endtime,susptime,etime,atime,stime,utime,
@@ -48,7 +54,6 @@
 int display_rm_partition_on_file_stream(FILE* stream,bridge_rm_partition_t* p_partition){
   int fstatus=-1;
 
-  float temp;
   struct tm * time_value;
 
   char* nodelist;
@@ -97,7 +102,7 @@ int display_rm_partition_on_file_stream(FILE* stream,bridge_rm_partition_t* p_pa
     }
 
     if(p_partition->time_limit!=INVALID_TIME_VALUE)
-      fprintf(stream,"Time limit \t: %d\n",p_partition->time_limit);
+      fprintf(stream,"Time limit \t: %ld\n",p_partition->time_limit);
     else
       fprintf(stream,"Time limit \t: -\n");
 
@@ -171,8 +176,6 @@ int main(int argc,char** argv){
 
   int fstatus=-1;
   int status;
-
-  FILE* output_stream=stdout;
 
   int classic_mode=0;
   int long_flag=0;
@@ -293,7 +296,7 @@ int main(int argc,char** argv){
 	    begin_eventTime=strtol(date,(char**)NULL,10);
 	    free(date);
 	    date=NULL;
-	    if(end_eventTime!=LONG_MIN && end_eventTime!=LONG_MAX){	    
+	    if(begin_eventTime!=LONG_MIN && begin_eventTime!=LONG_MAX){	    
 	      if(bridge_common_string_get_token(optarg,":",2,&date)==0){
 		end_eventTime=strtol(date,(char**)NULL,10);
 		free(date);
@@ -403,7 +406,7 @@ int display_classic_bridge_rm_partition_on_file_stream(FILE * stream,bridge_rm_p
   char* nodelist;
 
   int total_cores_nb;
-  int free_cores_nb;
+  int free_cores_nb = 0;
   
   if(!rmp){
     fprintf(stream,"%-16s %-10s %-19s %-10s %-10s %10s %-16s\n","PARTITION","STATUS","START_TIME","TYPE","TOTAL_CPUS","FREE_CPUS","NODES");
@@ -499,7 +502,7 @@ int display_classic_bridge_rm_partition_on_file_stream(FILE * stream,bridge_rm_p
 
 #define display_time_field(a) \
  if(a!=INVALID_TIME_VALUE) \
-  fprintf(stream,"%d",a); \
+  fprintf(stream,"%ld",a); \
  else \
   fprintf(stream,"-"); \
 
