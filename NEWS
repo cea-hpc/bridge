@@ -1,5 +1,7 @@
 * Changes in bridge-1.4.16 (ongoing)
 ==========================
+	-- modify autocarto addon to let administrators configure the 
+	   cartofile in the MPI configuration file
 	-- add autocarto addon (from bridge-1.4.15)
 	-- now use %R instead of %P in wrapped SLURM sinfo -o "" command
 	-- relax_affintiy.ad: add a new addon to use slurm-relax-affinity
