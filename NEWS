@@ -1,5 +1,7 @@
 * Changes in bridge-1.5.2
 =========================
+	-- modify autocarto addon to let administrators configure the 
+	   cartofile in the MPI configuration file
 	-- add GPL licensing information and headers
 	-- RPM specfile : now compile by default in TGCC style (ccc_*)
 	-- some code cleaning

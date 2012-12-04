@@ -57,9 +57,13 @@ function bridge_addon_msub_alteropt {
     fi
 
     if [[ ${selected_queue} == ${BRIDGE_ADDON_CARTO_PARTITION} ]]; then
-    	${LOGGER} "using cartofile $BRIDGE_ADDON_CARTO_FILE for queue ${selected_queue}"
-	export OMPI_MCA_carto_file_path=$BRIDGE_ADDON_CARTO_FILE
+	${LOGGER} "enabling cartofile"
 	export OMPI_MCA_carto=file
+	if [[ -n ${BRIDGE_ADDON_CARTO_FILE} ]]
+	    then
+	    ${LOGGER} "using cartofile $BRIDGE_ADDON_CARTO_FILE for queue ${selected_queue}"
+	    export OMPI_MCA_carto_file_path=$BRIDGE_ADDON_CARTO_FILE
+	fi
     else
 	${LOGGER} "not using cartofile for queue ${selected_queue}"
     fi
@@ -135,9 +139,13 @@ function bridge_addon_mprun_alteropt {
     fi
 
     if [[ ${selected_partition} == ${BRIDGE_ADDON_CARTO_PARTITION} ]]; then
-    	${LOGGER} "using cartofile $BRIDGE_ADDON_CARTO_FILE for partition ${selected_partition}"
-	export OMPI_MCA_carto_file_path=$BRIDGE_ADDON_CARTO_FILE
+	${LOGGER} "enabling cartofile"
 	export OMPI_MCA_carto=file
+	if [[ -n ${BRIDGE_ADDON_CARTO_FILE} ]]
+	    then
+	    ${LOGGER} "using cartofile $BRIDGE_ADDON_CARTO_FILE for partition ${selected_partition}"
+	    export OMPI_MCA_carto_file_path=$BRIDGE_ADDON_CARTO_FILE
+	fi
     else
 	${LOGGER} "not using cartofile for partition ${selected_partition}"
     fi
