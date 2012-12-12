@@ -1,5 +1,7 @@
 * Changes in bridge-1.5.2
 =========================
+	-- modify relax-affinity.ad logic to enable the RELAX_AFFINITY_GLOBALIDS
+	   variable slurm-relax-affinity-0.1.1.
 	-- modify autocarto addon to let administrators configure the 
 	   cartofile in the MPI configuration file
 	-- add GPL licensing information and headers
