@@ -1076,6 +1076,7 @@ int output_fields_require_parallel_infos(char* parallel_fields,char* query_field
 	if(string_array[i-1]!=NULL)
 	  free(string_array[i-1]);
       }
+      free(string_array);
     }
   }
 

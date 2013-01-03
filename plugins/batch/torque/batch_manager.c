@@ -90,7 +90,7 @@ init_batch_manager(bridge_batch_manager_t* p_batch_manager)
 
 	/* get master stats */
 	ostat = pbs_statserver(pbs_fd,NULL,NULL);
-	if ( ostat == NULL ) {
+	if ( ! ostat ) {
 		pbs_disconnect(pbs_fd);
 		pbs_fd=-1;
 	}

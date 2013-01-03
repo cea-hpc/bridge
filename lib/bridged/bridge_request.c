@@ -114,8 +114,8 @@ bridge_get_req_init_from_message(bridge_get_req_t* bgr,xmessage_t* msg){
 
   int fstatus=0;
 
-  size_t batchid_length;
-  size_t rmid_length;
+  size_t batchid_length = 0;
+  size_t rmid_length = 0;
   XDR xdr;
 
   bgr->batchid=NULL;

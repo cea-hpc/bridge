@@ -151,8 +151,11 @@ get_batch_queues(bridge_batch_manager_t* p_batch_manager,
 
 	/* get queue stats */
 	nstat = pbs_statque(con_fd,batch_queue_name,NULL,NULL);
-	if ( nstat == NULL ) 
+	if ( nstat == NULL ) {
+	        if (default_queue != NULL)
+		        free(default_queue);
 		return fstatus;
+	}
 
 	/* count queues quantity */
 	cstat = nstat ;
