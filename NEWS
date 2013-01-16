@@ -1,6 +1,7 @@
 * Changes in bridge-1.5.3
 =========================
 	-- code cleaning (cppcheck detected issues)
+	-- addons/mpmd-cluster: ensure that MPMD task exit codes are propagated
 
 * Changes in bridge-1.5.2
 =========================
