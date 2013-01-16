@@ -24,6 +24,8 @@
        one
     -- now use %R instead of %P in wrapped SLURM sinfo -o "" command
        (backported from 1.4.16)
+    -- addons/mpmd-cluster: ensure that MPMD task exit codes are propagated
+       (backported from 1.5.3)
 
 * Changes in bridge-1.4.14
 ==========================

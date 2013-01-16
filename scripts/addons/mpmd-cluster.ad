@@ -123,8 +123,9 @@ function bridge_addon_mprun_alteropt {
 		echo "  then" >> ${temporary_file}
 		echo "  export BRIDGE_MPRUN_ADDON_MPMD_STAGE=2" >> ${temporary_file}
 		echo "  ${BRIDGE_MPRUN_CMD} ${temporary_file}" >> ${temporary_file}
+		echo "  err_code=\$?" >> ${temporary_file}
 		echo "  rm -f ${temporary_file}" >> ${temporary_file}
-		echo "  exit \$?" >> ${temporary_file}
+		echo "  exit \${err_code}" >> ${temporary_file}
 		echo "fi" >> ${temporary_file}
 		echo ". \${BRIDGE_MPRUN_PROFILE} 2>/dev/null" >> ${temporary_file}
 		while read NBTASK CMD
