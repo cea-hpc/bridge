@@ -1,0 +1,144 @@
+#!/bin/ksh
+#
+#/********************************************************************************************************************\
+#
+# Cet addon msub permet de se placer en mode MPMD en environnement cluster a l'aide du wrapper bridge mpmd_wrapper
+# 
+#\********************************************************************************************************************/
+
+function bridge_addon_mprun_setopt {
+
+    typeset MYGETOPTOPTION="F:"
+
+    echo "${BRIDGE_MPRUN_GETOPT_OPTIONS}" | grep -q ${MYGETOPTOPTION}
+
+    if [ $? -ne 0 ]
+	then
+	BRIDGE_MPRUN_GETOPT_OPTIONS="${BRIDGE_MPRUN_GETOPT_OPTIONS}${MYGETOPTOPTION}"
+    fi
+
+    return 0
+
+}
+
+function bridge_addon_mprun_getopt {
+    
+    ## on se place en mode debug si souhaite
+    typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+	then
+	set -x
+    fi
+    
+    ## on incremente le niveau de log
+    typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+    
+    ## on ajoute une entete a la log
+    typeset LOGGER="${LOGGER} MPMD Addon :"
+
+    ## par defaut, on desactive le mode MPMD
+    if [[ -z ${BRIDGE_MPRUN_ADDON_MPMD_WRAPPER_SCRIPT} ]]
+	then
+	BRIDGE_MPRUN_ADDON_MPMD_WRAPPER_SCRIPT=
+    fi
+
+    ## on fixe le message d'aide a afficher si demande
+    typeset USAGE="\
+\t*) MPMD (Multiple Programs Multiple Data) (debugging aware flavor)
+\t\t -F descfile : activate MPMD mode using tasks description file 'descfile'\n"
+    
+    ## on fixe le status de sortie par defaut
+    typeset exit_status=0
+    
+    ## on parse les arguments
+    while getopts ${BRIDGE_MPRUN_GETOPT_OPTIONS} option
+      do
+      case ${option} in
+	  
+	  h)
+	      echo -e "${USAGE}" >&2
+	      return 0
+	      ;;
+
+	  F)
+	      BRIDGE_MPRUN_ADDON_MPMD_WRAPPER_SCRIPT=${OPTARG}
+	      BRIDGE_MPRUN_ADDON_MPMD_WRAPPER_STAGE=1
+	      ;;
+
+	  *)
+	      ;;
+      esac
+    done
+    export BRIDGE_MPRUN_ADDON_MPMD_WRAPPER_SCRIPT
+    export BRIDGE_MPRUN_ADDON_MPMD_WRAPPER_STAGE
+    
+    return ${exit_status}
+}
+
+
+function bridge_addon_mprun_alteropt {
+
+    ## on se place en mode debug si souhaite
+    typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+	then
+	set -x
+    fi
+    
+    ## on incremente le niveau de log
+    typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+    
+    ## on ajoute une entete a la log
+    typeset LOGGER="${LOGGER} MPMD Addon :"
+
+    if [[ ${BRIDGE_MPRUN_ADDON_MPMD_WRAPPER_STAGE} -eq 1 ]]
+    then
+	
+	if [[ ! -r ${BRIDGE_MPRUN_ADDON_MPMD_WRAPPER_SCRIPT} ]]
+	then
+	    ${ERROR} "MPMD Addon : invalid task file ${BRIDGE_MPRUN_ADDON_MPMD_WRAPPER_SCRIPT}"
+	else
+	    ${LOGGER} "using tasks file ${BRIDGE_MPRUN_ADDON_MPMD_WRAPPER_SCRIPT}"
+	    
+	    ### on recupere le nombre de taches a executer
+	    typeset NBTASK_CUMUL=0
+	    typeset NBTASK
+	    typeset CMD
+	    cat ${BRIDGE_MPRUN_ADDON_MPMD_WRAPPER_SCRIPT} | egrep -v "^#" | while read NBTASK CMD
+	    do
+		(( NBTASK_CUMUL = NBTASK_CUMUL + NBTASK ))
+	    done
+	    
+	    ### on met a jour le nombre de tache
+	    bridge_mprun_nproc=${NBTASK_CUMUL}
+	    ${LOGGER} "task count is now ${bridge_mprun_nproc}"
+	    
+	    ### on demande a executer le wrapper mpmd fournit par bridge
+	    bridge_mprun_args="${BRIDGE_BINDIR}/$(bridge_command_enhance mpmd_wrapper) -f ${BRIDGE_MPRUN_ADDON_MPMD_WRAPPER_SCRIPT}"
+	    ${LOGGER} "now executing ${bridge_mprun_args}"
+	fi
+
+    fi
+    
+    return 0
+}
+
+function bridge_addon_mprun_spmd_pre_allocate {
+    return 0
+}
+
+function bridge_addon_mprun_spmd_post_allocate {
+    return 0
+}
+
+function bridge_addon_mprun_spmd_pre_run {
+    return 0
+}
+
+function bridge_addon_mprun_spmd_post_run {
+    return 0
+}
+
+function bridge_addon_msub_alterscript {
+    return 0
+}
