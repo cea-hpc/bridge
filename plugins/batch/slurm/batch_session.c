@@ -380,8 +380,7 @@ get_batch_sessions(bridge_batch_manager_t* p_batch_manager,
 		}
 
 		/* username filter */
-		if ( bn != NULL && 
-		     username != NULL && bn->username!=NULL &&
+		if ( bn && username != NULL && bn->username!=NULL &&
 		     strcmp(username,bn->username)!=0 ) {
 			clean_batch_session(p_batch_manager,bn);
 			bn=NULL;

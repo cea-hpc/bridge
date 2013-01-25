@@ -328,13 +328,13 @@ int get_batch_sessions(bridge_batch_manager_t* p_batch_manager,
 		break;
 	      case BRIDGE_BATCH_SESSION_STATE_PENDING :
 		reason=lsb_pendreason(1,&(p_jobInfo->reasonTb[p_jobInfo->numReasons-1]),NULL,NULL,0);
-		if(reason!=NULL)
+		if(reason)
 		  reason[strlen(reason)-2]='\0';
 		(*p_p_batch_sessions)[stored_jobs_number].reason=strdup(reason);
 		break;
 	      case BRIDGE_BATCH_SESSION_STATE_SUSPENDED :
 		reason=lsb_suspreason(p_jobInfo->reasons,p_jobInfo->subreasons,NULL);
-		if(reason!=NULL)
+		if(reason)
 		  reason[strlen(reason)-2]='\0';
 		(*p_p_batch_sessions)[stored_jobs_number].reason=strdup(reason);
 		break;
