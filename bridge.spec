@@ -192,7 +192,7 @@ rm -rf $RPM_BUILD_ROOT
 %endif
 
 %changelog
-* Fri Jan 25 2012 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.5.3-1
+* Fri Jan 25 2013 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.5.3-1
 - tag release 1.5.3-1
 * Wed Nov 28 2012 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.5.2-1
 - tag release 1.5.2-1
