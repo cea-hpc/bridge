@@ -141,14 +141,6 @@ function bridge_addon_mprun_alteropt {
 		typeset NBTASK
 		typeset CMD
 		echo "#!/bin/ksh" > ${temporary_file}
-		echo "if [[ \${BRIDGE_MPRUN_ADDON_MPMD_STAGE} -eq 1 ]]" >> ${temporary_file}
-		echo "  then" >> ${temporary_file}
-		echo "  export BRIDGE_MPRUN_ADDON_MPMD_STAGE=2" >> ${temporary_file}
-		echo "  ${BRIDGE_MPRUN_CMD} ${temporary_file}" >> ${temporary_file}
-		echo "  err_code=\$?" >> ${temporary_file}
-		echo "  rm -f ${temporary_file}" >> ${temporary_file}
-		echo "  exit \${err_code}" >> ${temporary_file}
-		echo "fi" >> ${temporary_file}
 		echo ". \${BRIDGE_MPRUN_PROFILE} 2>/dev/null" >> ${temporary_file}
 		while read NBTASK CMD
 		  do
@@ -164,9 +156,8 @@ fi
 EOF
 		done < ${BRIDGE_MPRUN_ADDON_MPMD_SCRIPT}
 		
-		## on force maintenant l'allocation
-		bridge_mprun_allocation=yes
-		${LOGGER} "allocation mode is now enforced"
+		export BRIDGE_MPRUN_ADDON_MPMD_STAGE=2
+		export BRIDGE_MPRUN_ADDON_TEMPORARY_FILE=${temporary_file}
 
 		## on met a jour le nombre de tache
 		bridge_mprun_nproc=${NBTASK_CUMUL}
@@ -197,6 +188,23 @@ function bridge_addon_mprun_spmd_pre_run {
 }
 
 function bridge_addon_mprun_spmd_post_run {
+    typeset LOGGER="${LOGGER} MPMD Addon :"
+
+    ## on se place en mode debug si souhaite
+    typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+      then
+      set -x
+    fi
+    
+    ## on incremente le niveau de log
+    typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+
+    if [[ ${BRIDGE_MPRUN_ADDON_MPMD_STAGE} -eq 2 ]] && [[ -f ${BRIDGE_MPRUN_ADDON_TEMPORARY_FILE} ]]
+    then
+      ${LOGGER} "Removing temporary MPMD script ${BRIDGE_MPRUN_ADDON_TEMPORARY_FILE}"
+      rm -f ${BRIDGE_MPRUN_ADDON_TEMPORARY_FILE}
+    fi
     return 0
 }
 
