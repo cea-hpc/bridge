@@ -100,7 +100,7 @@ function bridge_addon_msub_alterscript {
 		    then
 
 		    ## on genere le fichier script ameliore
-		    local_err=$(sed -e '0,/#### SCRIPT BEGINS HERE ####/!d' ${BRIDGE_ADDON_DAM_WRAPPER_TEMPLATE} 2>&1 > ${temp_scriptfile} && cat ${BRIDGE_MSUB_SCRIPTFILE} 2>&1 >> ${temp_scriptfile} && sed -e '/#### SCRIPT ENDS HERE ####/,$!d' ${BRIDGE_ADDON_DAM_WRAPPER_TEMPLATE} 2>&1 >> ${temp_scriptfile})
+		    local_err=$(sed -e '0,/#### SCRIPT BEGINS HERE ####/!d' ${BRIDGE_ADDON_DAM_WRAPPER_TEMPLATE} 2>&1 > ${temp_scriptfile} && cat ${BRIDGE_MSUB_SCRIPTFILE} 2>&1 >> ${temp_scriptfile} && sed -i -e '$a\' ${temp_scriptfile} && sed -e '/#### SCRIPT ENDS HERE ####/,$!d' ${BRIDGE_ADDON_DAM_WRAPPER_TEMPLATE} 2>&1 >> ${temp_scriptfile})
 		    if [[ $? -ne 0 ]]
 			then
 			${ERROR} "unable to generate an enhanced temporary script file, aborting : ${local_err:--}"
