@@ -45,6 +45,9 @@
 #define JOB_STATE_BASE 0x00ff
 #endif
 
+/*Missing in slurm.h*/
+extern char *slurm_job_reason_string(enum job_state_reason inx);
+
 #define DEFAULT_PAR_CPUS_NB_LIMIT 0
 
 #define DEFAULT_TIME_LIMIT   999999
@@ -272,6 +275,8 @@ get_batch_sessions(bridge_batch_manager_t* p_batch_manager,
 			  bn->state=BRIDGE_BATCH_SESSION_STATE_PENDING;
 			  if ( pji->state_desc != NULL )
 			    bn->reason=strdup(pji->state_desc);
+			  else
+			    bn->reason=strdup(slurm_job_reason_string(pji->state_reason));
 			  break;
 			case JOB_RUNNING :
 			  bn->state=BRIDGE_BATCH_SESSION_STATE_RUNNING;
