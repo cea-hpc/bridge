@@ -26,6 +26,12 @@
        (backported from 1.4.16)
     -- addons/mpmd-cluster: ensure that MPMD task exit codes are propagated
        (backported from 1.5.3)
+    -- plugins/slurm: print the basic reason string if there is no detailed description provided (as squeue does)
+       (backported from 1.5.3)
+    -- addons/wrapper-DAM: tolerate user scripts with no newline at end of file
+       (backported from 1.5.3)
+    -- addons/mpmd-cluster: remove unnecessary allocation
+       (backported from 1.5.3)
 
 * Changes in bridge-1.4.14
 ==========================
