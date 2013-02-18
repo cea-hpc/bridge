@@ -32,6 +32,7 @@
        (backported from 1.5.3)
     -- addons/mpmd-cluster: remove unnecessary allocation
        (backported from 1.5.3)
+    -- mpp: Add REASON to header
 
 * Changes in bridge-1.4.14
 ==========================

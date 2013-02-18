@@ -334,9 +334,9 @@ if [[ ${show_with_header} == "yes" ]]
     set_bold_mode
     if [[ ${BRIDGE_BINDING} != "rmid" ]]
 	then
-	print "USER        ACCOUNT    BATCHID  NCPU   QUEUE      PRIORITY   STATE  RLIM   RUN/START     SUSP   OLD    NAME             NODES"
+	print "USER        ACCOUNT    BATCHID  NCPU   QUEUE      PRIORITY   STATE  RLIM   RUN/START     SUSP   OLD    NAME             NODES/REASON"
     else
-	print "USER        ACCOUNT    BATCHID  NCPU   QUEUE      PRIORITY   STATE  RLIM   RUN/START     SUSP   OLD    NAME             RMID    NODES"
+	print "USER        ACCOUNT    BATCHID  NCPU   QUEUE      PRIORITY   STATE  RLIM   RUN/START     SUSP   OLD    NAME             RMID    NODES/REASON"
     fi
     set_standard_mode
 fi
