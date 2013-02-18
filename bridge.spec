@@ -202,6 +202,10 @@ rm -rf $RPM_BUILD_ROOT
 - tag release 1.5.1-1
 * Mon Sep 17 2012 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.5.0-1
 - tag release 1.5.0-1 with GPL licensing information
+* Thu Feb 14 2013 Francois Diakhate <francois.diakhate@cea.fr> - 1.4.15-10
+- tag release 1.4.15-10
+* Tue Jan 29 2013 Francois Diakhate <francois.diakhate@cea.fr> - 1.4.15-9
+- tag release 1.4.15-9
 * Mon Aug 20 2012 Francois Diakhate <francois.diakhate@cea.fr> - 1.4.15-6
 - tag release 1.4.15-6
 * Fri Jul 27 2012 Francois Diakhate <francois.diakhate@cea.fr> - 1.4.15-5
