@@ -194,20 +194,21 @@ rm -rf $RPM_BUILD_ROOT
 %changelog
 * Thu Mar 07 2013 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.5.3-4
 - tag release 1.5.3-4
+* Thu Feb 14 2013 Francois Diakhate <francois.diakhate@cea.fr> - 1.4.15-10
+- tag release 1.4.15-10
 * Fri Feb 01 2013 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.5.3-2
 - tag release 1.5.3-2
+* Tue Jan 29 2013 Francois Diakhate <francois.diakhate@cea.fr> - 1.4.15-9
+- tag release 1.4.15-9
 * Fri Jan 25 2013 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.5.3-1
 - tag release 1.5.3-1
+
 * Wed Nov 28 2012 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.5.2-1
 - tag release 1.5.2-1
 * Tue Nov 27 2012 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.5.1-1
 - tag release 1.5.1-1
 * Mon Sep 17 2012 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.5.0-1
 - tag release 1.5.0-1 with GPL licensing information
-* Thu Feb 14 2013 Francois Diakhate <francois.diakhate@cea.fr> - 1.4.15-10
-- tag release 1.4.15-10
-* Tue Jan 29 2013 Francois Diakhate <francois.diakhate@cea.fr> - 1.4.15-9
-- tag release 1.4.15-9
 * Mon Aug 20 2012 Francois Diakhate <francois.diakhate@cea.fr> - 1.4.15-6
 - tag release 1.4.15-6
 * Fri Jul 27 2012 Francois Diakhate <francois.diakhate@cea.fr> - 1.4.15-5
@@ -220,12 +221,14 @@ rm -rf $RPM_BUILD_ROOT
 - tag release 1.4.15-1 for usage on TGCC/TERA+ machines
 * Wed Jun 27 2012 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.4.14-1
 - tag release 1.4.14-1
+
 * Tue Nov 08 2011 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.4.12-1
 - tag release 1.4.12-1
 * Tue Nov 08 2011 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.4.10-1
 - tag release 1.4.10
 * Fri Jul 07 2011 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.4.8-1
 - tag release 1.4.8
+
 * Wed Aug 27 2010 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.4.5-1
 - tag release 1.4.5
 * Wed Jun 16 2010 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.4.4-1
@@ -235,6 +238,7 @@ rm -rf $RPM_BUILD_ROOT
 * Tue Jan 26 2010 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.4.1-1
 - tag release 1.4.1 for better handling of two distinct branches (CEA vs CCRT)
   that will have to be merge again in the future
+
 * Thu Dec 03 2009 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.3.24-10
 - tag release 10
 * Mon Nov 23 2009 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.3.24-9
@@ -268,6 +272,7 @@ rm -rf $RPM_BUILD_ROOT
   minor changes 
 * Fri Jan 30 2009 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.3.11-4
 - Correct a bug in msub -W processing
+
 * Thu Dec 18 2008 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.3.11-3
 - Move conf load in mprun to set addon in conf file
 - Add a patch to use /etc as a default config directory
