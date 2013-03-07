@@ -1,1 +1,1 @@
-SUBDIRS		=	bridge bridged bridgedc
+SUBDIRS		=	bridge bridged bridgedc helpers

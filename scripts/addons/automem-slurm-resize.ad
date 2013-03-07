@@ -109,7 +109,7 @@ function bridge_addon_msub_alteropt {
 
     ## on cherche les partitions compatibles avec ce type de demande et on prend la 
     ## premiere (celle dont la quantite est la plus faible)
-    valid_queue=$(sinfo -a -h -o "%R %m %X %Y" | sort -n -k 2 | egrep -w "${BRIDGE_MSUB_QUEUE}|bigmem" | \
+    valid_queue=$(sinfo -a -h -o "%R %m %X %Y" | sort -n -k 2 | egrep -w "${BRIDGE_MSUB_QUEUE}|large" | \
 	awk -v mem=${mempercpu}  '{if ( mem <= $2 / $3 /$4 ) print $1}' | head -n 1 )
     if [[ -n ${valid_queue} ]]
     then
@@ -122,7 +122,7 @@ function bridge_addon_msub_alteropt {
     ## on regarde donc sur quelle partition on peut lancer l'application pour respecter la quantite requise 
     ## par tache
     mempertask=$(( ${mempercpu} * ${BRIDGE_MSUB_NCORE:-1} ))
-    valid_queue=$(sinfo -a -h -o "%R %m" | sort -n -k 2 | egrep -w "${BRIDGE_MSUB_QUEUE}|bigmem" | \
+    valid_queue=$(sinfo -a -h -o "%R %m" | sort -n -k 2 | egrep -w "${BRIDGE_MSUB_QUEUE}|large" | \
 	awk -v mem=${mempertask}  '{if ( mem <= $2 ) print $1}' | head -n 1 )
     if [[ -n ${valid_queue} ]]
     then
@@ -221,10 +221,10 @@ function bridge_addon_mprun_alteropt {
     ## premiere (celle dont la quantite est la plus faible)
     if [[ -n ${bridge_mprun_partition} ]]
     then  
-	valid_queue=$(sinfo -a -h -o "%R %m %X %Y" | sort -n -k 2 | egrep -w "bigmem|${bridge_mprun_partition}" | \
+	valid_queue=$(sinfo -a -h -o "%R %m %X %Y" | sort -n -k 2 | egrep -w "large|${bridge_mprun_partition}" | \
 	    awk -v mem=${mempercpu}  '{if ( mem <= $2 / $3 /$4 ) print $1}' | head -n 1 )
     else
-	valid_queue=$(sinfo -a -h -o "%R %m %X %Y" | sort -n -k 2 | egrep -w "parallele|bigmem" | \
+	valid_queue=$(sinfo -a -h -o "%R %m %X %Y" | sort -n -k 2 | egrep -w "parallele|large" | \
 	    awk -v mem=${mempercpu}  '{if ( mem <= $2 / $3 /$4 ) print $1}' | head -n 1 )
     fi
     if [[ -n ${valid_queue} ]]
@@ -241,10 +241,10 @@ function bridge_addon_mprun_alteropt {
     mempertask=$(( ${mempercpu} * ${bridge_mprun_ncore:-1} ))
     if [[ -n ${bridge_mprun_partition} ]]
     then
-	valid_queue=$(sinfo -a -h -o "%R %m" | sort -n -k 2 | egrep -w "bigmem|${bridge_mprun_partition}" | \
+	valid_queue=$(sinfo -a -h -o "%R %m" | sort -n -k 2 | egrep -w "large|${bridge_mprun_partition}" | \
 	    awk -v mem=${mempertask}  '{if ( mem <= $2 ) print $1}' | head -n 1 )
     else
-	valid_queue=$(sinfo -a -h -o "%R %m" | sort -n -k 2 | egrep -w "parallele|bigmem" | \
+	valid_queue=$(sinfo -a -h -o "%R %m" | sort -n -k 2 | egrep -w "parallele|large" | \
 	    awk -v mem=${mempertask}  '{if ( mem <= $2 ) print $1}' | head -n 1 )
     fi
     if [[ -n ${valid_queue} ]]

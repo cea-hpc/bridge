@@ -61,6 +61,7 @@ AC_CONFIG_FILES([Makefile
 		src/bridge/Makefile
 		src/bridged/Makefile
 		src/bridgedc/Makefile
+		src/helpers/Makefile
 		scripts/Makefile
 		scripts/common/Makefile
 		scripts/common/bridge_command:scripts/common/bridge_command.in

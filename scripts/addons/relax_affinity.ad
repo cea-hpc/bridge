@@ -6,6 +6,7 @@
 # Variables defined to configure the behavior :
 #
 # BRIDGE_RELAX_AFFINITY_LOCALIDS : default is unset
+# BRIDGE_RELAX_AFFINITY_GLOBALIDS : default is unset
 #################################################################################
 
 #################################################################################
@@ -61,7 +62,10 @@ function bridge_addon_mprun_getopt {
 \t*) slurm-relax-affinity\n
 \t\t BRIDGE_RELAX_AFFINITY_LOCALIDS environment variable that can be used to specify the
 \t\t set of tasks per node that need to access all the allocated cores
-\t\t Example: export BRIDGE_RELAX_AFFINITY_LOCALIDS=0,1\n"
+\t\t Example: export BRIDGE_RELAX_AFFINITY_LOCALIDS=0,1\n
+\t\t BRIDGE_RELAX_AFFINITY_GLOBALIDS environment variable that can be used to specify the
+\t\t set of tasks per job that need to access all the allocated cores
+\t\t Example: export BRIDGE_RELAX_AFFINITY_GLOBALIDS=0,1\n"
 
     ## on fixe le status de sortie par defaut
     typeset exit_status=0
@@ -118,7 +122,7 @@ function bridge_addon_mprun_spmd_pre_run {
     typeset LOGGER="${LOGGER} slurm-relax-affinity Addon :"
     typeset ERROR="${ERROR} slurm-relax-affinity Addon :"
 
-    ## on active le 
+    ## on active le prolog si necessaire
     if [[ -n ${BRIDGE_RELAX_AFFINITY_LOCALIDS} ]]
     then
 	case ${RESOURCE_MANAGER} in
@@ -131,6 +135,27 @@ function bridge_addon_mprun_spmd_pre_run {
 		    export SLURM_TASK_PROLOG=${RELAX_PROLOG}
 		    export RELAX_AFFINITY_LOCALIDS=${BRIDGE_RELAX_AFFINITY_LOCALIDS}
 		    ${LOGGER} "enabling by setting SLURM_TASK_PROLOG=${RELAX_PROLOG} and RELAX_AFFINITY_LOCALIDS=${BRIDGE_RELAX_AFFINITY_LOCALIDS} in environment"
+		fi
+		;;
+	    *)
+		${ERROR} "not supported with ${RESOURCE_MANAGER}"
+		;;
+	esac
+    fi
+
+    ## on active le prolog si necessaire
+    if [[ -n ${BRIDGE_RELAX_AFFINITY_GLOBALIDS} ]]
+    then
+	case ${RESOURCE_MANAGER} in
+            slurm)
+		RELAX_PROLOG=$(rpm -ql slurm-relax-affinity 2>/dev/null| grep prolog)
+		if [[ -z ${RELAX_PROLOG} ]]
+		then
+		    ${LOGGER} "unable to find slurm-relax-affinity prolog, check that the RPM is correctly installed"
+		else
+		    export SLURM_TASK_PROLOG=${RELAX_PROLOG}
+		    export RELAX_AFFINITY_GLOBALIDS=${BRIDGE_RELAX_AFFINITY_GLOBALIDS}
+		    ${LOGGER} "enabling by setting SLURM_TASK_PROLOG=${RELAX_PROLOG} and RELAX_AFFINITY_GLOBALIDS=${BRIDGE_RELAX_AFFINITY_GLOBALIDS} in environment"
 		fi
 		;;
 	    *)
