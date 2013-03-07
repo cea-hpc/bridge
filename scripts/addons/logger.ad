@@ -34,6 +34,8 @@
 # BRIDGE_ADDON_LOGGER_TAG:         pass this value to the command using a -t option.
 #                                  useful to select the tag with logger.
 #                                  default is "BRIDGE".
+# BRIDGE_ADDON_LOGGER_EXTRA_INFOS: add the content of the variables to the logger line
+#                                  default is the empty string.
 #
 
 ### MSUB ### MSUB ### MSUB ### MSUB ### MSUB ### MSUB ### MSUB ### MSUB ### MSUB ### MSUB 
@@ -100,7 +102,7 @@ function bridge_addon_mprun_alteropt {
     ## on print la ligne de log
     if [[ ${BRIDGE_LOGGER_MPRUN_ALTEROPT} != 1 ]]
 	then
-	${xlogger_cmd} ${xlogger_args} "user=${xuser} batchid=${xbatchid}" \
+	${xlogger_cmd} ${xlogger_args} "user=${xuser} batchid=${xbatchid} extra=${BRIDGE_ADDON_LOGGER_EXTRA_INFOS:--}" \
 	    "$(basename ${bridge_mprun_cmd})_args=${bridge_mprun_args}"
     fi
     export BRIDGE_LOGGER_MPRUN_ALTEROPT=1
