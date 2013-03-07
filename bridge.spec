@@ -1,7 +1,7 @@
 Summary: Bridge CEA In-House Batch Environment
 Name: bridge
 Version: 1.5.3
-Release: 2
+Release: 4
 License: GPL License
 Group: System Environment/Base
 URL: http://
@@ -192,6 +192,8 @@ rm -rf $RPM_BUILD_ROOT
 %endif
 
 %changelog
+* Thu Mar 07 2013 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.5.3-4
+- tag release 1.5.3-4
 * Fri Feb 01 2013 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.5.3-2
 - tag release 1.5.3-2
 * Fri Jan 25 2013 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.5.3-1
