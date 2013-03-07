@@ -1,5 +1,7 @@
 * Changes in bridge-1.4.16 (ongoing)
 ==========================
+	-- logger.ad : add the possibility to add external content to the logged
+	   information using the BRIDGE_ADDON_LOGGER_EXTRA_INFOS env var
 	-- Addons: add mpmd-cluster-wrapper, an alternate addon for MPMD
 	   using a dedicated binary wrapper easing debugging with Totalview
 	-- modify relax-affinity.ad logic to enable the RELAX_AFFINITY_GLOBALIDS
