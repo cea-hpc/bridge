@@ -154,13 +154,13 @@ function spmd_allocate_cmd {
       esac
     done
     shift ${OPTIND}-1 2>/dev/null
-    spmd_allocate_args="$@"
+    spmd_allocate_args=( "$@" )
 
     # on log un message si on est au sein d'une allocation
     if [[ ${BRIDGE_MPRUN_ALLOCATION} == yes ]]
 	then
         ${LOGGER} "wrapping allocation detected, skipping this one"
-        ${spmd_allocate_args}
+        "${spmd_allocate_args[@]}"
         exit_status=$?
         ${LOGGER} "exiting with status ${exit_status}"
         return ${exit_status}
@@ -170,7 +170,7 @@ function spmd_allocate_cmd {
     _load_slurm_infos
 
     # on appelle les addons eventuels en phase spmd_pre_allocate
-    bridge_addons_call_function bridge_addon_mprun_spmd_pre_allocate "${spmd_allocate_args}"
+    bridge_addons_call_function bridge_addon_mprun_spmd_pre_allocate "${spmd_run_args[@]}"
     
     ## si le code de retour de la stack des addons est 0
     ## alors le job n'a pas ete lance par un des addons
@@ -232,13 +232,13 @@ function spmd_allocate_cmd {
         ## on export quelques variables d'environnement dont une indiquant que l'on 
 	## a deja fait une allocation afin d'eviter les boucles
 	export BRIDGE_MPRUN_ALLOCATION=yes
-	${LOGGER} "${spmd_allocate_cmd} ${spmd_allocate_quiet}${spmd_allocate_options} ${spmd_allocate_extra_parameters} ${spmd_allocate_separator} ${spmd_allocate_args}"
-	${spmd_allocate_cmd} ${spmd_allocate_quiet}${spmd_allocate_options} ${spmd_allocate_extra_parameters} ${spmd_allocate_separator} ${spmd_allocate_args}
+	${LOGGER} "${spmd_allocate_cmd} ${spmd_allocate_quiet}${spmd_allocate_options} ${spmd_allocate_extra_parameters} ${spmd_allocate_separator} ${spmd_allocate_args[@]}"
+	${spmd_allocate_cmd} ${spmd_allocate_quiet}${spmd_allocate_options} ${spmd_allocate_extra_parameters} ${spmd_allocate_separator} "${spmd_allocate_args[@]}"
 	exit_status=$?
     fi
 
     # on appelle les addons eventuels en phase spmd_post_allocate
-    bridge_addons_call_function bridge_addon_mprun_spmd_post_allocate ${spmd_allocate_args}
+    bridge_addons_call_function bridge_addon_mprun_spmd_post_allocate "${spmd_allocate_args[@]}"
 
     ${LOGGER} "exiting with status ${exit_status}"
     return ${exit_status}
@@ -333,7 +333,7 @@ function spmd_run_cmd {
       esac
     done
     shift ${OPTIND}-1 2>/dev/null
-    spmd_run_args="$@"
+    spmd_run_args=( "$@" )
 
     # on log un message si on est au sein d'une allocation
     if [[ ${BRIDGE_MPRUN_ALLOCATION} == yes ]]
@@ -458,18 +458,18 @@ function spmd_run_cmd {
 	## to modify the behavior of spmd_run_cmd. As a result, we have to have different execution paths...
 	if [[ -n ${spmd_run_ncore} ]] && [[ ${spmd_run_cmd} == "mpirun" ]]
         then
-	    ${LOGGER} $(echo "SLURM_CPUS_PER_TASK=${spmd_run_ncore} ${spmd_run_cmd} ${spmd_run_options} ${spmd_run_extra_parameters} ${spmd_run_separator} ${spmd_run_args}")
-	    SLURM_CPUS_PER_TASK=${spmd_run_ncore} ${spmd_run_cmd} ${spmd_run_options} ${spmd_run_extra_parameters} ${spmd_run_separator} ${spmd_run_args}
+	    ${LOGGER} $(echo "SLURM_CPUS_PER_TASK=${spmd_run_ncore} ${spmd_run_cmd} ${spmd_run_options} ${spmd_run_extra_parameters} ${spmd_run_separator} ${spmd_run_args[@]}")
+	    SLURM_CPUS_PER_TASK=${spmd_run_ncore} ${spmd_run_cmd} ${spmd_run_options} ${spmd_run_extra_parameters} ${spmd_run_separator} "${spmd_run_args[@]}"
 	else
-	    ${LOGGER} $(echo "${spmd_run_cmd} ${spmd_run_options} ${spmd_run_extra_parameters} ${spmd_run_separator} ${spmd_run_args}")
-	    ${spmd_run_cmd} ${spmd_run_options} ${spmd_run_extra_parameters} ${spmd_run_separator} ${spmd_run_args}
+	    ${LOGGER} $(echo "${spmd_run_cmd} ${spmd_run_options} ${spmd_run_extra_parameters} ${spmd_run_separator} ${spmd_run_args[@]}")
+	    ${spmd_run_cmd} ${spmd_run_options} ${spmd_run_extra_parameters} ${spmd_run_separator} "${spmd_run_args[@]}"
         fi
 
 	exit_status=$?
     fi
 
     # on appelle les addons eventuels en phase spmd_post_run
-    bridge_addons_call_function bridge_addon_mprun_spmd_post_run ${spmd_run_args}
+    bridge_addons_call_function bridge_addon_mprun_spmd_post_run "${spmd_run_args[@]}"
     
     ${LOGGER} "exiting with status ${exit_status}"
     return ${exit_status}

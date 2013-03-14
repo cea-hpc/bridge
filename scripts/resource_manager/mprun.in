@@ -285,7 +285,7 @@ done
 #------------------------------------------------------------------------------------------------------------------
 # on supprime les options de la ligne courante et on sauvegarde le resultat
 shift `expr $OPTIND - 1`
-bridge_mprun_args="$@"
+bridge_mprun_args=( "$@" )
 #------------------------------------------------------------------------------------------------------------------
 # on appelle les functions mprun_getopt des differents addons avec les arguments d'entree
 bridge_addons_call_function bridge_addon_mprun_getopt "${args_array[@]}"
@@ -561,8 +561,8 @@ if [[ ${bridge_mprun_allocation} == yes ]]
 	bridge_mprun_options="-e ${bridge_mprun_options}"
     fi
 
-    ${LOGGER} "${bridge_mprun_allocate_cmd} ${bridge_mprun_options} -- ${bridge_mprun_args}"
-    ${bridge_mprun_allocate_cmd} ${bridge_mprun_options} -- ${bridge_mprun_args}
+    ${LOGGER} "${bridge_mprun_allocate_cmd} ${bridge_mprun_options} -- ${bridge_mprun_args[@]}"
+    ${bridge_mprun_allocate_cmd} ${bridge_mprun_options} -- "${bridge_mprun_args[@]}"
 
 else
     if [[ ${bridge_mprun_force_allocation} == yes ]]
@@ -575,8 +575,8 @@ else
 
 	if [[ -n ${bridge_mprun_args} ]]
 	    then
-	    ${LOGGER} "${bridge_mprun_allocate_cmd} ${bridge_mprun_options} -E \"${bridge_mprun_extra_parameters}\" -- ${bridge_mprun_cmd} ${bridge_mprun_args}"
-	    ${bridge_mprun_allocate_cmd} ${bridge_mprun_options} -E "${bridge_mprun_extra_parameters}" -- ${bridge_mprun_cmd} ${bridge_mprun_args}
+	    ${LOGGER} "${bridge_mprun_allocate_cmd} ${bridge_mprun_options} -E \"${bridge_mprun_extra_parameters}\" -- ${bridge_mprun_cmd} ${bridge_mprun_args[@]}"
+	    ${bridge_mprun_allocate_cmd} ${bridge_mprun_options} -E "${bridge_mprun_extra_parameters}" -- ${bridge_mprun_cmd} "${bridge_mprun_args[@]}"
 	else
 	    show_usage
 	    exit 1
@@ -589,8 +589,8 @@ else
 	
 	if [[ -n ${bridge_mprun_args} ]]
 	    then
-	    ${LOGGER} "${bridge_mprun_allocate_cmd} -e ${bridge_mprun_options} -E \"${bridge_mprun_extra_parameters}\" -- ${bridge_mprun_cmd} ${bridge_mprun_args}"
-	    ${bridge_mprun_allocate_cmd} -e ${bridge_mprun_options} -E "${bridge_mprun_extra_parameters}" -- ${bridge_mprun_cmd} ${bridge_mprun_args}
+	    ${LOGGER} "${bridge_mprun_allocate_cmd} -e ${bridge_mprun_options} -E \"${bridge_mprun_extra_parameters}\" -- ${bridge_mprun_cmd} ${bridge_mprun_args[@]}"
+	    ${bridge_mprun_allocate_cmd} -e ${bridge_mprun_options} -E "${bridge_mprun_extra_parameters}" -- ${bridge_mprun_cmd} "${bridge_mprun_args[@]}"
 	else
 	    show_usage
 	    exit 1
@@ -602,8 +602,8 @@ else
 
 	if [[ -n ${bridge_mprun_args} ]]
 	    then
-    	    ${LOGGER} "${bridge_mprun_run_cmd} ${bridge_mprun_options} -E \"${bridge_mprun_extra_parameters}\" -- ${bridge_mprun_args}"
-	    ${bridge_mprun_run_cmd} ${bridge_mprun_options} -E "${bridge_mprun_extra_parameters}" -- ${bridge_mprun_args}
+    	    ${LOGGER} "${bridge_mprun_run_cmd} ${bridge_mprun_options} -E \"${bridge_mprun_extra_parameters}\" -- ${bridge_mprun_args[@]}"
+	    ${bridge_mprun_run_cmd} ${bridge_mprun_options} -E "${bridge_mprun_extra_parameters}" -- "${bridge_mprun_args[@]}"
 	else
 	    show_usage
 	    exit 1
