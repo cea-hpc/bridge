@@ -29,11 +29,11 @@
 
 #Returns 0 if no broadcast is required, 1 for sbcast based bcast, 2 for srun/cp based bcast
 function is_bcast_needed {
-    typeset analyzed_file="$@"
+    typeset analyzed_file=( "$@" )
     if [[ ${BRIDGE_BROADCAST_MODE} -eq 1 ]] && [[ -n ${BRIDGE_BROADCAST_INCLUDE_PATTERN} ]]
     then
-	typeset exec_file=$(which ${analyzed_file%% *})
-	which ${exec_file} 2>/dev/null | egrep -q "${BRIDGE_BROADCAST_INCLUDE_PATTERN}"
+	typeset exec_file="$(which "${analyzed_file[0]}")"
+	which "${exec_file}" 2>/dev/null | egrep -q "${BRIDGE_BROADCAST_INCLUDE_PATTERN}"
 	if [[ $? -ne 0 ]]
 	then
 	    ${LOGGER} "avoiding to broadcast ${exec_file} because of inclusion pattern \"${BRIDGE_BROADCAST_INCLUDE_PATTERN}\""
@@ -43,7 +43,7 @@ function is_bcast_needed {
 	fi
     elif [[ ${BRIDGE_BROADCAST_MODE} -eq 1 ]] && [[ -n ${BRIDGE_BROADCAST_EXCLUDE_PATTERN} ]]
     then
-	typeset exec_file=$(which ${analyzed_file%% *})
+	typeset exec_file="$(which "${analyzed_file[0]}")"
 	which ${exec_file} 2>/dev/null | egrep -q "${BRIDGE_BROADCAST_EXCLUDE_PATTERN}"
 	if [[ $? -eq 0 ]]
 	then
@@ -67,7 +67,7 @@ function is_bcast_needed {
 
     if [[ -n ${BRIDGE_BROADCAST_LOCAL_CP_INCLUDE_PATTERN} ]]
     then
-       typeset exec_file=$(which ${analyzed_file%% *})
+       typeset exec_file="$(which "${analyzed_file[0]}")"
        which ${exec_file} 2>/dev/null | egrep -q "${BRIDGE_BROADCAST_LOCAL_CP_INCLUDE_PATTERN}"
        if [[ $? -eq 0 ]]
        then
@@ -81,7 +81,7 @@ function is_bcast_needed {
 
 
 function compute_bcast_name {
-    typeset analyzed_file="$@"
+    typeset analyzed_file=( "$@" )
     echo "/tmp/$(id -un)_${analyzed_file##*\/}_$$_${SLURM_JOBID}"
 }
 
@@ -90,17 +90,17 @@ function do_bcast {
     typeset requested_mode=$1
     shift
     typeset orig_file="$@"
-    typeset dst_file=$(compute_bcast_name $orig_file)
+    typeset dst_file="$(compute_bcast_name "$orig_file")"
 
     # if parallel local copy mode is requested, then do it, otherwise, use
     # SLURM sbcast cmd
     if [[ ${requested_mode} -eq 2 ]]
     then
         ${LOGGER} "broadcasting ${orig_file} to remote:${dst_file} using parallel local cp ..."
-        srun --input none -w $SLURM_NODELIST -n $SLURM_NNODES cp -p ${orig_file} ${dst_file}
+        srun --input none -w $SLURM_NODELIST -n $SLURM_NNODES cp -p "${orig_file}" "${dst_file}"
     else
         ${LOGGER} "broadcasting ${orig_file} to remote:${dst_file} ..."
-        sbcast -Cfp ${orig_file} ${dst_file}
+        sbcast -Cfp "${orig_file}" "${dst_file}"
     fi
 
     return $?
@@ -183,7 +183,6 @@ function bridge_addon_mprun_getopt {
 }
 
 function bridge_addon_mprun_alteropt {
-
     ## on se place en mode debug si souhaite
     typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
     if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
@@ -210,15 +209,11 @@ function bridge_addon_mprun_alteropt {
 }
 
 function bridge_addon_mprun_spmd_pre_allocate {
-
     return 0
-
 }
 
 function bridge_addon_mprun_spmd_post_allocate {
-
     return 0
-
 }
 
 function bridge_addon_mprun_spmd_pre_run {
@@ -238,64 +233,55 @@ function bridge_addon_mprun_spmd_pre_run {
 
     if [[ ${BRIDGE_MPRUN_ADDON_MPMD_STAGE} -eq 2 ]] && [[ -n ${BRIDGE_MPRUN_ADDON_MPMD_SCRIPT} ]]
     then
-	typeset gen_script=$(which ${spmd_run_args%% *})
+	typeset gen_script="$(which "${spmd_run_args[0]}")"
 	typeset bcast_mode=0
-	while read NBTASK CMD
+	
+	while read -A CMD
 	do
-	    if [[ -z $CMD ]]
+	    if [[ -z "${CMD[1]}" ]]
 	    then
 		continue
 	    fi
 
-	    is_bcast_needed "$CMD"
+	    is_bcast_needed "${CMD[1]}"
 	    bcast_mode=$?
 	    if [[ $bcast_mode -ne 0 ]]
 	    then
 	    ## on broadcast le job
-		typeset exec_file=$(which ${CMD%% *})
-		typeset exec_args=${CMD#* }
-		if [[ ${exec_args} == ${CMD} ]]
-		then
-		    exec_args=
-		fi
-
-		typeset dst_file=$(compute_bcast_name "$exec_file")
-		do_bcast $bcast_mode ${exec_file}
+		typeset exec_file="$(which "${CMD[1]}")"
+		typeset dst_file="$(compute_bcast_name "$exec_file")"
+		do_bcast "${bcast_mode}" "${exec_file}"
 		if [[ $? -ne 0 ]]
 		then
 		    ${LOGGER} "failure of broadcast ... staying in standard mode"
 		else
 		    ${LOGGER} "swapping executables ..."
-		    sed -i "/#BRIDGE-MPMDv1-TASK-MARKER/{ N;s*^#BRIDGE-MPMDv1-TASK-MARKER\n${CMD}*#BRIDGE-MPMDv1-TASK-MARKER\n${dst_file} ${exec_args}*}" ${gen_script}
+		    NCMD=( "${CMD[@]}" )
+		    NCMD[1]="$dst_file"
+		    SAFENCMD="$(printf "'%s' " "${NCMD[@]:1}")"
+		    sed -i "/#BRIDGE-MPMDv1-TASK-MARKER/{ N;s*^#BRIDGE-MPMDv1-TASK-MARKER\n${CMD[*]:1}*#BRIDGE-MPMDv1-TASK-MARKER\n${SAFENCMD}*}" "${gen_script}"
 		fi
 	    fi
-	done < ${BRIDGE_MPRUN_ADDON_MPMD_SCRIPT}
+	done < "${BRIDGE_MPRUN_ADDON_MPMD_SCRIPT}"
     fi
 
-    is_bcast_needed "$spmd_run_args"
+    is_bcast_needed "${spmd_run_args[@]}"
     bcast_mode=$?
 
     if [[ ${BRIDGE_BROADCAST_MODE} -eq 1 ]] && [[ ${bcast_mode} -ne 0 ]]
     then
 	## on broadcast le job
-	typeset exec_file=$(which ${spmd_run_args%% *})
-	typeset exec_args=${spmd_run_args#* }
-	if [[ ${exec_args} == ${spmd_run_args} ]]
-	then
-	    exec_args=
-	fi
+	typeset exec_file="$(which "${spmd_run_args[0]}")"
 
-	export BRIDGE_BROADCAST_ORIGINAL_CMD=${exec_file}
-	typeset dst_file=$(compute_bcast_name "$exec_file")
-	do_bcast $bcast_mode ${exec_file}
-
+	export BRIDGE_BROADCAST_ORIGINAL_CMD="${exec_file}"
+	typeset dst_file="$(compute_bcast_name "$exec_file")"
+	do_bcast "$bcast_mode" "${exec_file}"
 	if [[ $? -ne 0 ]]
 	then
 	    ${LOGGER} "failure of broadcast ... staying in standard mode"
 	else
 	    ${LOGGER} "swapping executables ..."
-	    spmd_run_args="${dst_file} ${exec_args}"
-	    BRIDGE_BROADCAST_MODE=0
+	    spmd_run_args[0]="${dst_file}"
 	fi
 
     fi
@@ -304,7 +290,5 @@ function bridge_addon_mprun_spmd_pre_run {
 }
 
 function bridge_addon_mprun_spmd_post_run {
-
     return 0
-
 }

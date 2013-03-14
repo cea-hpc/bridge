@@ -60,7 +60,7 @@ function bridge_addon_mprun_getopt {
     typeset LOGGER="${LOGGER} MPMD Addon :"
 
     ## par defaut, on desactive le mode MPMD
-    if [[ -z ${BRIDGE_MPRUN_ADDON_MPMD_SCRIPT} ]]
+    if [[ -z "${BRIDGE_MPRUN_ADDON_MPMD_SCRIPT}" ]]
 	then
 	BRIDGE_MPRUN_ADDON_MPMD_SCRIPT=
     fi
@@ -84,7 +84,7 @@ function bridge_addon_mprun_getopt {
 	      ;;
 
 	  f)
-	      BRIDGE_MPRUN_ADDON_MPMD_SCRIPT=${OPTARG}
+	      BRIDGE_MPRUN_ADDON_MPMD_SCRIPT="${OPTARG}"
 	      BRIDGE_MPRUN_ADDON_MPMD_STAGE=1
 	      ;;
 
@@ -117,24 +117,24 @@ function bridge_addon_mprun_alteropt {
     if [[ ${BRIDGE_MPRUN_ADDON_MPMD_STAGE} -eq 1 ]]
 	then
 	
-	if [[ ! -r ${BRIDGE_MPRUN_ADDON_MPMD_SCRIPT} ]]
+	if [[ ! -r "${BRIDGE_MPRUN_ADDON_MPMD_SCRIPT}" ]]
 	    then
 	    ${ERROR} "MPMD Addon : invalid task file ${BRIDGE_MPRUN_ADDON_MPMD_SCRIPT}"
 	else
 	    ${LOGGER} "using tasks file ${BRIDGE_MPRUN_ADDON_MPMD_SCRIPT}"
 	    
 	    typeset temporary_file=
-	    temporary_file=$(bridge_tmpfile ${BRIDGE_MPRUN_ADDON_MPMD_SCRIPT})
+	    temporary_file="$(bridge_tmpfile "${BRIDGE_MPRUN_ADDON_MPMD_SCRIPT}")"
 	    
-	    if [[ -z ${temporary_file} ]]
+	    if [[ -z "${temporary_file}" ]]
 		then
 		${ERROR} "MPMD Addon : unable to build temporary file ${temporary_file}"
 	    else
-		if [[ $(basename ${temporary_file}) == ${temporary_file} ]]
+		if [[ $(basename "${temporary_file}") == "${temporary_file}" ]]
 		    then
-		    temporary_file=${PWD}/${temporary_file}
+		    temporary_file="${PWD}"/"${temporary_file}"
 		fi
-		chmod +x ${temporary_file}
+		chmod +x "${temporary_file}"
 		#### on cree le fichier spmd temporaire qui permettra de lancer 
 		#### l'appli mpmd
 		typeset NBTASK_CUMUL=0
@@ -142,19 +142,19 @@ function bridge_addon_mprun_alteropt {
 		typeset CMD
 		echo "#!/bin/ksh" > ${temporary_file}
 		echo ". \${BRIDGE_MPRUN_PROFILE} 2>/dev/null" >> ${temporary_file}
-		while read NBTASK CMD
+		while read -A CMD
 		  do
-		  (( NBTASK_CUMUL = NBTASK_CUMUL + NBTASK ))
-		  cat >> ${temporary_file} <<EOF
+		  (( NBTASK_CUMUL = NBTASK_CUMUL + CMD[0] ))
+		  cat >> "${temporary_file}" <<EOF
 if [[ \${BRIDGE_MPRUN_RANKID} -lt ${NBTASK_CUMUL} ]]
 then
-echo "task=\${BRIDGE_MPRUN_RANKID} , cmd = ${CMD}"
+echo "task=\${BRIDGE_MPRUN_RANKID} , cmd = $(printf "'%s' " "${CMD[@]:1}")"
 #BRIDGE-MPMDv1-TASK-MARKER
-${CMD}
+${CMD[@]:1}
 exit \$?
 fi
 EOF
-		done < ${BRIDGE_MPRUN_ADDON_MPMD_SCRIPT}
+		done < "${BRIDGE_MPRUN_ADDON_MPMD_SCRIPT}"
 		
 		export BRIDGE_MPRUN_ADDON_MPMD_STAGE=2
 		export BRIDGE_MPRUN_ADDON_TEMPORARY_FILE=${temporary_file}
@@ -200,10 +200,10 @@ function bridge_addon_mprun_spmd_post_run {
     ## on incremente le niveau de log
     typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
 
-    if [[ ${BRIDGE_MPRUN_ADDON_MPMD_STAGE} -eq 2 ]] && [[ -f ${BRIDGE_MPRUN_ADDON_TEMPORARY_FILE} ]]
+    if [[ ${BRIDGE_MPRUN_ADDON_MPMD_STAGE} -eq 2 ]] && [[ -f "${BRIDGE_MPRUN_ADDON_TEMPORARY_FILE}" ]]
     then
       ${LOGGER} "Removing temporary MPMD script ${BRIDGE_MPRUN_ADDON_TEMPORARY_FILE}"
-      rm -f ${BRIDGE_MPRUN_ADDON_TEMPORARY_FILE}
+      rm -f "${BRIDGE_MPRUN_ADDON_TEMPORARY_FILE}"
     fi
     return 0
 }

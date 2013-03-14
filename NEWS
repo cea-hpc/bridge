@@ -13,7 +13,8 @@
 	-- addons/wrapper-DAM: tolerate user scripts with no newline at end of file
 	-- addons/mpmd-cluster: remove unnecessary allocation
 	-- mprun/slurm: fix handling of whitespaces and special characters argument
-s
+	-- addons/mpmd-cluster: more fixes for whitespaces and special characters handling
+
 * Changes in bridge-1.5.2
 =========================
 	-- add GPL licensing information and headers
