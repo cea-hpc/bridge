@@ -236,8 +236,9 @@ function bridge_addon_mprun_spmd_pre_run {
 	typeset gen_script="$(which "${spmd_run_args[0]}")"
 	typeset bcast_mode=0
 	
-	while read -A CMD
+	while read -r RAWCMD
 	do
+	    eval CMD=\( "$RAWCMD" \)
 	    if [[ -z "${CMD[1]}" ]]
 	    then
 		continue
@@ -258,7 +259,7 @@ function bridge_addon_mprun_spmd_pre_run {
 		    ${LOGGER} "swapping executables ..."
 		    NCMD=( "${CMD[@]}" )
 		    NCMD[1]="$dst_file"
-		    SAFENCMD="$(printf "'%s' " "${NCMD[@]:1}")"
+		    SAFENCMD="$(printf "%q " "${NCMD[@]:1}")"
 		    sed -i "/#BRIDGE-MPMDv1-TASK-MARKER/{ N;s*^#BRIDGE-MPMDv1-TASK-MARKER\n${CMD[*]:1}*#BRIDGE-MPMDv1-TASK-MARKER\n${SAFENCMD}*}" "${gen_script}"
 		fi
 	    fi

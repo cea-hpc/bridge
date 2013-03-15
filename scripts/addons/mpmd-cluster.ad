@@ -139,23 +139,27 @@ function bridge_addon_mprun_alteropt {
 		#### l'appli mpmd
 		typeset NBTASK_CUMUL=0
 		typeset NBTASK
-		typeset CMD
+		typeset RAWCMD
+
 		echo "#!/bin/ksh" > ${temporary_file}
 		echo ". \${BRIDGE_MPRUN_PROFILE} 2>/dev/null" >> ${temporary_file}
-		while read -A CMD
+		while read -r RAWCMD
 		  do
+		  eval CMD=\( "$RAWCMD" \)
 		  (( NBTASK_CUMUL = NBTASK_CUMUL + CMD[0] ))
 		  cat >> "${temporary_file}" <<EOF
 if [[ \${BRIDGE_MPRUN_RANKID} -lt ${NBTASK_CUMUL} ]]
 then
-echo "task=\${BRIDGE_MPRUN_RANKID} , cmd = $(printf "'%s' " "${CMD[@]:1}")"
+echo -n "task=\${BRIDGE_MPRUN_RANKID} , cmd = "
+printf " %q " $(printf "%q " "${CMD[@]:1}")
+echo
 #BRIDGE-MPMDv1-TASK-MARKER
-${CMD[@]:1}
+$(printf "%q " "${CMD[@]:1}")
 exit \$?
 fi
 EOF
 		done < "${BRIDGE_MPRUN_ADDON_MPMD_SCRIPT}"
-		
+
 		export BRIDGE_MPRUN_ADDON_MPMD_STAGE=2
 		export BRIDGE_MPRUN_ADDON_TEMPORARY_FILE=${temporary_file}
 
