@@ -28,8 +28,18 @@ export BRIDGE_MPRUN_NNODE=${SLURM_NNODES}
 export BRIDGE_MPRUN_NPROC=${SLURM_NPROCS}
 export BRIDGE_MPRUN_NCORE=${SLURM_CPUS_PER_TASK}
 
-export BRIDGE_MPRUN_QUEUE=$(squeue -o %R -h -j ${SLURM_JOB_ID})
-export BRIDGE_MPRUN_PROJECT=$(squeue -o %a -h -j ${SLURM_JOB_ID})
+# Do not use squeue here to get information as it could
+# severely limit the scalability of large jobs using
+# this profile and/or overload the slurm controller
+# when used by too much jobs simultaneously
+# (MPMD script use it a lot)
+#
+# Use inherited MSUB variables if available instead
+#
+#export BRIDGE_MPRUN_QUEUE=$(squeue -o %R -h -j ${SLURM_JOB_ID})
+#export BRIDGE_MPRUN_PROJECT=$(squeue -o %a -h -j ${SLURM_JOB_ID})
+export BRIDGE_MPRUN_QUEUE=${BRIDGE_MSUB_QUEUE}
+export BRIDGE_MPRUN_PROJECT=${BRIDGE_MSUB_PROJECT}
 
 export BRIDGE_MPRUN_NODEID=${SLURM_NODEID}
 

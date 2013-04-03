@@ -14,6 +14,7 @@
 	-- addons/mpmd-cluster: remove unnecessary allocation
 	-- mprun/slurm: fix handling of whitespaces and special characters argument
 	-- addons/mpmd-cluster: more fixes for whitespaces and special characters handling
+	-- rm/slurm: ensure that the provided profile does not overload the ctld (port of 1.4.15)
 
 * Changes in bridge-1.5.2
 =========================
@@ -76,6 +77,7 @@
 	-- addons/mpmd-cluster: remove unnecessary allocation
 	   (backported from 1.5.3)
 	-- mpp: Add REASON to header
+	-- rm/slurm: ensure that the provided profile does not overload the ctld
 
 * Changes in bridge-1.4.14
 ==========================
