@@ -1,7 +1,7 @@
 Summary: Bridge CEA In-House Batch Environment
 Name: bridge
 Version: 1.5.3
-Release: 5
+Release: 6
 License: GPL License
 Group: System Environment/Base
 URL: http://
@@ -163,6 +163,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_prefix}/share/scripts/addons/*
 %{_prefix}/share/scripts/batch_system/plugins/generic
 %{_prefix}/share/scripts/resource_manager/plugins/generic
+%{_prefix}/share/scripts/resource_manager/plugins/ws
 %{_sbindir}/%{_program_prefix}bridged
 %config (noreplace) %{_sysconfdir}/bridged.conf
 %config (noreplace) %{_sysconfdir}/bridgedapi.conf
@@ -192,6 +193,9 @@ rm -rf $RPM_BUILD_ROOT
 %endif
 
 %changelog
+* Thu Mar 28 2013 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.5.3-6
+- tag release 1.5.3-6
+- now add ws plugin in the default bridge RPM for standalone mode
 * Thu Mar 28 2013 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.5.3-5
 - tag release 1.5.3-5
 * Thu Mar 07 2013 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.5.3-4
