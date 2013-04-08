@@ -56,13 +56,13 @@ function bridge_addon_msub_getopt {
     typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
     
     ## on supprime un eventuel placement d'une QOS dans l'environnement
-    ## (afin de ne pas herite de la configuration sbatch mais uniquement
-    ## de celle de bridge dans la definition de la QOS a utiliser)
+    ## (afin de ne pas heriter de la configuration sbatch)
     case ${BATCH_SYSTEM} in
         slurm)
 	    unset SBATCH_QOS
 	    ;;
     esac
+    export BRIDGE_MSUB_ADDON_QOS=
 
     ## on ajoute une entete a la log
     typeset LOGGER="${LOGGER} QOS Addon :"
