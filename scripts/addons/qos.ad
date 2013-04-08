@@ -55,6 +55,15 @@ function bridge_addon_msub_getopt {
     ## on incremente le niveau de log
     typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
     
+    ## on supprime un eventuel placement d'une QOS dans l'environnement
+    ## (afin de ne pas herite de la configuration sbatch mais uniquement
+    ## de celle de bridge dans la definition de la QOS a utiliser)
+    case ${BATCH_SYSTEM} in
+        slurm)
+	    unset SBATCH_QOS
+	    ;;
+    esac
+
     ## on ajoute une entete a la log
     typeset LOGGER="${LOGGER} QOS Addon :"
     typeset ERROR="${ERROR} QOS Addon :"
@@ -141,6 +150,7 @@ function bridge_addon_msub_alteropt {
 	else
 	    ${LOGGER} "SLA is now ${BRIDGE_MSUB_ADDON_QOS}"
 	fi
+	export BRIDGE_MSUB_ADDON_QOS
     fi
     if [[ -n ${BRIDGE_MSUB_ADDON_QOS} ]]
     then
