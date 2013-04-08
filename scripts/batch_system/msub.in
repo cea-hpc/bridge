@@ -712,10 +712,7 @@ export BRIDGE_MSUB_MULTIREQ
 # start time
 export BRIDGE_MSUB_STARTTIME=${OPTION_S}
 # queue name
-if [[ -n ${OPTION_q} ]]
-then
-    export BRIDGE_MSUB_QUEUE=${OPTION_q}
-fi
+export BRIDGE_MSUB_QUEUE=${OPTION_q}
 # requested stdout file
 export BRIDGE_MSUB_STDOUT=${OPTION_o}
 # requested stderr file
