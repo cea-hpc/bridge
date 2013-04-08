@@ -15,6 +15,7 @@
 	-- mprun/slurm: fix handling of whitespaces and special characters argument
 	-- addons/mpmd-cluster: more fixes for whitespaces and special characters handling
 	-- rm/slurm: ensure that the provided profile does not overload the ctld (port of 1.4.15)
+	-- remove inheritance of msub queue and QoS when nested msub are executed
 
 * Changes in bridge-1.5.2
 =========================
