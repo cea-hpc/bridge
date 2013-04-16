@@ -327,17 +327,31 @@ function submit_cmd {
     if [[ -n ${mail_addr} ]]
 	then
 	local_submit_args="${local_submit_args} --mail-user=${mail_addr}"
-	case ${mail_info} in
-	    begin)
-		local_submit_args="${local_submit_args} --mail-type=FAIL --mail-type=BEGIN"
-		;;
-	    "begin,end")
-		local_submit_args="${local_submit_args} --mail-type=ALL"
-		;;
-	    *)
-		local_submit_args="${local_submit_args} --mail-type=FAIL --mail-type=END"
-		;;
-	esac
+	## on a toujours envoye des messages en cas d'erreur, gardons ce comportement
+	local_submit_args="${local_submit_args} --mail-type=FAIL"
+	if [[ -n ${mail_info} ]]
+	    then
+	     for mail_type in ${mail_info//,/ } 
+	     do
+		 case ${mail_type} in
+		     begin)
+			 local_submit_args="${local_submit_args} --mail-type=BEGIN"
+			 ;;
+		     end)
+			 local_submit_args="${local_submit_args} --mail-type=END"
+			 ;;
+		     requeue)
+			 local_submit_args="${local_submit_args} --mail-type=REQUEUE"
+			 ;;
+		     *)
+			 ${ERROR} "Unsupported mail type for this batch system: ${mail_type}"
+			 exit 1
+			 ;;
+		     esac
+	     done
+	else
+	    local_submit_args="${local_submit_args} --mail-type=END"
+	fi
     fi
 
     ## on fixe la date de depart de l'execution

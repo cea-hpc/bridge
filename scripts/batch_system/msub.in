@@ -198,7 +198,7 @@ typeset USAGE="usage : ${PROGNAME} [-dvhV] \\
 
  -S starttime  : requested start time using format like \"HH:MM\" or \"MM/DD HH:MM\"
 
- -@ mailopts   : mail options following the pattern mailaddr[:begin|end|begin,end]
+ -@ mailopts   : mail options following the pattern mailaddr[:begin|end|requeue]
                  exp: ${PROGNAME} -@ jdoe@foo.com:begin,end
                  will send a mail to jdoe at the begining and the end of the job
                  default behavior depends of the underlying batch system

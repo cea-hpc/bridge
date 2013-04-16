@@ -294,17 +294,29 @@ function submit_cmd {
     if [[ -n ${mail_addr} ]]
 	then
 	local_submit_args="${local_submit_args} -u ${mail_addr}"
-	case ${mail_info} in
-	    begin)
-	    local_submit_args="${local_submit_args} -B"
-	    ;;
-	    "begin,end")
-	    local_submit_args="${local_submit_args} -B -N"
-	    ;;
-	    *)
+	if [[ -n ${mail_info} ]]
+	    then
+	     for mail_type in ${mail_info//,/ } 
+	     do
+		 case ${mail_type} in
+		     begin)
+			 local_submit_args="${local_submit_args} -B"
+			 ;;
+		     end)
+			 local_submit_args="${local_submit_args} -N"
+			 ;;
+		     requeue)
+			 # default behaviour of lsf on "rerun" which is what we call requeue
+			 ;;
+		     *)
+			 ${ERROR} "Unsupported mail type for this batch system: ${mail_type}"
+			 exit 1
+			 ;;
+		     esac
+	     done
+	else
 	    local_submit_args="${local_submit_args} -N"
-	    ;;
-	esac
+	fi
     fi
     
     ## on fixe les dependances de jobs

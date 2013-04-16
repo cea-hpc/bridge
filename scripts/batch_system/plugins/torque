@@ -355,17 +355,28 @@ function submit_cmd {
     if [[ -n ${mail_addr} ]]
 	then
 	local_submit_args="${local_submit_args} -M ${mail_addr}"
-	case ${mail_info} in
-	    begin)
-		local_submit_args="${local_submit_args} -m ab"
-		;;
-	    "begin,end")
-		local_submit_args="${local_submit_args} -m abe"
-		;;
-	    *)
-		local_submit_args="${local_submit_args} -m ae"
-		;;
-	esac
+	## on a toujours envoye des messages en cas d'erreur, gardons ce comportement
+	local_submit_args="${local_submit_args} -m a"
+	if [[ -n ${mail_info} ]]
+	    then
+	     for mail_type in ${mail_info//,/ } 
+	     do
+		 case ${mail_type} in
+		     begin)
+			 local_submit_args="${local_submit_args}b"
+			 ;;
+		     end)
+			 local_submit_args="${local_submit_args}e"
+			 ;;
+		     *)
+			 ${ERROR} "Unsupported mail type for this batch system: ${mail_type}"
+			 exit 1
+			 ;;
+		     esac
+	     done
+	else
+	    local_submit_args="${local_submit_args}e"
+	fi
     fi
 
     ## on fixe les dependances de jobs
