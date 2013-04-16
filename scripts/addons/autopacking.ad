@@ -148,9 +148,6 @@ function bridge_addon_msub_alteropt {
 		fi
 		export BRIDGE_MSUB_NNODE=${scpn}
 		${LOGGER} "requested nodes nb is now ${scpn}"
-
-		# disable autopacking to avoid recursive call
-		export BRIDGE_ADDON_AUTOPACKING_DISABLE=1
 	    fi
 	fi
     fi

@@ -19,6 +19,7 @@
 	-- remove inheritance of msub queue and QoS when nested msub are executed
 	-- remove bogus inheritance of mprun variables from previous submissions in case of nested msubs
 	-- introduce "requeue" mail notification event and support real lists of events
+	-- autopacking: remove useless export which caused a bug in recursive submissions
 
 * Changes in bridge-1.5.2
 =========================
