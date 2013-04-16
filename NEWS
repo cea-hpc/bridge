@@ -17,6 +17,7 @@
 	-- addons/mpmd-cluster|bcast: even more fixes for whitespaces and special characters handling
 	-- rm/slurm: ensure that the provided profile does not overload the ctld (port of 1.4.15)
 	-- remove inheritance of msub queue and QoS when nested msub are executed
+	-- remove bogus inheritance of mprun variables from previous submissions in case of nested msubs
 
 * Changes in bridge-1.5.2
 =========================

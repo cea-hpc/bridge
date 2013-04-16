@@ -895,6 +895,8 @@ if [[ -n ${BRIDGE_MSUB_NNODE} ]]
     submit_args="${submit_args} -N ${BRIDGE_MSUB_NNODE}"
     # usefull to ${BRIDGE_MPRUN_CMD}
     export BRIDGE_MPRUN_NNODE=${BRIDGE_MSUB_NNODE}
+else
+    export BRIDGE_MPRUN_NNODE=
 fi
 export BRIDGE_MSUB_NNODE
 # requested process number
@@ -903,6 +905,8 @@ if [[ -n ${BRIDGE_MSUB_NPROC} ]]
     submit_args="${submit_args} -n ${BRIDGE_MSUB_NPROC}"
     # usefull to ${BRIDGE_MPRUN_CMD}
     export BRIDGE_MPRUN_NPROC=${BRIDGE_MSUB_NPROC}
+else
+    export BRIDGE_MPRUN_NPROC=
 fi
 export BRIDGE_MSUB_NPROC
 # requested core per process
@@ -911,6 +915,8 @@ if [[ -n ${BRIDGE_MSUB_NCORE} ]]
     submit_args="${submit_args} -c ${BRIDGE_MSUB_NCORE}"
     # usefull to ${BRIDGE_MPRUN_CMD}
     export BRIDGE_MPRUN_NCORE=${BRIDGE_MSUB_NCORE}
+else
+    export BRIDGE_MPRUN_NCORE=
 fi
 export BRIDGE_MSUB_NCORE
 # requested memory for shared parts of job
@@ -931,6 +937,8 @@ if [[ -n ${BRIDGE_MSUB_MAXMEM} ]]
     submit_args="${submit_args} -M ${BRIDGE_MSUB_MAXMEM}"
     # usefull to ${BRIDGE_MPRUN_CMD}
     export BRIDGE_MPRUN_MAXMEM=${BRIDGE_MSUB_MAXMEM}
+else
+    export BRIDGE_MPRUN_MAXMEM=
 fi
 export BRIDGE_MSUB_MAXMEM
 # requested time in exclusive mode
@@ -939,6 +947,8 @@ if [[ -n ${BRIDGE_MSUB_MAXTIME} ]]
     submit_args="${submit_args} -T ${BRIDGE_MSUB_MAXTIME}"
     # usefull to ${BRIDGE_MPRUN_CMD}
     export BRIDGE_MPRUN_MAXTIME=${BRIDGE_MSUB_MAXTIME}
+else
+    export BRIDGE_MPRUN_MAXTIME=
 fi
 export BRIDGE_MSUB_MAXTIME
 # requested licences
