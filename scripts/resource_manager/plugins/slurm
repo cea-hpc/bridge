@@ -88,7 +88,7 @@ function spmd_allocate_cmd {
     spmd_allocate_nnode=
     spmd_allocate_partition=
     spmd_allocate_pproject=
-    spmd_allocate_extra_parameters=
+    typeset -a spmd_allocate_extra_parameters
     spmd_allocate_maxmem=
     spmd_allocate_maxtime=
     spmd_allocate_requestname=
@@ -127,7 +127,7 @@ function spmd_allocate_cmd {
 	  E)
 	      if [[ -n ${OPTARG} ]]
 		  then
-		  spmd_allocate_extra_parameters=${OPTARG}
+		  spmd_allocate_extra_parameters+=( "${OPTARG[@]}" )
 	      fi
 	      ;;
 
@@ -223,7 +223,7 @@ function spmd_allocate_cmd {
 	fi
 
 	## Check if we can use the quiet mode of SLURM
-	echo "${spmd_allocate_extra_parameters}" | egrep -qw '\-v+'
+	echo "${spmd_allocate_extra_parameters[@]}" | egrep -qw '\-v+'
 	if [[ $? -ne 0 ]]
 	then
 	    spmd_allocate_quiet="-Q "
@@ -232,8 +232,8 @@ function spmd_allocate_cmd {
         ## on export quelques variables d'environnement dont une indiquant que l'on 
 	## a deja fait une allocation afin d'eviter les boucles
 	export BRIDGE_MPRUN_ALLOCATION=yes
-	${LOGGER} "${spmd_allocate_cmd} ${spmd_allocate_quiet}${spmd_allocate_options} ${spmd_allocate_extra_parameters} ${spmd_allocate_separator} ${spmd_allocate_args[@]}"
-	${spmd_allocate_cmd} ${spmd_allocate_quiet}${spmd_allocate_options} ${spmd_allocate_extra_parameters} ${spmd_allocate_separator} "${spmd_allocate_args[@]}"
+	${LOGGER} "${spmd_allocate_cmd} ${spmd_allocate_quiet}${spmd_allocate_options} ${spmd_allocate_extra_parameters[@]} ${spmd_allocate_separator} ${spmd_allocate_args[@]}"
+	${spmd_allocate_cmd} ${spmd_allocate_quiet}${spmd_allocate_options} ${spmd_allocate_extra_parameters[@]} ${spmd_allocate_separator} "${spmd_allocate_args[@]}"
 	exit_status=$?
     fi
 
@@ -272,7 +272,7 @@ function spmd_run_cmd {
     spmd_run_nnode=
     spmd_run_partition=
     spmd_run_project=
-    spmd_run_extra_parameters=
+    typeset -a spmd_run_extra_parameters
     spmd_run_maxmem=
     spmd_run_maxtime=
     spmd_run_separator=${spmd_run_separator:---}
@@ -314,7 +314,7 @@ function spmd_run_cmd {
 	  E)
 	      if [[ -n ${OPTARG} ]]
 		  then
-		  spmd_run_extra_parameters=${OPTARG}
+		  spmd_run_extra_parameters+=( "${OPTARG[@]}" )
 	      fi
 	      ;;
 
@@ -458,11 +458,11 @@ function spmd_run_cmd {
 	## to modify the behavior of spmd_run_cmd. As a result, we have to have different execution paths...
 	if [[ -n ${spmd_run_ncore} ]] && [[ ${spmd_run_cmd} == "mpirun" ]]
         then
-	    ${LOGGER} $(echo "SLURM_CPUS_PER_TASK=${spmd_run_ncore} ${spmd_run_cmd} ${spmd_run_options} ${spmd_run_extra_parameters} ${spmd_run_separator} ${spmd_run_args[@]}")
-	    SLURM_CPUS_PER_TASK=${spmd_run_ncore} ${spmd_run_cmd} ${spmd_run_options} ${spmd_run_extra_parameters} ${spmd_run_separator} "${spmd_run_args[@]}"
+	    ${LOGGER} $(echo "SLURM_CPUS_PER_TASK=${spmd_run_ncore} ${spmd_run_cmd} ${spmd_run_options} ${spmd_run_extra_parameters[@]} ${spmd_run_separator} ${spmd_run_args[@]}")
+	    SLURM_CPUS_PER_TASK=${spmd_run_ncore} ${spmd_run_cmd} ${spmd_run_options} "${spmd_run_extra_parameters[@]}" ${spmd_run_separator} "${spmd_run_args[@]}"
 	else
-	    ${LOGGER} $(echo "${spmd_run_cmd} ${spmd_run_options} ${spmd_run_extra_parameters} ${spmd_run_separator} ${spmd_run_args[@]}")
-	    ${spmd_run_cmd} ${spmd_run_options} ${spmd_run_extra_parameters} ${spmd_run_separator} "${spmd_run_args[@]}"
+	    ${LOGGER} $(echo "${spmd_run_cmd} ${spmd_run_options} ${spmd_run_extra_parameters[@]} ${spmd_run_separator} ${spmd_run_args[@]}")
+	    ${spmd_run_cmd} ${spmd_run_options} "${spmd_run_extra_parameters[@]}" ${spmd_run_separator} "${spmd_run_args[@]}"
         fi
 
 	exit_status=$?
