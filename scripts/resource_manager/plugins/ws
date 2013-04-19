@@ -194,8 +194,9 @@ function spmd_run_cmd {
     spmd_run_maxtime=
 
     max_ncore_per_node=${BRIDGE_MPRUN_MAX_NCORE}
-    spmd_run_options=
-    spmd_run_cmd=mpirun
+    spmd_run_cmd=${spmd_run_cmd:-mpirun}
+    spmd_run_separator=${spmd_run_separator:---}
+    spmd_run_options=${spmd_run_options}
     spmd_run_args=
 
     while getopts Vc:n:N:p:A:M:T:E: option
@@ -280,8 +281,8 @@ function spmd_run_cmd {
 	if [[ ${BRIDGE_MPRUN_ALLOCATION} == yes ]]
 	    then
 
-	    ${LOGGER} "${spmd_run_cmd} ${spmd_run_options} ${spmd_run_extra_parameters} ${spmd_run_args}"
-	    ${spmd_run_cmd} ${spmd_run_options} ${spmd_run_extra_parameters}  ${spmd_run_args}
+	    ${LOGGER} "${spmd_run_cmd} ${spmd_run_options} ${spmd_run_extra_parameters} ${spmd_run_separator} ${spmd_run_args}"
+	    ${spmd_run_cmd} ${spmd_run_options} ${spmd_run_extra_parameters} ${spmd_run_separator} ${spmd_run_args}
 
 	else
 
@@ -298,8 +299,8 @@ function spmd_run_cmd {
 		sub_cmd="ulimit -t ${spmd_run_maxtime};${sub_cmd}"
 	    fi
 	    
-	    ${LOGGER} "${wrapper_cmd} \"${sub_cmd}${spmd_run_cmd} ${spmd_run_options} ${spmd_run_extra_parameters} ${spmd_run_args}\""
-	    ${wrapper_cmd} "${sub_cmd}${spmd_run_cmd} ${spmd_run_options} ${spmd_run_extra_parameters}  ${spmd_run_args}"
+	    ${LOGGER} "${wrapper_cmd} \"${sub_cmd}${spmd_run_cmd} ${spmd_run_options} ${spmd_run_extra_parameters} ${spmd_run_separator} ${spmd_run_args}\""
+	    ${wrapper_cmd} "${sub_cmd}${spmd_run_cmd} ${spmd_run_options} ${spmd_run_extra_parameters} ${spmd_run_separator} ${spmd_run_args}"
 
 	fi
 
