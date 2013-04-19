@@ -21,6 +21,7 @@
 	-- introduce "requeue" mail notification event and support real lists of events
 	-- autopacking: remove useless export which caused a bug in recursive submissions
 	-- rm/ws: add spmd_run_separator support in ws resource manager plugin
+	-- rm/ws: fixes for whitespaces and special characters handling
 
 * Changes in bridge-1.5.2
 =========================

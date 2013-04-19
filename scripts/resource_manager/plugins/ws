@@ -52,7 +52,7 @@ function spmd_allocate_cmd {
  
     spmd_allocate_cmd="ksh"
     spmd_allocate_options=""
-    spmd_allocate_args=
+    typeset -a spmd_allocate_args
 
     spmd_allocate_ncore=
     spmd_allocate_nproc=
@@ -99,7 +99,7 @@ function spmd_allocate_cmd {
 	  E)
 	      if [[ -n ${OPTARG} ]]
 		  then
-		  spmd_allocate_extra_parameters=${OPTARG}
+		  spmd_allocate_extra_parameters+=( "${OPTARG[@]}" )
 	      fi
 	      ;;
 
@@ -122,10 +122,10 @@ function spmd_allocate_cmd {
       esac
     done
     shift ${OPTIND}-1 2>/dev/null
-    spmd_allocate_args=$@
+    spmd_allocate_args=( "$@" )
 
     # on appelle les addons eventuels en phase spmd_pre_allocate
-    bridge_addons_call_function bridge_addon_mprun_spmd_pre_allocate ${spmd_allocate_args}
+    bridge_addons_call_function bridge_addon_mprun_spmd_pre_allocate "${spmd_allocate_args[@]}"
     
     ## si le code de retour de la stack des addons est 0
     ## alors le job n'a pas ete lance par un des addons
@@ -133,31 +133,32 @@ function spmd_allocate_cmd {
     ## on passe au post run
     if [ $? -eq 0 ]
 	then
-
-	sub_cmd=${spmd_allocate_args}
 	
 	# build options
 	if [[ -n ${spmd_allocate_maxmem} ]]
 	    then
 	    (( memlim = spmd_allocate_maxmem * 1024 ))
-	    sub_cmd="ulimit -M ${memlim};${sub_cmd}"
+	    sub_cmd+=( "ulimit -M ${memlim};" )
 	fi
 	if [[ -n ${spmd_allocate_maxtime} ]]
 	    then
-	    sub_cmd="ulimit -t ${spmd_allocate_maxtime};${sub_cmd}"
+	    sub_cmd+=( "ulimit -t ${spmd_allocate_maxtime};" )
 	fi
 
         ## on export quelques variables d'environnement dont une indiquant que l'on 
 	## a deja fait une allocation afin d'eviter les boucles
 	export BRIDGE_MPRUN_ALLOCATION=yes
-	
-	${LOGGER} "${spmd_allocate_cmd} ${spmd_allocate_options} ${spmd_allocate_extra_parameters} -c \"${sub_cmd}\""
-	${spmd_allocate_cmd} ${spmd_allocate_options} ${spmd_allocate_extra_parameters} -c "${sub_cmd}"
+
+	${LOGGER} "${spmd_allocate_cmd} ${spmd_allocate_options[@]} " \
+	    "-c \"${sub_cmd[@]} $(printf "%q " "${spmd_allocate_args[@]}") \""
+	${spmd_allocate_cmd} ${spmd_allocate_options[@]} \
+	    -c "${sub_cmd[*]} $(printf "%q " "${spmd_allocate_args[@]}")"
+
 	exit_status=$?
     fi
 
     # on appelle les addons eventuels en phase spmd_post_allocate
-    bridge_addons_call_function bridge_addon_mprun_spmd_post_allocate ${spmd_allocate_args}
+    bridge_addons_call_function bridge_addon_mprun_spmd_post_allocate "${spmd_allocate_args[@]}"
 
     return ${exit_status}
 }
@@ -189,15 +190,15 @@ function spmd_run_cmd {
     spmd_run_nnode=
     spmd_run_partition=
     spmd_run_project=
-    spmd_run_extra_parameters=
+    typeset -a spmd_run_extra_parameters
     spmd_run_maxmem=
     spmd_run_maxtime=
 
     max_ncore_per_node=${BRIDGE_MPRUN_MAX_NCORE}
     spmd_run_cmd=${spmd_run_cmd:-mpirun}
     spmd_run_separator=${spmd_run_separator:---}
-    spmd_run_options=${spmd_run_options}
-    spmd_run_args=
+    spmd_run_options=( "${spmd_run_options[@]}" )
+    typeset -a spmd_run_args
 
     while getopts Vc:n:N:p:A:M:T:E: option
       do
@@ -231,7 +232,7 @@ function spmd_run_cmd {
 	  E)
 	      if [[ -n ${OPTARG} ]]
 		  then
-		  spmd_run_extra_parameters=${OPTARG}
+		  spmd_run_extra_parameters+=( "${OPTARG[@]}" )
 	      fi
 	      ;;
 
@@ -250,16 +251,16 @@ function spmd_run_cmd {
       esac
     done
     shift ${OPTIND}-1 2>/dev/null
-    spmd_run_args=$@
+    spmd_run_args=( "$@" )
 
     # on log un message si on est au sein d'une allocation
     if [[ ${BRIDGE_MPRUN_ALLOCATION} == yes ]]
 	then
 	${LOGGER} "wrapping allocation detected"
     fi
-	
+
     # on appelle les addons eventuels en phase spmd_pre_run
-    bridge_addons_call_function bridge_addon_mprun_spmd_pre_run $@
+    bridge_addons_call_function bridge_addon_mprun_spmd_pre_run "${spmd_run_args[@]}"
 
     ## si le code de retour de la stack des addons est 0
     ## alors le job n'a pas ete lance par un des addons
@@ -269,47 +270,51 @@ function spmd_run_cmd {
 	then
 
 	# build options
+	if [[ -z ${spmd_run_nproc} ]] && [[ -n ${BRIDGE_MPRUN_NPROC} ]]
+	then
+	    spmd_run_nproc=${BRIDGE_MPRUN_NPROC}
+	fi
 	if [[ -n ${spmd_run_nproc} ]]
 	    then
-	    spmd_run_options="${spmd_run_options} -np ${spmd_run_nproc}"
+	    spmd_run_options+=( "-np" "${spmd_run_nproc}" )
 	fi
 	if [[ -n ${spmd_run_partition} ]]
 	    then
-	    spmd_run_options="${spmd_run_options} -p ${spmd_run_partition}"
+	    spmd_run_options+=( "-p" "${spmd_run_partition}" )
 	fi
-	
+
+	# then build full spmd cmd integrating the options
+	if [[ ${spmd_run_cmd} == "mpirun" ]] && [[ ${#spmd_run_options[@]} -ne 0 ]]
+	then
+	    spmd_run_cmd+=( "${spmd_run_options[@]}" )
+	fi
+
 	if [[ ${BRIDGE_MPRUN_ALLOCATION} == yes ]]
 	    then
-
-	    ${LOGGER} "${spmd_run_cmd} ${spmd_run_options} ${spmd_run_extra_parameters} ${spmd_run_separator} ${spmd_run_args}"
-	    ${spmd_run_cmd} ${spmd_run_options} ${spmd_run_extra_parameters} ${spmd_run_separator} ${spmd_run_args}
-
+	    ${LOGGER} $(printf "%q " "${spmd_run_cmd[@]}" "${spmd_run_extra_parameters[@]}" "${spmd_run_separator}" "${spmd_run_args[@]}")
+	    "${spmd_run_cmd[@]}" ${spmd_run_extra_parameters[@]} "${spmd_run_separator}" "${spmd_run_args[@]}" 
 	else
-
 	    wrapper_cmd="ksh -c"
-	    sub_cmd=" "
 	    # build options
 	    if [[ -n ${spmd_run_maxmem} ]]
-		then
+	    then
 		(( memlim = spmd_run_maxmem * 1024 ))
-		sub_cmd="ulimit -M ${memlim};${sub_cmd}"
+		sub_cmd+=( "ulimit -M ${memlim};" )
 	    fi
 	    if [[ -n ${spmd_run_maxtime} ]]
-		then
-		sub_cmd="ulimit -t ${spmd_run_maxtime};${sub_cmd}"
+	    then
+		sub_cmd+=( "ulimit -t ${spmd_run_maxtime};" )
 	    fi
-	    
-	    ${LOGGER} "${wrapper_cmd} \"${sub_cmd}${spmd_run_cmd} ${spmd_run_options} ${spmd_run_extra_parameters} ${spmd_run_separator} ${spmd_run_args}\""
-	    ${wrapper_cmd} "${sub_cmd}${spmd_run_cmd} ${spmd_run_options} ${spmd_run_extra_parameters} ${spmd_run_separator} ${spmd_run_args}"
-
+	    ${LOGGER} "${wrapper_cmd} \"${sub_cmd[@]} $(printf "%q " "${spmd_run_cmd[@]}") ${spmd_run_extra_parameters[@]} ${spmd_run_separator} ${spmd_run_args[@]}\""
+	    ${wrapper_cmd} "${sub_cmd[*]} $(printf "%q " "${spmd_run_cmd[@]}") ${spmd_run_extra_parameters[*]} ${spmd_run_separator} $(printf "%q " ${spmd_run_args[@]})"
 	fi
 
 	exit_status=$?
     fi
 
     # on appelle les addons eventuels en phase spmd_post_run
-    bridge_addons_call_function bridge_addon_mprun_spmd_post_run ${spmd_run_args}
+    bridge_addons_call_function bridge_addon_mprun_spmd_post_run "${spmd_run_args[@]}"
 
-    ${LOGGER} "exiting with status ${exit_status}"    
+    ${LOGGER} "exiting with status ${exit_status}"
     return ${exit_status}
 }
