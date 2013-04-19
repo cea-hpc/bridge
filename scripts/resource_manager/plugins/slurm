@@ -459,10 +459,10 @@ function spmd_run_cmd {
 	if [[ -n ${spmd_run_ncore} ]] && [[ ${spmd_run_cmd} == "mpirun" ]]
         then
 	    ${LOGGER} $(echo "SLURM_CPUS_PER_TASK=${spmd_run_ncore} ${spmd_run_cmd} ${spmd_run_options} ${spmd_run_extra_parameters[@]} ${spmd_run_separator} ${spmd_run_args[@]}")
-	    SLURM_CPUS_PER_TASK=${spmd_run_ncore} ${spmd_run_cmd} ${spmd_run_options} "${spmd_run_extra_parameters[@]}" ${spmd_run_separator} "${spmd_run_args[@]}"
+	    SLURM_CPUS_PER_TASK=${spmd_run_ncore} ${spmd_run_cmd} ${spmd_run_options} ${spmd_run_extra_parameters[@]} ${spmd_run_separator} "${spmd_run_args[@]}"
 	else
 	    ${LOGGER} $(echo "${spmd_run_cmd} ${spmd_run_options} ${spmd_run_extra_parameters[@]} ${spmd_run_separator} ${spmd_run_args[@]}")
-	    ${spmd_run_cmd} ${spmd_run_options} "${spmd_run_extra_parameters[@]}" ${spmd_run_separator} "${spmd_run_args[@]}"
+	    ${spmd_run_cmd} ${spmd_run_options} ${spmd_run_extra_parameters[@]} ${spmd_run_separator} "${spmd_run_args[@]}"
         fi
 
 	exit_status=$?

@@ -221,7 +221,7 @@ function spmd_allocate_cmd {
 	export BRIDGE_MPRUN_ALLOCATION=yes
 
 	${LOGGER} "${spmd_allocate_cmd} ${spmd_allocate_options} ${spmd_allocate_extra_parameters[@]} -- ${spmd_allocate_args}"
-	eval ${spmd_allocate_cmd} ${spmd_allocate_options} "${spmd_allocate_extra_parameters[@]}" -- ${spmd_allocate_args}
+	eval ${spmd_allocate_cmd} ${spmd_allocate_options} ${spmd_allocate_extra_parameters[@]} -- ${spmd_allocate_args}
 	exit_status=$?
 
     fi
@@ -371,7 +371,7 @@ function spmd_run_cmd {
 	
 	### on execute
 	${LOGGER} "${spmd_run_cmd} ${spmd_run_options} ${spmd_run_extra_parameters[@]} -- ${spmd_run_args}"
-	eval ${spmd_run_cmd} ${spmd_run_options} "${spmd_run_extra_parameters[@]}" -- ${spmd_run_args}
+	eval ${spmd_run_cmd} ${spmd_run_options} ${spmd_run_extra_parameters[@]} -- ${spmd_run_args}
 	exit_status=$?
 
     else

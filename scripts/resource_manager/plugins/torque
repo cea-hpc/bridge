@@ -316,7 +316,7 @@ function spmd_run_cmd {
 	    fi
 	fi
 	${LOGGER} "${spmd_run_cmd} ${spmd_run_options} ${spmd_run_extra_parameters[@]} -- ${spmd_run_args}"
-	eval ${spmd_run_cmd} ${spmd_run_options} "${spmd_run_extra_parameters[@]}" -- ${spmd_run_args}
+	eval ${spmd_run_cmd} ${spmd_run_options} ${spmd_run_extra_parameters[@]} -- ${spmd_run_args}
 	exit_status=$?
     fi
 
