@@ -178,7 +178,7 @@ typeset bridge_mprun_allocation=no
 typeset bridge_mprun_debug_mode=${BRIDGE_MPRUN_DEBUG_MODE}
 typeset exclusive=${BRIDGE_MPRUN_EXCLUSIVE:-no}
 #------------------------------------------------------------------------------------------------------------------
-typeset bridge_mprun_args=
+typeset -a bridge_mprun_args
 #------------------------------------------------------------------------------------------------------------------
 # on incremente le compteur d'appel recursif
 typeset BRIDGE_MPRUN_LOOP=${BRIDGE_MPRUN_LOOP:-0}
@@ -242,13 +242,13 @@ do
 	  ;;
 
       P)
-	  bridge_mprun_extra_parameters="${bridge_mprun_extra_parameters} $(echo ${OPTARG} | tr ',' ' ')"
+	  bridge_mprun_extra_parameters+=( "-E" "$(echo ${OPTARG} | tr ',' ' ')" )
 	  ;;
-      
+
       E)
-	  bridge_mprun_extra_parameters="${bridge_mprun_extra_parameters} ${OPTARG}"
+	  bridge_mprun_extra_parameters+=( "-E" "${OPTARG[@]}" )
 	  ;;
-      
+
       M)
 	  bridge_mprun_maxmem=$(bridge_get_memlimit ${OPTARG})
 	  ;;
@@ -487,16 +487,19 @@ if [[ ${BRIDGE_MPRUN_ALLOCATION} != yes ]]
 then
     if [[ -z ${bridge_mprun_extra_parameters} ]]
     then
-	export BRIDGE_MPRUN_EXTRA_PARAMETERS="${BRIDGE_MPRUN_DEFAULT_EXTRA_PARAMETERS}"
-	bridge_mprun_extra_parameters="${BRIDGE_MPRUN_DEFAULT_EXTRA_PARAMETERS}"
+	export BRIDGE_MPRUN_EXTRA_PARAMETERS=( "${BRIDGE_MPRUN_DEFAULT_EXTRA_PARAMETERS[@]}" )
+	bridge_mprun_extra_parameters=( "${BRIDGE_MPRUN_DEFAULT_EXTRA_PARAMETERS[@]}" )
     else
-	export BRIDGE_MPRUN_EXTRA_PARAMETERS="${BRIDGE_MPRUN_DEFAULT_EXTRA_PARAMETERS} ${bridge_mprun_extra_parameters}"
-	bridge_mprun_extra_parameters="${BRIDGE_MPRUN_DEFAULT_EXTRA_PARAMETERS} ${bridge_mprun_extra_parameters}"
+	if [[ -n ${BRIDGE_MPRUN_DEFAULT_EXTRA_PARAMETERS[@]} ]]
+	then
+	    bridge_mprun_extra_parameters=( "${BRIDGE_MPRUN_DEFAULT_EXTRA_PARAMETERS[@]}" "${bridge_mprun_extra_parameters[@]}" )
+	fi
+	export BRIDGE_MPRUN_EXTRA_PARAMETERS=( "${bridge_mprun_extra_parameters[@]}" )
     fi
 else
     if [[ -n ${bridge_mprun_extra_parameters} ]]
     then
-	export BRIDGE_MPRUN_EXTRA_PARAMETERS=${bridge_mprun_extra_parameters}
+	export BRIDGE_MPRUN_EXTRA_PARAMETERS=( "${bridge_mprun_extra_parameters[@]}" )
     fi
 fi
 export BRIDGE_MPRUN_PWD=${PWD}
@@ -573,42 +576,37 @@ else
 	    bridge_mprun_options="-e ${bridge_mprun_options}"
 	fi
 
-	if [[ -n ${bridge_mprun_args} ]]
+	if [[ ${#bridge_mprun_args[@]} -ne 0 ]]
 	    then
-	    ${LOGGER} "${bridge_mprun_allocate_cmd} ${bridge_mprun_options} -E \"${bridge_mprun_extra_parameters}\" -- ${bridge_mprun_cmd} ${bridge_mprun_args[@]}"
-	    ${bridge_mprun_allocate_cmd} ${bridge_mprun_options} -E "${bridge_mprun_extra_parameters}" -- ${bridge_mprun_cmd} "${bridge_mprun_args[@]}"
+	    ${LOGGER} "${bridge_mprun_allocate_cmd} ${bridge_mprun_options} -E \"${bridge_mprun_extra_parameters[@]}\" -- ${bridge_mprun_cmd} ${bridge_mprun_args[@]}"
+	    ${bridge_mprun_allocate_cmd} ${bridge_mprun_options} -E "${bridge_mprun_extra_parameters[@]}" -- ${bridge_mprun_cmd} ${bridge_mprun_args[@]}
 	else
 	    show_usage
 	    exit 1
-	    ${LOGGER} "${bridge_mprun_allocate_cmd} ${bridge_mprun_options} -E \"${bridge_mprun_extra_parameters}\""
-	    ${bridge_mprun_allocate_cmd} ${bridge_mprun_options} -E "${bridge_mprun_extra_parameters}"
 	fi
 
     elif [[ ${exclusive} == yes ]]
 	then
 	
-	if [[ -n ${bridge_mprun_args} ]]
+	if [[ ${#bridge_mprun_args[@]} -ne 0 ]]
 	    then
-	    ${LOGGER} "${bridge_mprun_allocate_cmd} -e ${bridge_mprun_options} -E \"${bridge_mprun_extra_parameters}\" -- ${bridge_mprun_cmd} ${bridge_mprun_args[@]}"
-	    ${bridge_mprun_allocate_cmd} -e ${bridge_mprun_options} -E "${bridge_mprun_extra_parameters}" -- ${bridge_mprun_cmd} "${bridge_mprun_args[@]}"
+	    ${LOGGER} "${bridge_mprun_allocate_cmd} -e ${bridge_mprun_options} -E \"${bridge_mprun_extra_parameters[@]}\" -- ${bridge_mprun_cmd} ${bridge_mprun_args[@]}"
+	    ${bridge_mprun_allocate_cmd} -e ${bridge_mprun_options} -E "${bridge_mprun_extra_parameters[@]}" -- ${bridge_mprun_cmd} ${bridge_mprun_args[@]}
 	else
 	    show_usage
 	    exit 1
-	    ${LOGGER} "${bridge_mprun_allocate_cmd} -e ${bridge_mprun_options} -E \"${bridge_mprun_extra_parameters}\""
-	    ${bridge_mprun_allocate_cmd} -e ${bridge_mprun_options} -E "${bridge_mprun_extra_parameters}"
 	fi
 
     else
 
-	if [[ -n ${bridge_mprun_args} ]]
+	if [[ ${#bridge_mprun_args[@]} -ne 0 ]]
 	    then
-    	    ${LOGGER} "${bridge_mprun_run_cmd} ${bridge_mprun_options} -E \"${bridge_mprun_extra_parameters}\" -- ${bridge_mprun_args[@]}"
-	    ${bridge_mprun_run_cmd} ${bridge_mprun_options} -E "${bridge_mprun_extra_parameters}" -- "${bridge_mprun_args[@]}"
+    	    # ${LOGGER} "${bridge_mprun_run_cmd} ${bridge_mprun_options} -E \"${bridge_mprun_extra_parameters[@]}\" -- ${bridge_mprun_args}"
+    	    ${LOGGER} "${bridge_mprun_run_cmd} ${bridge_mprun_options} ${bridge_mprun_extra_parameters[@]} -- ${bridge_mprun_args[@]}"
+	    ${bridge_mprun_run_cmd} ${bridge_mprun_options} "${bridge_mprun_extra_parameters[@]}" -- ${bridge_mprun_args[@]}
 	else
 	    show_usage
 	    exit 1
-	    ${LOGGER} "${bridge_mprun_run_cmd} ${bridge_mprun_options} -E \"${bridge_mprun_extra_parameters}\""
-	    ${bridge_mprun_run_cmd} ${bridge_mprun_options} -E "${bridge_mprun_extra_parameters}"
 	fi
 
     fi
