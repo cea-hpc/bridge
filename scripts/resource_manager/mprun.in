@@ -487,12 +487,12 @@ if [[ ${BRIDGE_MPRUN_ALLOCATION} != yes ]]
 then
     if [[ -z ${bridge_mprun_extra_parameters} ]]
     then
-	export BRIDGE_MPRUN_EXTRA_PARAMETERS=( "${BRIDGE_MPRUN_DEFAULT_EXTRA_PARAMETERS[@]}" )
-	bridge_mprun_extra_parameters=( "${BRIDGE_MPRUN_DEFAULT_EXTRA_PARAMETERS[@]}" )
+	export BRIDGE_MPRUN_EXTRA_PARAMETERS=( "-E" "${BRIDGE_MPRUN_DEFAULT_EXTRA_PARAMETERS[@]}" )
+	bridge_mprun_extra_parameters=( "${BRIDGE_MPRUN_EXTRA_PARAMETERS[@]}" )
     else
 	if [[ -n ${BRIDGE_MPRUN_DEFAULT_EXTRA_PARAMETERS[@]} ]]
 	then
-	    bridge_mprun_extra_parameters=( "${BRIDGE_MPRUN_DEFAULT_EXTRA_PARAMETERS[@]}" "${bridge_mprun_extra_parameters[@]}" )
+	    bridge_mprun_extra_parameters=( "-E" "${BRIDGE_MPRUN_DEFAULT_EXTRA_PARAMETERS[@]}" "${bridge_mprun_extra_parameters[@]}" )
 	fi
 	export BRIDGE_MPRUN_EXTRA_PARAMETERS=( "${bridge_mprun_extra_parameters[@]}" )
     fi
