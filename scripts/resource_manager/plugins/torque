@@ -51,7 +51,7 @@ function spmd_allocate_cmd {
     spmd_allocate_nnode=
     spmd_allocate_partition=
     spmd_allocate_project=
-    spmd_allocate_extra_parameters=
+    typeset -a spmd_allocate_extra_parameters
     spmd_allocate_maxmem=
     spmd_allocate_maxtime=
 
@@ -89,7 +89,7 @@ function spmd_allocate_cmd {
 	  E)
 	      if [[ -n ${OPTARG} ]]
 		  then
-		  spmd_allocate_extra_parameters=${OPTARG}
+		  spmd_allocate_extra_parameters+=( "${OPTARG[@]}" )
 	      fi
 	      ;;
 
@@ -180,7 +180,7 @@ function spmd_run_cmd {
     spmd_run_nnode=
     spmd_run_partition=
     spmd_run_project=
-    spmd_run_extra_parameters=
+    typeset -a spmd_run_extra_parameters
     spmd_run_maxmem=
     spmd_run_maxtime=
 
@@ -223,7 +223,7 @@ function spmd_run_cmd {
 	  E)
 	      if [[ -n ${OPTARG} ]]
 		  then
-		  spmd_run_extra_parameters=${OPTARG}
+		  spmd_run_extra_parameters+=( "${OPTARG[@]}" )
 	      fi
 	      ;;
 
@@ -315,8 +315,8 @@ function spmd_run_cmd {
 		spmd_run_options="${spmd_run_options} --host ${VISU_HOST}"
 	    fi
 	fi
-	${LOGGER} "${spmd_run_cmd} ${spmd_run_options} ${spmd_run_extra_parameters} -- ${spmd_run_args}"
-	eval ${spmd_run_cmd} ${spmd_run_options} ${spmd_run_extra_parameters} -- ${spmd_run_args}
+	${LOGGER} "${spmd_run_cmd} ${spmd_run_options} ${spmd_run_extra_parameters[@]} -- ${spmd_run_args}"
+	eval ${spmd_run_cmd} ${spmd_run_options} "${spmd_run_extra_parameters[@]}" -- ${spmd_run_args}
 	exit_status=$?
     fi
 

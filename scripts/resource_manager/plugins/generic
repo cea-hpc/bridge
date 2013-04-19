@@ -58,7 +58,7 @@ function spmd_allocate_cmd {
     spmd_allocate_nproc=
     spmd_allocate_nnode=
     spmd_allocate_partition=
-    spmd_allocate_extra_parameters=
+    typeset -a spmd_allocate_extra_parameters
     spmd_allocate_maxmem=
     spmd_allocate_maxtime=
 
@@ -92,7 +92,7 @@ function spmd_allocate_cmd {
 	  E)
 	      if [[ -n ${OPTARG} ]]
 		  then
-		  spmd_allocate_extra_parameters=${OPTARG}
+		  spmd_allocate_extra_parameters+=( "${OPTARG[@]}" )
 	      fi
 	      ;;
 
@@ -157,8 +157,8 @@ function spmd_allocate_cmd {
 	## a deja fait une allocation afin d'eviter les boucles
 	export BRIDGE_MPRUN_ALLOCATION=yes
 	
-	${LOGGER} "${spmd_allocate_cmd} ${spmd_allocate_options} ${spmd_allocate_extra_parameters} -- ${spmd_allocate_args}"
-	${spmd_allocate_cmd} ${spmd_allocate_options} ${spmd_allocate_extra_parameters} -- ${spmd_allocate_args}
+	${LOGGER} "${spmd_allocate_cmd} ${spmd_allocate_options} ${spmd_allocate_extra_parameters[@]} -- ${spmd_allocate_args}"
+	${spmd_allocate_cmd} ${spmd_allocate_options} "${spmd_allocate_extra_parameters[@]}" -- ${spmd_allocate_args}
 	exit_status=$?
     fi
 
@@ -195,7 +195,7 @@ function spmd_run_cmd {
     spmd_run_nproc=
     spmd_run_nnode=
     spmd_run_partition=
-    spmd_run_extra_parameters=
+    typeset -a spmd_run_extra_parameters
     spmd_run_maxmem=
     spmd_run_maxtime=
 
@@ -232,7 +232,7 @@ function spmd_run_cmd {
 	  E)
 	      if [[ -n ${OPTARG} ]]
 		  then
-		  spmd_run_extra_parameters=${OPTARG}
+		  spmd_run_extra_parameters+=( "${OPTARG[@]}" )
 	      fi
 	      ;;
 
@@ -295,8 +295,8 @@ function spmd_run_cmd {
 	    spmd_run_options="${spmd_run_options} -T ${spmd_run_maxtime}"
 	fi
 	
-	${LOGGER} "${spmd_run_command} ${spmd_run_options} ${spmd_run_extra_parameters} -- ${spmd_run_args}"
-	${spmd_run_command} ${spmd_run_options} ${spmd_run_extra_parameters} -- ${spmd_run_args}
+	${LOGGER} "${spmd_run_command} ${spmd_run_options} ${spmd_run_extra_parameters[@]} -- ${spmd_run_args}"
+	${spmd_run_command} ${spmd_run_options} "${spmd_run_extra_parameters[@]}" -- ${spmd_run_args}
 	exit_status=$?
     fi
 

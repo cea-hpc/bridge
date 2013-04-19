@@ -24,6 +24,7 @@
 	-- rm/ws: fixes for whitespaces and special characters handling
 	-- mprun: fixes for whitespaces and special characters handling in extra parameters management
 	-- rm/slurm: fixes for whitespaces and special characters handling when using -E "extra_params"
+	-- rm/*: fixes for whitespaces and special characters handling when using -E "extra_params"
 
 * Changes in bridge-1.5.2
 =========================
