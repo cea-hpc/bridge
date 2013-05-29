@@ -178,7 +178,7 @@ function bridge_addon_mprun_spmd_pre_run {
 	    vtune_wrapper_args="${vtune_wrapper_args} -t ${BRIDGE_MPRUN_ADDON_VTUNE_ACTIVITY_NAME}"
 	fi
 	${LOGGER} "Vtune addon : swapping current args '${spmd_run_args}' with '${vtune_wrapper} ${vtune_wrapper_args} -- ${spmd_run_args}'"
-	spmd_run_args="${vtune_wrapper} ${vtune_wrapper_args} -- ${spmd_run_args}"
+	spmd_run_args=(${vtune_wrapper} ${vtune_wrapper_args} -- "${spmd_run_args[@]}")
 	typeset exit_status=0
 
 	## on rend la main a la fonction appelante
