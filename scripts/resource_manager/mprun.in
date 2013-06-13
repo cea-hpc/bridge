@@ -89,7 +89,7 @@ if [[ ! -d ${BRIDGE_CONFDIR} ]]
 fi
 #------------------------------------------------------------------------------------------------------------------
 # on fixe les options de base du script, utilisees par les addons pour parser les lignes de commandes
-typeset BRIDGE_MPRUN_GETOPT_OPTIONS="DhvVc:n:N:p:A:M:xT:P:KE:"
+typeset BRIDGE_MPRUN_GETOPT_OPTIONS="DhvVc:n:N:p:A:M:xT:P:KE:Z:"
 #------------------------------------------------------------------------------------------------------------------
 typeset BRIDGE_HOSTNAME=$(hostname 2>/dev/null)
 #------------------------------------------------------------------------------------------------------------------
@@ -110,8 +110,9 @@ typeset EXIT_STATUS=1
 #------------------------------------------------------------------------------------------------------------------
 # on fixe l'usage de la commande et le code retour par defaut
 #------------------------------------------------------------------------------------------------------------------
-typeset USAGE="usage : ${PROGNAME} [-hDvV] [-c ncore] [-n nproc] [-N nnode] [-A projid] [-p partition] \\
-    [-M mem] [-T time] [-K] [program [args...]]
+typeset USAGE="\
+usage : ${PROGNAME} [-hDvV] [-c ncore] [-n nproc] [-N nnode] [-A projid] \\
+    [-p partition] [-M mem] [-T time] [-K] [program [args...]]
 
  ${PROGNAME} is the CCC parallel launch interface
 
@@ -126,17 +127,28 @@ typeset USAGE="usage : ${PROGNAME} [-hDvV] [-c ncore] [-n nproc] [-N nnode] [-A 
  -c ncore      : number of cores per task (default=1)
  -N nnode      : number of nodes to use (default is undefined)
 
- -T time_limit       : maximum walltime of the allocation in seconds (default depends of resource mgr conf)
- -M mem_limit        : required amount of memory per core in Mo (default depends of resource mgr conf)
+ -T time_limit : maximum walltime of the allocation in seconds
+                 (default depends of resource mgr conf)
+ -M mem_limit  : required amount of memory per core in Mo
+                 (default depends of resource mgr conf)
 
  -x            : request exclusive usage of allocated nodes
 
  -E extra      : extra parameters to pass directly to the underlying resource mgr
+                 (can be used multiple times, spaces are treated as subparameters
+                 delimiter when parsing the provided args, i.e.: -E \"a b c\"
+                 will be translated in rm_run a b c ...)
+
+ -Z extra      : extra parameters to pass directly to the underlying resource mgr
+                 (can be used multiple times, spaces are treated as parameter
+                 content when parsing the provided args, i.e.: -Z \"a b c\" will
+                 be translated in rm_run \"a b c\" ...)
 
  -p partition  : required partition (default depends of resource mgr conf)
 
- -K            : only allocates resources. If a program is defined it will be executed only once. It would
-                 contain ${PROGNAME} calls to launch parallel commands using the allocated resources
+ -K            : only allocates resources. If a program is defined it will be 
+                 executed only once. It would contain ${PROGNAME} calls 
+                 to launch parallel commands using the allocated resources
 
  program ...   : command line to execute in parallel mode
 
@@ -246,6 +258,13 @@ do
 	  ;;
 
       E)
+          for eparam in ${OPTARG[@]}
+          do
+              bridge_mprun_extra_parameters+=( "-E" "${eparam}" )
+	  done
+          ;;
+
+      Z)
 	  bridge_mprun_extra_parameters+=( "-E" "${OPTARG[@]}" )
 	  ;;
 
