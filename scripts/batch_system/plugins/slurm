@@ -113,7 +113,11 @@ function submit_cmd {
     typeset LOGGER="${LOGGER} submit:"
     typeset exit_status=0
     typeset local_submit_cmd=${bridge_msub_cmd:-sbatch}
-    typeset local_submit_args=${bridge_msub_args}
+    typeset -a local_submit_args
+    if [[ -n "${bridge_msub_args[@]}" ]]
+    then
+	local_submit_args+=( "${bridge_msub_args[@]}" )
+    fi
     typeset LOCAL_ARGEXP1=
     typeset LOCAL_ARGEXP2=
     typeset LOCAL_FILEARG=
@@ -154,54 +158,54 @@ function submit_cmd {
       do
       case ${option} in
 	  r)
-	      LOCAL_ARGEXP1="$LOCAL_ARGEXP1""request_name=${OPTARG}; "
+	      LOCAL_ARGEXP1="$LOCAL_ARGEXP1""request_name=\"${OPTARG}\"; "
 	      ;;
 	  s)
-	      LOCAL_ARGEXP1="$LOCAL_ARGEXP1""study_name=${OPTARG}; "
+	      LOCAL_ARGEXP1="$LOCAL_ARGEXP1""study_name=\"${OPTARG}\"; "
 	      ;;
 	  A)
-	      LOCAL_ARGEXP1="$LOCAL_ARGEXP1""project_name=${OPTARG}; "
+	      LOCAL_ARGEXP1="$LOCAL_ARGEXP1""project_name=\"${OPTARG}\"; "
 	      ;;
 	  W)
 	      same_request_at_same_time_flag=1
 	      ;;
 	  S)
-	      LOCAL_ARGEXP1="$LOCAL_ARGEXP1""requested_start_time=${OPTARG}; "
+	      LOCAL_ARGEXP1="$LOCAL_ARGEXP1""requested_start_time=\"${OPTARG}\"; "
 	      ;;
 	  q)
-	      LOCAL_ARGEXP1="$LOCAL_ARGEXP1""requested_queue=${OPTARG}; "
+	      LOCAL_ARGEXP1="$LOCAL_ARGEXP1""requested_queue=\"${OPTARG}\"; "
 	      ;;
 	  ## on traduit un eventuel %I signifiant l'ID du job par l'equivalent LSF (%J)
 	  o)
-	      LOCAL_ARGEXP1="$LOCAL_ARGEXP1""output_file=$(echo ${OPTARG} | sed -e 's/%I/%J/g'); "
+	      LOCAL_ARGEXP1="$LOCAL_ARGEXP1""output_file=\"$(echo ${OPTARG} | sed -e 's/%I/%J/g')\"; "
 	      ;;
 	  ## on traduit un eventuel %I signifiant l'ID du job par l'equivalent LSF (%J)
 	  e)
-	      LOCAL_ARGEXP1="$LOCAL_ARGEXP1""error_file=$(echo ${OPTARG} | sed -e 's/%I/%J/g'); "
+	      LOCAL_ARGEXP1="$LOCAL_ARGEXP1""error_file=\"$(echo ${OPTARG} | sed -e 's/%I/%J/g')\"; "
 	      ;;
 	  N)
-	      LOCAL_ARGEXP1="$LOCAL_ARGEXP1""nnode=${OPTARG}; "
+	      LOCAL_ARGEXP1="$LOCAL_ARGEXP1""nnode=\"${OPTARG}\"; "
 	      ;;
 	  n)
-	      LOCAL_ARGEXP1="$LOCAL_ARGEXP1""nproc=${OPTARG}; "
+	      LOCAL_ARGEXP1="$LOCAL_ARGEXP1""nproc=\"${OPTARG}\"; "
 	      ;;
 	  c)
-	      LOCAL_ARGEXP1="$LOCAL_ARGEXP1""ncoreperproc=${OPTARG}; "
+	      LOCAL_ARGEXP1="$LOCAL_ARGEXP1""ncoreperproc=\"${OPTARG}\"; "
 	      ;;
 	  m)
-	      LOCAL_ARGEXP1="$LOCAL_ARGEXP1""time_sharing_memlimit=${OPTARG}; "
+	      LOCAL_ARGEXP1="$LOCAL_ARGEXP1""time_sharing_memlimit=\"${OPTARG}\"; "
 	      ;;
 	  t)
-	      LOCAL_ARGEXP1="$LOCAL_ARGEXP1""time_sharing_timelimit=${OPTARG}; "
+	      LOCAL_ARGEXP1="$LOCAL_ARGEXP1""time_sharing_timelimit=\"${OPTARG}\"; "
 	      ;;
 	  M)
-	      LOCAL_ARGEXP1="$LOCAL_ARGEXP1""exclusive_memlimit=${OPTARG}; "
+	      LOCAL_ARGEXP1="$LOCAL_ARGEXP1""exclusive_memlimit=\"${OPTARG}\"; "
 	      ;;
 	  T)
-	      LOCAL_ARGEXP1="$LOCAL_ARGEXP1""exclusive_timelimit=${OPTARG}; "
+	      LOCAL_ARGEXP1="$LOCAL_ARGEXP1""exclusive_timelimit=\"${OPTARG}\"; "
 	      ;;
 	  L)
-	      LOCAL_ARGEXP1="$LOCAL_ARGEXP1""requested_licenses=${OPTARG}; "
+	      LOCAL_ARGEXP1="$LOCAL_ARGEXP1""requested_licenses=\"${OPTARG}\"; "
 	      ;;
 	  K)
 	      keep_allocation=1
@@ -266,7 +270,7 @@ function submit_cmd {
 	    request_name=$(basename $LOCAL_FILEARG)
 	fi
     fi
-    
+
     ## on associe certaines options du script aux variables
     ## locales
     LOCAL_ARGEXP2=`awk "$AWKSCRIPT" < $LOCAL_SCRIPTFILE`
@@ -279,7 +283,7 @@ function submit_cmd {
     ## on fixe le nom de la requete
     if [[ -n ${request_name} ]]
 	then
-	local_submit_args="${local_submit_args} -J ${request_name}"
+	local_submit_args+=( "-J" "${request_name[@]}" )
     fi
 
     ## LSF ne supporte pas cette option
@@ -291,7 +295,7 @@ function submit_cmd {
     ## on fixe le projet associe a la requete
     if [[ -n ${project_name} ]]
 	then
-	local_submit_args="${local_submit_args} -A ${project_name}"
+	local_submit_args+=( "-A" "${project_name[@]}" )
     fi
 
     ## option -P singleton supportee depuis la v1.3.10
@@ -320,28 +324,28 @@ function submit_cmd {
 	fi
     elif [[ -n ${after_jobs} ]]
     then
-        local_submit_args="${local_submit_args} -d afterany:${after_jobs}"
+	local_submit_args+=( "-d" "afterany:${project_name[@]}" )
     fi
 
     ## on fixe les informations concernant le mail
     if [[ -n ${mail_addr} ]]
 	then
-	local_submit_args="${local_submit_args} --mail-user=${mail_addr}"
+	local_submit_args+=( "--mail-user=${mail_addr[@]}" )
 	## on a toujours envoye des messages en cas d'erreur, gardons ce comportement
-	local_submit_args="${local_submit_args} --mail-type=FAIL"
+	local_submit_args+=( "--mail-type=FAIL" )
 	if [[ -n ${mail_info} ]]
 	    then
 	     for mail_type in ${mail_info//,/ } 
 	     do
 		 case ${mail_type} in
 		     begin)
-			 local_submit_args="${local_submit_args} --mail-type=BEGIN"
+			 local_submit_args+=( "--mail-type=BEGIN" )
 			 ;;
 		     end)
-			 local_submit_args="${local_submit_args} --mail-type=END"
+			 local_submit_args+=( "--mail-type=END" )
 			 ;;
 		     requeue)
-			 local_submit_args="${local_submit_args} --mail-type=REQUEUE"
+			 local_submit_args+=( "--mail-type=REQUEUE" )
 			 ;;
 		     *)
 			 ${ERROR} "Unsupported mail type for this batch system: ${mail_type}"
@@ -350,29 +354,29 @@ function submit_cmd {
 		     esac
 	     done
 	else
-	    local_submit_args="${local_submit_args} --mail-type=END"
+	    local_submit_args+=( "--mail-type=END" )
 	fi
     fi
 
     ## on fixe la date de depart de l'execution
     if [[ -n ${requested_start_time} ]]
 	then
-	local_submit_args="${local_submit_args} --begin $(echo ${requested_start_time} | tr -d '/')"
+	local_submit_args+=( "--begin" "$(echo ${requested_start_time} | tr -d '/')" )
     fi
 
     ## on fixe la queue d'execution souhaitee
     if [[ -n ${requested_queue} ]]
 	then
-	local_submit_args="${local_submit_args} -p ${requested_queue}"
+	local_submit_args+=( "-p" "${requested_queue[@]}" )
     fi
 
     ## on fixe le fichier pour le stdout
     ## si il n'est pas precise, on en construit un par defaut
     if [[ -n ${output_file} ]]
 	then
-	local_submit_args="${local_submit_args} -o ${output_file}"
+	local_submit_args+=( "-o" "${output_file[@]}" )
     else
-	local_submit_args="${local_submit_args} -o ${request_name}.%J.o"
+	local_submit_args+=( "-o" "${request_name[@]}.%J.o" )
 	export BRIDGE_MSUB_STDOUT="${request_name}.%J.o"
     fi
 
@@ -380,28 +384,28 @@ function submit_cmd {
     ## si il n'est pas precise, on en construit un par defaut
     if [[ -n ${error_file} ]]
 	then
-	local_submit_args="${local_submit_args} -e ${error_file}"
+	local_submit_args+=( "-e" "${error_file[@]}" )
     else
-	local_submit_args="${local_submit_args} -e ${request_name}.%J.e"
+	local_submit_args+=( "-e" "${request_name[@]}.%J.e" )
 	export BRIDGE_MSUB_STDERR="${request_name}.%J.e"
     fi
 
     ## on fixe le nombre de noeud
     if [[ -n ${nnode} ]]
 	then
-	local_submit_args="${local_submit_args} -N ${nnode}"
+	local_submit_args+=( "-N" "${nnode}" )
     fi
 
     ## on fixe le nombre de processus
     if [[ -n ${nproc} ]]
 	then
-	local_submit_args="${local_submit_args} -n ${nproc}"
+	local_submit_args+=( "-n" "${nproc}" )
     fi
 
     ## on fixe le nombre de core par processus
     if [[ -n ${ncoreperproc} ]]
 	then
-	local_submit_args="${local_submit_args} -c ${ncoreperproc}"
+	local_submit_args+=( "-c" "${ncoreperproc}" )
     fi
 
     ## Slurm ne supporte pas les deux types de memoire, par default l'exclusive(parallele)
@@ -410,12 +414,12 @@ function submit_cmd {
 	then
 	typeset memlimit
 	(( memlimit = exclusive_memlimit * 1 ))
-	local_submit_args="${local_submit_args} ${slurm_mem_param} ${memlimit}"
+	local_submit_args+=( "${slurm_mem_param}" "${memlimit[@]}" )
     elif [[ -n ${time_sharing_memlimit} ]]
         then
         typeset memlimit
         (( memlimit = time_sharing_memlimit * 1 ))
-        local_submit_args="${local_submit_args} ${slurm_mem_param} ${memlimit}"
+        local_submit_args+=( "${slurm_mem_param}" "${memlimit[@]}" )
     fi
 
     ## Slurm ne supporte pas les deux types de temps, par default l'exclusive(parallele)
@@ -427,7 +431,7 @@ function submit_cmd {
 	(( runlimit = exclusive_timelimit / 60 ))
 	(( residu = exclusive_timelimit % 60 ))
 	runlimit="${runlimit}:${residu}"
-	local_submit_args="${local_submit_args} -t ${runlimit}"
+	local_submit_args+=( "-t" "${runlimit[@]}" )
     elif [[ -n ${time_sharing_timelimit} ]]
 	then
 	typeset runlimit
@@ -435,13 +439,13 @@ function submit_cmd {
 	(( runlimit = time_sharing_timelimit / 60 ))
 	(( residu = time_sharing_timelimit % 60 ))
 	runlimit="${runlimit}:${residu}"
-	local_submit_args="${local_submit_args} -t ${runlimit}"
+	local_submit_args+=( "-t" "${runlimit[@]}" )
     fi
 
     ## gestion des allocations exclusives
     if [[ ${exclusive} == "yes" ]]
 	then
-	local_submit_args="${local_submit_args} --exclusive"
+	local_submit_args+=( "--exclusive" )
     fi
 
     ## licenses supportees depuis la 1.3
@@ -457,7 +461,7 @@ function submit_cmd {
 	fi
 	if [[ ${put_licenses} -eq 1 ]]
 	    then
-	    local_submit_args="${local_submit_args} --licenses=$(echo ${requested_licenses} | tr '=' '*')"
+	    local_submit_args+=( "--licenses=$(echo ${requested_licenses} | tr '=' '*')" )
 	else
 	    ${LOGGER} "licenses management not supported, skipping"
 	fi
@@ -474,8 +478,8 @@ function submit_cmd {
 	then
 	## on va faire une allocation dans slurm, donc pas besoin d'en refaire par la suite
 	export BRIDGE_MPRUN_ALLOCATION=yes
-	${LOGGER} "${local_submit_cmd} ${local_submit_args} ${extra_parameters} $LOCAL_SCRIPTFILE"
-	output=$(${local_submit_cmd} ${local_submit_args} ${extra_parameters} $LOCAL_SCRIPTFILE 2>/tmp/errmsub$$)
+	${LOGGER} "${local_submit_cmd} $(printf "%q " ${local_submit_args[@]}) ${extra_parameters} $LOCAL_SCRIPTFILE"
+	output=$(${local_submit_cmd} "${local_submit_args[@]}" ${extra_parameters} $LOCAL_SCRIPTFILE 2>/tmp/errmsub$$)
 	exit_status=$?
 	output_err=`cat /tmp/errmsub$$`
 	if [ -f /tmp/errmsub$$ ]
