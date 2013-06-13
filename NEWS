@@ -1,4 +1,4 @@
-* Changes in bridge-1.5.3
+A* Changes in bridge-1.5.3
 =========================
 	-- Addons: add openmpi-slurm-direct addon
 	-- Addons: add mpmd-cluster-wrapper, an alternate addon for MPMD
@@ -29,6 +29,7 @@
 	-- mprun: unify extra parameters management using array struct and
 	   introduce a new option -Z "a b c" to allow to pass parameter containing
 	   spaces as single block parameters to the underlying resource manager command
+	-- msub: add support for whitespaces in submission parameters with SLURM
 
 * Changes in bridge-1.5.2
 =========================

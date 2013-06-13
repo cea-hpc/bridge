@@ -119,7 +119,7 @@ GAWK=$(whence gawk)
 AWK=${GAWK:=nawk}
 #------------------------------------------------------------------------------------------------------------------
 typeset submit_cmd=submit_cmd
-typeset submit_args=
+typeset -a submit_args
 #------------------------------------------------------------------------------------------------------------------
 
 ###################################################################################################################
@@ -267,26 +267,26 @@ do
 	  echo "${PROGNAME}-${PROG_VERSION} (${BRIDGE_VERSION:-?})"
 	  exit 0
 	  ;;
-      e) ARGEXP1="$ARGEXP1""OPTION_e=$OPTARG; ";;
-      o) ARGEXP1="$ARGEXP1""OPTION_o=$OPTARG; ";;
-      r) ARGEXP1="$ARGEXP1""OPTION_r=$OPTARG; ";;
-      s) ARGEXP1="$ARGEXP1""OPTION_s=$OPTARG; ";;
-      S) ARGEXP1="$ARGEXP1""OPTION_S=$OPTARG; ";;
-      p) ARGEXP1="$ARGEXP1""OPTION_A=$OPTARG; ";;
-      A) ARGEXP1="$ARGEXP1""OPTION_A=$OPTARG; ";;
-      T) ARGEXP1="$ARGEXP1""OPTION_T=$OPTARG; ";;
-      t) ARGEXP1="$ARGEXP1""OPTION_t=$OPTARG; ";;
-      N) ARGEXP1="$ARGEXP1""OPTION_N=$OPTARG; " ; DISABLE_OVERRIDE_OPTION_n=1 ;  DISABLE_OVERRIDE_OPTION_x=1 ;  DISABLE_OVERRIDE_OPTION_c=1 ;;
-      n) ARGEXP1="$ARGEXP1""OPTION_n=$OPTARG; " ; DISABLE_OVERRIDE_OPTION_N=1 ;  DISABLE_OVERRIDE_OPTION_x=1 ;  DISABLE_OVERRIDE_OPTION_c=1 ;;
-      c) ARGEXP1="$ARGEXP1""OPTION_c=$OPTARG; " ; DISABLE_OVERRIDE_OPTION_N=1 ;  DISABLE_OVERRIDE_OPTION_x=1 ;  DISABLE_OVERRIDE_OPTION_n=1 ;;
-      M) ARGEXP1="$ARGEXP1""OPTION_M=$OPTARG; ";;
-      m) ARGEXP1="$ARGEXP1""OPTION_m=$OPTARG; ";;
+      e) ARGEXP1="$ARGEXP1""OPTION_e=\"$OPTARG\"; ";;
+      o) ARGEXP1="$ARGEXP1""OPTION_o=\"$OPTARG\"; ";;
+      r) ARGEXP1="$ARGEXP1""OPTION_r=\"$OPTARG\"; ";;
+      s) ARGEXP1="$ARGEXP1""OPTION_s=\"$OPTARG\"; ";;
+      S) ARGEXP1="$ARGEXP1""OPTION_S=\"$OPTARG\"; ";;
+      p) ARGEXP1="$ARGEXP1""OPTION_A=\"$OPTARG\"; ";;
+      A) ARGEXP1="$ARGEXP1""OPTION_A=\"$OPTARG\"; ";;
+      T) ARGEXP1="$ARGEXP1""OPTION_T=\"$OPTARG\"; ";;
+      t) ARGEXP1="$ARGEXP1""OPTION_t=\"$OPTARG\"; ";;
+      N) ARGEXP1="$ARGEXP1""OPTION_N=\"$OPTARG\"; " ; DISABLE_OVERRIDE_OPTION_n=1 ;  DISABLE_OVERRIDE_OPTION_x=1 ;  DISABLE_OVERRIDE_OPTION_c=1 ;;
+      n) ARGEXP1="$ARGEXP1""OPTION_n=\"$OPTARG\"; " ; DISABLE_OVERRIDE_OPTION_N=1 ;  DISABLE_OVERRIDE_OPTION_x=1 ;  DISABLE_OVERRIDE_OPTION_c=1 ;;
+      c) ARGEXP1="$ARGEXP1""OPTION_c=\"$OPTARG\"; " ; DISABLE_OVERRIDE_OPTION_N=1 ;  DISABLE_OVERRIDE_OPTION_x=1 ;  DISABLE_OVERRIDE_OPTION_n=1 ;;
+      M) ARGEXP1="$ARGEXP1""OPTION_M=\"$OPTARG\"; ";;
+      m) ARGEXP1="$ARGEXP1""OPTION_m=\"$OPTARG\"; ";;
       W) ARGEXP1="$ARGEXP1""OPTION_W=1; ";;
       w) ARGEXP1="$ARGEXP1""OPTION_W=0; ";;
       K) ARGEXP1="$ARGEXP1""OPTION_K=1; ";;
       L) ARGEXP1="$ARGEXP1""OPTION_L=\"$OPTARG\"; ";;
-      q) ARGEXP1="$ARGEXP1""OPTION_q=$OPTARG; ";;
-      P) ARGEXP1="$ARGEXP1""OPTION_P=$OPTARG; ";;
+      q) ARGEXP1="$ARGEXP1""OPTION_q=\"$OPTARG\"; ";;
+      P) ARGEXP1="$ARGEXP1""OPTION_P=\"$OPTARG\"; ";;
       E) ARGEXP1="$ARGEXP1""OPTION_E+=\"$OPTARG \"; ";;
       @) ARGEXP1="$ARGEXP1""OPTION_at=\"$OPTARG\"; ";;
       a) ARGEXP1="$ARGEXP1""OPTION_a=\"$OPTARG\"; ";;
@@ -692,10 +692,10 @@ esac
 # submission working directory
 export BRIDGE_MSUB_PWD=${PWD}
 # request name
-export BRIDGE_MSUB_REQNAME=${OPTION_r}
+export BRIDGE_MSUB_REQNAME=( "${OPTION_r[@]}" )
 if [[ -z ${BRIDGE_MSUB_REQNAME} ]]
 then
-    BRIDGE_MSUB_REQNAME=${scriptname}
+    BRIDGE_MSUB_REQNAME=( "${scriptname}" )
 fi
 # project name
 export BRIDGE_MSUB_PROJECT=${OPTION_A}
@@ -714,9 +714,9 @@ export BRIDGE_MSUB_STARTTIME=${OPTION_S}
 # queue name
 export BRIDGE_MSUB_QUEUE=${OPTION_q}
 # requested stdout file
-export BRIDGE_MSUB_STDOUT=${OPTION_o}
+export BRIDGE_MSUB_STDOUT=( "${OPTION_o[@]}" )
 # requested stderr file
-export BRIDGE_MSUB_STDERR=${OPTION_e}
+export BRIDGE_MSUB_STDERR=( "${OPTION_e[@]}" )
 # requested node  number
 export BRIDGE_MSUB_NNODE=${OPTION_N}
 # requested process number
@@ -831,53 +831,52 @@ bridge_addons_call_function bridge_addon_msub_alterscript
 # Construction des arguments de la fonction de soumission
 # on reexporte aussi les variables BRIDGE, elles peuvent avoir changees
 #------------------------------------------------------------------------------------------------------------------
-typeset submit_args=""
 # request name
 if [[ -n ${BRIDGE_MSUB_REQNAME} ]]
     then
-    submit_args="${submit_args} -r ${BRIDGE_MSUB_REQNAME}"
+    submit_args+=( "-r" "${BRIDGE_MSUB_REQNAME[@]}" )
 fi
 export BRIDGE_MSUB_REQNAME
 # study name
 if [[ -n ${BRIDGE_MSUB_STUDY} ]]
     then
-    submit_args="${submit_args} -s ${BRIDGE_MSUB_STUDY}"
+    submit_args+=( "-s" "${BRIDGE_MSUB_STUDY[@]}" )
 fi
 export BRIDGE_MSUB_STUDY
 # project name
 if [[ -n ${BRIDGE_MSUB_PROJECT} ]]
     then
-    submit_args="${submit_args} -A ${BRIDGE_MSUB_PROJECT}"
+    submit_args+=( "-A" "${BRIDGE_MSUB_PROJECT[@]}" )
 fi
 export BRIDGE_MSUB_PROJECT
 # multi job for same request name authorization
 if [[ ${BRIDGE_MSUB_MULTIREQ} == "1" ]]
     then
-    submit_args="${submit_args} -W"
+    submit_args+=( "-W" )
 fi
 export BRIDGE_MSUB_MULTIREQ
 # requested start time 
 if [[ -n ${BRIDGE_MSUB_STARTTIME} ]]
     then
-    submit_args="${submit_args} -S ${BRIDGE_MSUB_STARTTIME}"
+    submit_args+=( "-S" "${BRIDGE_MSUB_STARTTIME[@]}" )
 fi
 export BRIDGE_MSUB_STARTTIME
 # requested queue
 if [[ -n ${BRIDGE_MSUB_QUEUE} ]]
     then
-    submit_args="${submit_args} -q ${BRIDGE_MSUB_QUEUE}"
+    submit_args+=( "-q" "${BRIDGE_MSUB_QUEUE[@]}" )
 fi
 export BRIDGE_MSUB_QUEUE
 # requested stdout file
 if [[ -n ${BRIDGE_MSUB_STDOUT} ]]
     then
-    submit_args="${submit_args} -o ${BRIDGE_MSUB_STDOUT}"
+    submit_args+=( "-o" "${BRIDGE_MSUB_STDOUT[@]}" )
 fi
 export BRIDGE_MSUB_STDOUT
 # requested stderr file
 if [[ -n ${BRIDGE_MSUB_STDERR} ]]
     then
-    submit_args="${submit_args} -e ${BRIDGE_MSUB_STDERR}"
+    submit_args+=( "-e" "${BRIDGE_MSUB_STDERR[@]}" )
 fi
 export BRIDGE_MSUB_STDERR
 # requested node number
@@ -892,7 +891,7 @@ if [[ -n ${BRIDGE_MSUB_NNODE} ]]
 	    "for consistency"
 	BRIDGE_MSUB_NNODE=${BRIDGE_MSUB_NPROC}
     fi
-    submit_args="${submit_args} -N ${BRIDGE_MSUB_NNODE}"
+    submit_args+=( "-N" "${BRIDGE_MSUB_NNODE}" )
     # usefull to ${BRIDGE_MPRUN_CMD}
     export BRIDGE_MPRUN_NNODE=${BRIDGE_MSUB_NNODE}
 else
@@ -902,7 +901,7 @@ export BRIDGE_MSUB_NNODE
 # requested process number
 if [[ -n ${BRIDGE_MSUB_NPROC} ]]
     then
-    submit_args="${submit_args} -n ${BRIDGE_MSUB_NPROC}"
+    submit_args+=( "-n" "${BRIDGE_MSUB_NPROC}" )
     # usefull to ${BRIDGE_MPRUN_CMD}
     export BRIDGE_MPRUN_NPROC=${BRIDGE_MSUB_NPROC}
 else
@@ -912,7 +911,7 @@ export BRIDGE_MSUB_NPROC
 # requested core per process
 if [[ -n ${BRIDGE_MSUB_NCORE} ]]
     then
-    submit_args="${submit_args} -c ${BRIDGE_MSUB_NCORE}"
+    submit_args+=( "-c" "${BRIDGE_MSUB_NCORE}" )
     # usefull to ${BRIDGE_MPRUN_CMD}
     export BRIDGE_MPRUN_NCORE=${BRIDGE_MSUB_NCORE}
 else
@@ -922,19 +921,19 @@ export BRIDGE_MSUB_NCORE
 # requested memory for shared parts of job
 if [[ -n ${BRIDGE_MSUB_MAXSMEM} ]]
     then
-    submit_args="${submit_args} -m ${BRIDGE_MSUB_MAXSMEM}"
+    submit_args+=( "-m" "${BRIDGE_MSUB_MAXSMEM[@]}" )
 fi
 export BRIDGE_MSUB_MAXSMEM
 # requested time for shared parts of job
 if [[ -n ${BRIDGE_MSUB_MAXSTIME} ]]
     then
-    submit_args="${submit_args} -t ${BRIDGE_MSUB_MAXSTIME}"
+    submit_args+=( "-t" "${BRIDGE_MSUB_MAXSTIME[@]}" )
 fi
 export BRIDGE_MSUB_MAXSTIME
 # requested memory per core in exclusive mode
 if [[ -n ${BRIDGE_MSUB_MAXMEM} ]]
     then
-    submit_args="${submit_args} -M ${BRIDGE_MSUB_MAXMEM}"
+    submit_args+=( "-M" "${BRIDGE_MSUB_MAXMEM[@]}" )
     # usefull to ${BRIDGE_MPRUN_CMD}
     export BRIDGE_MPRUN_MAXMEM=${BRIDGE_MSUB_MAXMEM}
 else
@@ -944,7 +943,7 @@ export BRIDGE_MSUB_MAXMEM
 # requested time in exclusive mode
 if [[ -n ${BRIDGE_MSUB_MAXTIME} ]]
     then
-    submit_args="${submit_args} -T ${BRIDGE_MSUB_MAXTIME}"
+    submit_args+=( "-T" "${BRIDGE_MSUB_MAXTIME[@]}" )
     # usefull to ${BRIDGE_MPRUN_CMD}
     export BRIDGE_MPRUN_MAXTIME=${BRIDGE_MSUB_MAXTIME}
 else
@@ -954,7 +953,7 @@ export BRIDGE_MSUB_MAXTIME
 # requested licences
 if [[ -n ${BRIDGE_MSUB_LICENSES} ]]
     then
-    submit_args="${submit_args} -L \"${BRIDGE_MSUB_LICENSES}\""
+    submit_args+=( "-L" "${BRIDGE_MSUB_LICENSES[@]}" )
 fi
 export BRIDGE_MSUB_LICENSES
 # non interpreted extra parameters
@@ -962,18 +961,18 @@ export BRIDGE_MSUB_EXTRA_PARAMETERS
 # mail information
 if [[ -n ${BRIDGE_MSUB_MAIL_INFO} ]]
     then
-    submit_args="${submit_args} -@ ${BRIDGE_MSUB_MAIL_INFO}"
+    submit_args+=( "-@" "${BRIDGE_MSUB_MAIL_INFO[@]}" )
 fi
 # dependency information
 if [[ -n ${BRIDGE_MSUB_AFTER_JOBS} ]]
 then
-    submit_args="${submit_args} -a ${BRIDGE_MSUB_AFTER_JOBS}"
+    submit_args+=( "-a" "${BRIDGE_MSUB_AFTER_JOBS[@]}" )
 fi
 export BRIDGE_MSUB_MAIL_INFO
 # exclusive allocation
 if [[ ${BRIDGE_MSUB_EXCLUSIVE} == yes ]]
     then
-    submit_args="${submit_args} -x"
+    submit_args+=( "-x" )
 fi
 export BRIDGE_MSUB_EXCLUSIVE
 ###################################################################################################################
@@ -984,8 +983,9 @@ export BRIDGE_MSUB_EXCLUSIVE
 #------------------------------------------------------------------------------------------------------------------
 if [[ ${EXIT_STATUS} -eq 0 ]]
     then
-    ${LOGGER} "${submit_cmd} ${submit_args} -E \"${BRIDGE_MSUB_EXTRA_PARAMETERS}\" ${BRIDGE_MSUB_SCRIPTFILE}"
-    ${submit_cmd} ${submit_args} -E "${BRIDGE_MSUB_EXTRA_PARAMETERS}" ${BRIDGE_MSUB_SCRIPTFILE}
+    set -x 
+    ${LOGGER} "${submit_cmd} $(printf "%q " ${submit_args[@]}) -E \"${BRIDGE_MSUB_EXTRA_PARAMETERS}\" ${BRIDGE_MSUB_SCRIPTFILE}"
+    ${submit_cmd} "${submit_args[@]}" -E "${BRIDGE_MSUB_EXTRA_PARAMETERS}" ${BRIDGE_MSUB_SCRIPTFILE}
     EXIT_STATUS=$?
 fi
 ###################################################################################################################
