@@ -983,7 +983,6 @@ export BRIDGE_MSUB_EXCLUSIVE
 #------------------------------------------------------------------------------------------------------------------
 if [[ ${EXIT_STATUS} -eq 0 ]]
     then
-    set -x 
     ${LOGGER} "${submit_cmd} $(printf "%q " ${submit_args[@]}) -E \"${BRIDGE_MSUB_EXTRA_PARAMETERS}\" ${BRIDGE_MSUB_SCRIPTFILE}"
     ${submit_cmd} "${submit_args[@]}" -E "${BRIDGE_MSUB_EXTRA_PARAMETERS}" ${BRIDGE_MSUB_SCRIPTFILE}
     EXIT_STATUS=$?
