@@ -328,10 +328,10 @@ else
 	    else
 	        ${LOGGER} "created with success"
 	    fi
-    fi
+	fi
 ### pas beau et a change, on recupere la liste des cpus binde...
-###	BRIDGE_VTUNE_CPUSET=$(echo $(cat /dev/cpuset/slurm_${SLURMD_NODENAME}_${SLURM_JOBID}/cpus 2>/dev/null) |tr ' ' ',')
-	BRIDGE_VTUNE_CPUSET=$(echo $(cat /dev/cpuset/slurm${SLURM_JOBID}/slurm${SLURM_JOBID}.${SLURM_STEPID}_${SLURM_LOCALID}/cpus 2>/dev/null) |tr ' ' ',')
+        BRIDGE_CPUSET_MOUNTPOINT=$(lssubsys -m cpuset | cut -d ' ' -f 2)
+        BRIDGE_VTUNE_CPUSET=$(cat "$BRIDGE_CPUSET_MOUNTPOINT"/$(cat /proc/self/cpuset)/cpuset.cpus)
 ### on demarre la collecte sur tout le systeme
 	typeset counter=0
 	${bridge_vtune_run_cmd} ${bridge_vtune_activity_name} \
