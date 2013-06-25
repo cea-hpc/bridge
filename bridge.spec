@@ -1,7 +1,7 @@
 Summary: Bridge CEA In-House Batch Environment
 Name: bridge
 Version: 1.5.3
-Release: 8
+Release: 9
 License: GPL License
 Group: System Environment/Base
 URL: http://
@@ -193,6 +193,14 @@ rm -rf $RPM_BUILD_ROOT
 %endif
 
 %changelog
+* Tue Jun 25 2013 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.5.3-9
+- tag release 1.5.3-8
+-- addons: fixes for incorrect construction of compounded parameters
+-- mprun: unify extra parameters management using array struct and
+  introduce a new option -Z "a b c" to allow to pass parameter containing
+  spaces as single block parameters to the underlying resource manager command
+-- msub: add support for whitespaces in submission parameters with SLURM
+
 * Tue Apr 19 2013 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.5.3-8
 - tag release 1.5.3-8
 -- autopacking: remove useless export which caused a bug in recursive submissions
