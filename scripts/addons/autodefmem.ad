@@ -52,7 +52,7 @@ function bridge_addon_msub_alteropt {
     ## do auto-selection only if max_mem is not already set and the user specifies a partition
     if [[ -z ${BRIDGE_MSUB_MAXMEM} && -n ${BRIDGE_MSUB_QUEUE} ]]
 	then
-	BRIDGE_MSUB_MAXMEM=`sinfo -p ${BRIDGE_MSUB_QUEUE}  -heo %c,%m | awk -F ',' '{v=$2/$1; if(min==0 || min>v) min=v  } END {print int(v)}'`
+	BRIDGE_MSUB_MAXMEM=`sinfo -p ${BRIDGE_MSUB_QUEUE}  -heo %c,%m | awk -F ',' '{v=$2/$1; if(min == 0 || min>v) min=int(v) } END {print min}'`
 
 	### display auto-mem result
 	if [[ -n ${BRIDGE_MSUB_MAXMEM} ]]
@@ -104,7 +104,7 @@ function bridge_addon_mprun_alteropt {
     if [[ -z ${bridge_mprun_maxmem} && -n ${bridge_mprun_partition} ]]
 	then
 
-	bridge_mprun_maxmem=`sinfo -p ${bridge_mprun_partition}  -heo %c,%m | awk -F ',' '{v=$2/$1; if(min==0 || min>v) min=v  } END {print int(v)}'`
+	bridge_mprun_maxmem=`sinfo -p ${bridge_mprun_partition}  -heo %c,%m | awk -F ',' '{v=$2/$1; if(min == 0 || min>v) min=int(v) } END {print min}'`
 
 	if [[ -n ${bridge_mprun_maxmem} ]]
 	    then

@@ -31,6 +31,7 @@
 	   spaces as single block parameters to the underlying resource manager command
 	-- msub: add support for whitespaces in submission parameters with SLURM
 	-- vtune: fix for invalid cpuset argument with slurm cgroups
+	-- addons: fix autodefmem which would choose the wrong value
 
 * Changes in bridge-1.5.2
 =========================
