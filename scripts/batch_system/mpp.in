@@ -41,7 +41,7 @@ function check_val {
     fi
 }
 function shrink_name {
-    echo $1 | cut -c 1-16
+    echo ${1:0:16}
 }
 function shrink_time {
     if [ $1 -eq 0 ]
@@ -381,7 +381,7 @@ typeset NODES
 typeset REASON
 typeset NAME
 
-typeset current_time=$(date +%s)
+typeset current_time=$(printf '%(%s)T')
 typeset line_id=0
 typeset end_of_line=0
 
@@ -521,9 +521,9 @@ ${stat_cmd} ${stat_args} | tr '?' '-' | sort -n -t '^' -k 7 -r |\
 	  if [ $STATE == "PEN" ]; then
 	      (( difftime = SCHEDTIME - current_time ))
 	      if [ $difftime -lt 86400 ]; then
-		  TIMEUSED="~`date -d @$SCHEDTIME  '+%Hh%M'`"
+		  TIMEUSED="~`printf  '%(%Hh%M)T' \#$SCHEDTIME`"
 	      else
-		  TIMEUSED="~`date -d @$SCHEDTIME  '+%b%d'`"
+		  TIMEUSED="~`printf  '%(%b%d)T' \#$SCHEDTIME `"
 	      fi
 	  fi
       fi
@@ -640,7 +640,25 @@ printf "\n";
       fi
 
       # Get the list of partitions which contain nodes from the reservation
-      QUEUES=`sinfo -h -n $NODES -o '%N|%R' | sort -t '|' -k 2 | awk -F '|' '/[[:alnum:]_\[,\-\]]+\|\w+/ {if (S==0) S=1; else printf ",";printf "%s",$2} END {printf "\n"}'`
+      QUEUES=
+      NCPUS=
+      sinfo -h -n "$NODES" -o '%N|%R|%C' | while IFS='|' read nodes part cpus; do
+	  if [[ "$cpus" != '0/0/0/0' ]]; then
+	      if [[ -n "$QUEUES" ]]; then
+		  QUEUES="$QUEUES,$part"
+		  #More than one queue: we'll have to ask slurm one more time compute the total number of cpus
+		  NCPUS=
+	      else
+		  QUEUES="$part"
+		  NCPUS="${cpus##*/}"
+	      fi
+	  fi	  
+      done
+
+      if [[ -z "${NCPUS}" ]]; then
+	  NCPUS=$(sinfo -h -n "$NODES" -o '%C')
+	  NCPUS=${NCPUS##*/}
+      fi
 
       # Filter by partition
       if [[ -n $show_partition ]]; then
@@ -648,9 +666,9 @@ printf "\n";
 	  for q in $QUEUES; do
 	      if [[ ${q} = ${show_partition} ]]; then
 		  QUEUE=$q
-                  break
+		  break
 	      fi
-          done
+	  done
 	  unset IFS
 
 	  if [[ -z $QUEUE ]]; then
@@ -691,11 +709,11 @@ printf "\n";
 	  fi
       fi
 
-      SLURMSTART=`echo $SLURMSTART | tr T ' '`
-      SLURMLIM=`echo $SLURMLIM | tr T ' '`     
+      SLURMSTART=${SLURMSTART/T/ /}
+      SLURMLIM=${SLURMLIM/T/ /}
 
-      UNIXSTART=`date -d "$SLURMSTART" '+%s'`
-      UNIXEND=`date -d "$SLURMLIM" '+%s'`
+      UNIXSTART=`printf '%(%s)T' "$SLURMSTART"`
+      UNIXEND=`printf '%(%s)T' "$SLURMLIM"`
 
       TIMELIM=`shrink_time $((UNIXEND - UNIXSTART))`
 
@@ -734,7 +752,6 @@ printf "\n";
 	  PROJECT="-"
       fi
 
-      NCPUS=`sinfo -n $NODES -h -o %C  | cut -d '/' -f 4`
       NAME=`shrink_name $NAME`
 
       if [[ ${BRIDGE_BINDING} != "rmid" ]]
