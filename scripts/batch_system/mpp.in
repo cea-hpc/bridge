@@ -14,7 +14,7 @@
 #
 #  Bridge is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	 See the
 #  GNU General Public License for more details.
 #
 #  You should have received a copy of the GNU General Public License
@@ -64,7 +64,7 @@ function shrink_time {
 	then
 	(( divi = value / 3600 )) 
 	(( value = value % 3600 ))
-	(( value = value * 10 / 3600 ))  
+	(( value = value * 10 / 3600 ))	 
 	output="${divi}.${value}h"
     elif [ $value -ge 60 ]
 	then
@@ -132,7 +132,7 @@ function set_purple_mode {
 function set_orange_mode {
     is_color_enabled
     if [ $? -eq 1 ]
-        then
+	then
 	printf "[0;33m"
     fi
 }
@@ -154,7 +154,7 @@ function extract_base_acct {
 ###################################################################################################################
 # Initialisation des parametres de base
 #------------------------------------------------------------------------------------------------------------------
-typeset BRIDGE_VERSION="@PACKAGE_NAME@-@PACKAGE_VERSION@"
+typeset BRIDGE_VERSION="bridge-1.5.3"
 typeset PROG_VERSION="1.0.0"
 #------------------------------------------------------------------------------------------------------------------
 # le repertoire de base est fixe lors de l'installation du produit (via ./configure)
@@ -164,7 +164,7 @@ typeset PROG_VERSION="1.0.0"
 typeset BASE_DIR=`dirname $0`
 typeset PROGNAME=`basename $0`
 #------------------------------------------------------------------------------------------------------------------
-typeset BRIDGE_BASEDIR=@prefix@
+typeset BRIDGE_BASEDIR=/usr
 if [[ ! -d ${BRIDGE_BASEDIR} ]]
     then
     BRIDGE_BASEDIR=${BRIDGE_BASEDIR:-${BASE_DIR}/../}
@@ -203,21 +203,21 @@ typeset USAGE="Usage : ${PROGNAME} [-dvhV] [-p] [-r] [-s] [-q queue] [-u user] [
 
  ${PROGNAME} is the CCC jobs visualisation interface.
 
- -h          : print this message
- -d          : increase debug level
- -v          : increase verbosity
- -V          : print application version
+ -h	     : print this message
+ -d	     : increase debug level
+ -v	     : increase verbosity
+ -V	     : print application version
 
- -r          : print 'running' jobs
- -s          : print 'suspended' jobs
- -p          : print 'pending' jobs
+ -r	     : print 'running' jobs
+ -s	     : print 'suspended' jobs
+ -p	     : print 'pending' jobs
 
  -q queue    : requested queue
  -u user     : requested user
  -a account  : requested account
 
- -n          : print results without colors
- -H          : don't print header
+ -n	     : print results without colors
+ -H	     : don't print header
 
  Please note that the expected start time of a job is an estimation based on 
  the current state of the job queue. Your job may in fact start sooner, 
@@ -254,7 +254,7 @@ do
 	  ((BRIDGE_VERBOSE_MAXLEVEL = BRIDGE_VERBOSE_MAXLEVEL + 1 ))
 	  ;;
       h) 
-	  echo "$USAGE"  >& 2 ;
+	  echo "$USAGE"	 >& 2 ;
 	  exit 0
 	  ;;
       V) 
@@ -290,7 +290,7 @@ do
       H)
 	  show_with_header=no
 	  ;;
-      *) echo "$USAGE"  >& 2 ;exit 1 ;;
+      *) echo "$USAGE"	>& 2 ;exit 1 ;;
   esac
 done
 OPTIND2=`expr $OPTIND - 1`
@@ -356,9 +356,9 @@ if [[ ${show_with_header} == "yes" ]]
     set_bold_mode
     if [[ ${BRIDGE_BINDING} != "rmid" ]]
 	then
-	print "USER        ACCOUNT    BATCHID  NCPU   QUEUE      PRIORITY   STATE  RLIM   RUN/START     SUSP   OLD    NAME             NODES/REASON"
+	print "USER	   ACCOUNT    BATCHID  NCPU   QUEUE	 PRIORITY   STATE  RLIM	  RUN/START	SUSP   OLD    NAME	       NODES/REASON"
     else
-	print "USER        ACCOUNT    BATCHID  NCPU   QUEUE      PRIORITY   STATE  RLIM   RUN/START     SUSP   OLD    NAME             RMID    NODES/REASON"
+	print "USER	   ACCOUNT    BATCHID  NCPU   QUEUE	 PRIORITY   STATE  RLIM	  RUN/START	SUSP   OLD    NAME	       RMID    NODES/REASON"
     fi
     set_standard_mode
 fi
@@ -709,8 +709,8 @@ printf "\n";
 	  fi
       fi
 
-      SLURMSTART=${SLURMSTART/T/ /}
-      SLURMLIM=${SLURMLIM/T/ /}
+      SLURMSTART=${SLURMSTART/T/ }
+      SLURMLIM=${SLURMLIM/T/ }
 
       UNIXSTART=`printf '%(%s)T' "$SLURMSTART"`
       UNIXEND=`printf '%(%s)T' "$SLURMLIM"`
