@@ -24,12 +24,14 @@
 #
 # Addon for IntelMPI support in Bridge with Slurm
 #
-# 2 environment variables can be used to externally configure 
+# 3 environment variables can be used to externally configure 
 # openmpi launcher and args :
 #
 # BRIDGE_SLURM_INTELMPI_CMD srun by default
 # BRIDGE_SLURM_INTELMPI_CMD_OPTIONS empty by default
-# 
+# BRIDGE_SLURM_INTELMPI_CMD_DEFAULT_OPTIONS empty by default (used before the 
+#                                           previous one)
+#
 #################################################################################
 
 function bridge_addon_mprun_setopt {
@@ -71,6 +73,8 @@ function bridge_addon_mprun_getopt {
     ## on fixe le status de sortie par defaut
     typeset exit_status=0
     
+    ## on fixe les options par defaut du launcher
+
     ## on parse les arguments
     while getopts ${BRIDGE_MPRUN_GETOPT_OPTIONS} option
       do
@@ -125,17 +129,22 @@ function bridge_addon_mprun_alteropt {
 	    bridge_mprun_force_allocation=yes
 	else
 	    export spmd_run_cmd=${BRIDGE_SLURM_INTELMPI_CMD:-mpirun}
+	    typeset -a spmd_run_options
 	    export spmd_run_options
 	    export spmd_run_separator=" "
 	    if [[ ${spmd_run_cmd} == "mpirun" ]]
-		then	
+		then
+		if [[ -n ${BRIDGE_SLURM_INTELMPI_CMD_DEFAULT_OPTIONS} ]]
+		    then
+		    spmd_run_options="${spmd_run_options} ${BRIDGE_SLURM_INTELMPI_CMD_DEFAULT_OPTIONS}"
+		fi
 		if [[ -n ${BRIDGE_SLURM_INTELMPI_CMD_OPTIONS} ]]
 		    then
 		    spmd_run_options="${spmd_run_options} ${BRIDGE_SLURM_INTELMPI_CMD_OPTIONS}"
 		fi
-		if [[ "$(echo $spmd_run_options | grep 'rsh=ssh')" = "" ]]
+		if [[ "$(echo ${spmd_run_options} | grep 'rsh=ssh')" = "" ]]
 		    then
-		    spmd_run_options="--rsh=ssh ${spmd_run_options} "  
+		    spmd_run_options="--rsh=ssh ${spmd_run_options} "
 		fi
 	    fi
 	fi
