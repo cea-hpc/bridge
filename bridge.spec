@@ -1,7 +1,7 @@
 Summary: Bridge CEA In-House Batch Environment
 Name: bridge
 Version: 1.5.3
-Release: 10
+Release: 11
 License: GPL License
 Group: System Environment/Base
 URL: http://
@@ -193,6 +193,11 @@ rm -rf $RPM_BUILD_ROOT
 %endif
 
 %changelog
+* Wed Nov 13 2013 Francois Diakhate <francois.diakhate@cea.fr>  - 1.5.3-11
+- tag release 1.5.3-11
+-- mprun: re-fix special character handling in arguments which was broken since 1.5.3-8
+-- slurm: fix special character handling in extra-parameters for allocations
+
 * Wed Nov 13 2013 Francois Diakhate <francois.diakhate@cea.fr>  - 1.5.3-10
 - tag release 1.5.3-10
 -- vtune: fix for invalid cpuset argument with slurm cgroups
