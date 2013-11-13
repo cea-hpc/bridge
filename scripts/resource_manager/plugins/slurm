@@ -233,7 +233,7 @@ function spmd_allocate_cmd {
 	## a deja fait une allocation afin d'eviter les boucles
 	export BRIDGE_MPRUN_ALLOCATION=yes
 	${LOGGER} "${spmd_allocate_cmd} ${spmd_allocate_quiet}${spmd_allocate_options} ${spmd_allocate_extra_parameters[@]} ${spmd_allocate_separator} ${spmd_allocate_args[@]}"
-	${spmd_allocate_cmd} ${spmd_allocate_quiet}${spmd_allocate_options} ${spmd_allocate_extra_parameters[@]} ${spmd_allocate_separator} "${spmd_allocate_args[@]}"
+	${spmd_allocate_cmd} ${spmd_allocate_quiet}${spmd_allocate_options} "${spmd_allocate_extra_parameters[@]}" ${spmd_allocate_separator} "${spmd_allocate_args[@]}"
 	exit_status=$?
     fi
 
