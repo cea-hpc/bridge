@@ -88,9 +88,8 @@ function compute_bcast_name {
 function do_bcast {
 
     typeset requested_mode=$1
-    shift
-    typeset orig_file="$@"
-    typeset dst_file="$(compute_bcast_name "$orig_file")"
+    typeset orig_file="$2"
+    typeset dst_file="$3"
 
     # if parallel local copy mode is requested, then do it, otherwise, use
     # SLURM sbcast cmd
@@ -235,7 +234,8 @@ function bridge_addon_mprun_spmd_pre_run {
     then
 	typeset gen_script="$(which "${spmd_run_args[0]}")"
 	typeset bcast_mode=0
-	
+
+	CMD_ID=0	
 	while read -r RAWCMD
 	do
 	    eval CMD=\( "$RAWCMD" \)
@@ -250,8 +250,8 @@ function bridge_addon_mprun_spmd_pre_run {
 	    then
 	    ## on broadcast le job
 		typeset exec_file="$(which "${CMD[1]}")"
-		typeset dst_file="$(compute_bcast_name "$exec_file")"
-		do_bcast "${bcast_mode}" "${exec_file}"
+		typeset dst_file="$(compute_bcast_name "$exec_file")_${CMD_ID}"
+		do_bcast "${bcast_mode}" "${exec_file}" "${dst_file}"
 		if [[ $? -ne 0 ]]
 		then
 		    ${LOGGER} "failure of broadcast ... staying in standard mode"
@@ -263,6 +263,7 @@ function bridge_addon_mprun_spmd_pre_run {
 		    sed -i "/#BRIDGE-MPMDv1-TASK-MARKER/{ N;s*^#BRIDGE-MPMDv1-TASK-MARKER\n${CMD[*]:1}*#BRIDGE-MPMDv1-TASK-MARKER\n${SAFENCMD}*}" "${gen_script}"
 		fi
 	    fi
+	    CMD_ID=$(( CMD_ID + 1 ))
 	done < "${BRIDGE_MPRUN_ADDON_MPMD_SCRIPT}"
     fi
 
@@ -276,7 +277,7 @@ function bridge_addon_mprun_spmd_pre_run {
 
 	export BRIDGE_BROADCAST_ORIGINAL_CMD="${exec_file}"
 	typeset dst_file="$(compute_bcast_name "$exec_file")"
-	do_bcast "$bcast_mode" "${exec_file}"
+	do_bcast "$bcast_mode" "${exec_file}" "${dst_file}"
 	if [[ $? -ne 0 ]]
 	then
 	    ${LOGGER} "failure of broadcast ... staying in standard mode"
