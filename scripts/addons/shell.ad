@@ -1,0 +1,190 @@
+#*****************************************************************************\
+#  scripts/addons/shell.ad - 
+#******************************************************************************
+#  Copyright  CEA/DAM/DIF (2013)
+#
+#  This file is part of Bridge, an abstraction layer to ease batch system and
+#  resource manager usage in heterogeneous HPC environments.
+#
+#  Bridge is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  Bridge is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with Bridge.  If not, see <http://www.gnu.org/licenses/>
+#*****************************************************************************/
+
+function bridge_addon_mprun_setopt {
+
+    typeset MYGETOPTOPTION="s"
+
+    echo "${BRIDGE_MPRUN_GETOPT_OPTIONS}" | grep -q ${MYGETOPTOPTION}
+
+    if [ $? -ne 0 ]
+	then
+	BRIDGE_MPRUN_GETOPT_OPTIONS="${BRIDGE_MPRUN_GETOPT_OPTIONS}${MYGETOPTOPTION}"
+    fi
+
+    return 0
+}
+
+function bridge_addon_mprun_getopt {
+    
+    ## on se place en mode debug si souhaite
+    typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+	then
+	set -x
+    fi
+    
+    ## on incremente le niveau de log
+    typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+    
+    ## on ajoute une entete a la log
+    typeset LOGGER="${LOGGER} Shell Addon :"
+
+    ## par defaut, on desactive le mode shell
+    if [[ -z ${BRIDGE_MPRUN_ADDON_SHELL} ]]
+	then
+	BRIDGE_MPRUN_ADDON_SHELL=0
+    fi
+
+    ## on fixe le message d'aide a afficher si demande
+    typeset USAGE="\
+\t*) Shell
+\t\t -s : Launch a shell on a compute node with dedicated resources \n"
+    
+    ## on fixe le status de sortie par defaut
+    typeset exit_status=0
+    
+    ## on parse les arguments
+    while getopts ${BRIDGE_MPRUN_GETOPT_OPTIONS} option
+      do
+      case ${option} in
+	  
+	  h)
+	      echo -e "${USAGE}" >&2
+	      return 0
+	      ;;
+
+	  s)
+	      BRIDGE_MPRUN_ADDON_SHELL=1
+	      ${LOGGER} "Shell mode is node enabled"
+	      ;;
+	  *)
+	      ;;
+      esac
+    done
+    export BRIDGE_MPRUN_ADDON_SHELL
+    
+    return ${exit_status}
+}
+
+function bridge_addon_mprun_alteropt {
+    ## on se place en mode debug si souhaite
+    typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+	then
+	set -x
+    fi
+    
+    ## on incremente le niveau de log
+    typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+    
+    ## on ajoute une entete a la log
+    typeset LOGGER="${LOGGER} Shell Addon :"
+
+    if [[ "${BRIDGE_MPRUN_ALLOCATION}" == yes ]] then
+        ${LOGGER} "wrapping allocation detected: skipping"
+    	return 0
+    fi
+
+    if [[ ${BRIDGE_MPRUN_ADDON_SHELL} -eq 1 ]]
+    then
+	if [[ ${bridge_mprun_nnode} -gt 1 || ${bridge_mprun_nproc} -gt 1 ]]
+	then
+	    ${ERROR} "You cannot specify more than one node or task in interactive shell mode"
+	    exit 1
+	fi
+
+	if [[ -n "${bridge_mprun_args[@]}" ]]
+	then
+	    ${ERROR} "You cannot specify a command in interactive shell mode"
+	    exit 1
+	fi
+
+	bridge_mprun_args="$SHELL"
+
+	cat <<EOF
+    _______________  
+   / ___/ ___/ ___/  A compute node is going to be allocated and an
+  / /__/ /__/ /__   interactive shell session launched on it.
+  \___/\___/\___/    
+                  Hit CTL-D or enter "exit 0" to close the
+                 session and release the allocation.   
+ 
+             Waiting for free ressources... (Hit CTL-C to abort)
+
+EOF
+    fi
+
+    return 0
+
+}
+
+function bridge_addon_mprun_spmd_pre_allocate {
+
+    return 0
+
+}
+
+
+function bridge_addon_mprun_spmd_post_allocate {
+
+    return 0
+
+}
+
+
+function bridge_addon_mprun_spmd_pre_run {
+
+    if [[ ${BRIDGE_MPRUN_ADDON_SHELL} -eq 1 ]]
+	then
+
+	    ## on se place en mode debug si souhaite
+	typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+	if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+	then
+	    set -x
+	fi
+	
+        ## on incremente le niveau de log
+	typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+    
+        ## on ajoute une entete a la log
+        typeset LOGGER="${LOGGER} Shell Addon :"
+
+	${LOGGER} "Exporting a pty and starting a shell"
+
+
+	spmd_run_options+=" --pty"
+	spmd_run_options+=" --cpu_bind=none"
+
+	return 0
+	
+    fi
+    
+    return 0   
+}
+
+function bridge_addon_mprun_spmd_post_run {
+
+    return 0
+    
+}
