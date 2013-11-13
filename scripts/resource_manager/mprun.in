@@ -598,7 +598,7 @@ else
 	if [[ ${#bridge_mprun_args[@]} -ne 0 ]]
 	    then
 	    ${LOGGER} "${bridge_mprun_allocate_cmd} ${bridge_mprun_options} ${bridge_mprun_extra_parameters[@]} -- ${bridge_mprun_cmd} ${bridge_mprun_args[@]}"
-	    ${bridge_mprun_allocate_cmd} ${bridge_mprun_options} "${bridge_mprun_extra_parameters[@]}" -- ${bridge_mprun_cmd} ${bridge_mprun_args[@]}
+	    ${bridge_mprun_allocate_cmd} ${bridge_mprun_options} "${bridge_mprun_extra_parameters[@]}" -- ${bridge_mprun_cmd} "${bridge_mprun_args[@]}"
 	else
 	    show_usage
 	    exit 1
@@ -610,7 +610,7 @@ else
 	if [[ ${#bridge_mprun_args[@]} -ne 0 ]]
 	    then
 	    ${LOGGER} "${bridge_mprun_allocate_cmd} -e ${bridge_mprun_options} ${bridge_mprun_extra_parameters[@]} -- ${bridge_mprun_cmd} ${bridge_mprun_args[@]}"
-	    ${bridge_mprun_allocate_cmd} -e ${bridge_mprun_options} "${bridge_mprun_extra_parameters[@]}" -- ${bridge_mprun_cmd} ${bridge_mprun_args[@]}
+	    ${bridge_mprun_allocate_cmd} -e ${bridge_mprun_options} "${bridge_mprun_extra_parameters[@]}" -- ${bridge_mprun_cmd} "${bridge_mprun_args[@]}"
 	else
 	    show_usage
 	    exit 1
@@ -621,7 +621,7 @@ else
 	if [[ ${#bridge_mprun_args[@]} -ne 0 ]]
 	    then
     	    ${LOGGER} "${bridge_mprun_run_cmd} ${bridge_mprun_options} ${bridge_mprun_extra_parameters[@]} -- ${bridge_mprun_args[@]}"
-	    ${bridge_mprun_run_cmd} ${bridge_mprun_options} "${bridge_mprun_extra_parameters[@]}" -- ${bridge_mprun_args[@]}
+	    ${bridge_mprun_run_cmd} ${bridge_mprun_options} "${bridge_mprun_extra_parameters[@]}" -- "${bridge_mprun_args[@]}"
 	else
 	    show_usage
 	    exit 1
