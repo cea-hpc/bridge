@@ -1,7 +1,7 @@
 Summary: Bridge CEA In-House Batch Environment
 Name: bridge
 Version: 1.5.3
-Release: 9
+Release: 10
 License: GPL License
 Group: System Environment/Base
 URL: http://
@@ -193,6 +193,15 @@ rm -rf $RPM_BUILD_ROOT
 %endif
 
 %changelog
+* Wed Nov 13 2013 Francois Diakhate <francois.diakhate@cea.fr>  - 1.5.3-10
+- tag release 1.5.3-10
+-- vtune: fix for invalid cpuset argument with slurm cgroups
+-- addons: fix autodefmem which would choose the wrong value
+-- mpp: optimizations for loaded machines
+-- intelmpi-slurm.ad: add a new BRIDGE_SLURM_INTELMPI_CMD_DEFAULT_OPTIONS env var
+-- addons: fix mpmd bcast if the same name is used for different binaries
+-- addons: add shell addon for interactive usage of a node
+
 * Tue Jun 25 2013 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.5.3-9
 - tag release 1.5.3-8
 -- addons: fixes for incorrect construction of compounded parameters
