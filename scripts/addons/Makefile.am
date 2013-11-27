@@ -35,6 +35,7 @@ dist_addonscripts_DATA		=	autoaccount.ad \
                                         qos.ad \
                                         relax_affinity.ad \
                                         spank-stats.ad \
+                                        shell.ad \
                                         tagoutput.ad \
                                         totalview.ad \
                                         vtune.ad \
