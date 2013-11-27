@@ -324,7 +324,7 @@ function submit_cmd {
 	fi
     elif [[ -n ${after_jobs} ]]
     then
-	local_submit_args+=( "-d" "afterany:${project_name[@]}" )
+	local_submit_args+=( "-d" "afterany:${after_jobs[@]}" )
     fi
 
     ## on fixe les informations concernant le mail
