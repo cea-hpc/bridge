@@ -191,6 +191,7 @@ typeset bridge_mprun_debug_mode=${BRIDGE_MPRUN_DEBUG_MODE}
 typeset exclusive=${BRIDGE_MPRUN_EXCLUSIVE:-no}
 #------------------------------------------------------------------------------------------------------------------
 typeset -a bridge_mprun_args
+typeset -a bridge_mprun_extra_parameters
 #------------------------------------------------------------------------------------------------------------------
 # on incremente le compteur d'appel recursif
 typeset BRIDGE_MPRUN_LOOP=${BRIDGE_MPRUN_LOOP:-0}
@@ -265,7 +266,7 @@ do
           ;;
 
       Z)
-	  bridge_mprun_extra_parameters+=( "-E" "${OPTARG[@]}" )
+	  bridge_mprun_extra_parameters+=( "-E" "${OPTARG}" )
 	  ;;
 
       M)
@@ -504,22 +505,22 @@ fi
 # qu'aucun autre parametre n'est fixe
 if [[ ${BRIDGE_MPRUN_ALLOCATION} != yes ]]
 then
-    if [[ -z ${bridge_mprun_extra_parameters} ]]
+    typeset -a default_extra_params
+    for opt in ${BRIDGE_MPRUN_DEFAULT_EXTRA_PARAMETERS}
+    do
+	default_extra_params+=( "-E" "${opt}" )
+    done
+    for opt in "${BRIDGE_MPRUN_DEFAULT_EXTRA_ARRAY_PARAMETERS[@]}"
+    do
+	default_extra_params+=( "-E" "${opt}" )
+    done
+
+    if [[ -z "${bridge_mprun_extra_parameters}" ]]
     then
-	export BRIDGE_MPRUN_EXTRA_PARAMETERS=( "-E" "${BRIDGE_MPRUN_DEFAULT_EXTRA_PARAMETERS[@]}" )
-	bridge_mprun_extra_parameters=( "${BRIDGE_MPRUN_EXTRA_PARAMETERS[@]}" )
-    else
-	if [[ -n ${BRIDGE_MPRUN_DEFAULT_EXTRA_PARAMETERS[@]} ]]
-	then
-	    bridge_mprun_extra_parameters=( "-E" "${BRIDGE_MPRUN_DEFAULT_EXTRA_PARAMETERS[@]}" "${bridge_mprun_extra_parameters[@]}" )
-	fi
-	export BRIDGE_MPRUN_EXTRA_PARAMETERS=( "${bridge_mprun_extra_parameters[@]}" )
+	typeset -a bridge_mprun_extra_parameters
     fi
-else
-    if [[ -n ${bridge_mprun_extra_parameters} ]]
-    then
-	export BRIDGE_MPRUN_EXTRA_PARAMETERS=( "${bridge_mprun_extra_parameters[@]}" )
-    fi
+    bridge_mprun_extra_parameters=( "${default_extra_params[@]}" "${bridge_mprun_extra_parameters[@]}" )
+    export BRIDGE_MPRUN_EXTRA_PARAMETERS=${bridge_mprun_extra_parameters}
 fi
 export BRIDGE_MPRUN_PWD=${PWD}
 if [[ -n ${BRIDGE_VERBOSE_MODE} ]]
