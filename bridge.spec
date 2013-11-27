@@ -1,7 +1,7 @@
 Summary: Bridge CEA In-House Batch Environment
 Name: bridge
-Version: 1.5.3
-Release: 11
+Version: 1.5.4
+Release: 0
 License: GPL License
 Group: System Environment/Base
 URL: http://
@@ -193,6 +193,15 @@ rm -rf $RPM_BUILD_ROOT
 %endif
 
 %changelog
+* Wed Nov 27 2013 Francois Diakhate <francois.diakhate@cea.fr>  - 1.5.4-0
+- tag release 1.5.4-0
+-- addons: add missing shell.ad
+
+* Wed Nov 27 2013 Francois Diakhate <francois.diakhate@cea.fr>  - 1.5.3-12
+- tag release 1.5.3-12
+-- mprun: enhance BRIDGE_MPRUN_EXTRA_(ARRAY_)PARAMETERS support
+-- msub/slurm: correct a reg in '-a job' management which appeared in 1.5.3-8
+
 * Wed Nov 13 2013 Francois Diakhate <francois.diakhate@cea.fr>  - 1.5.3-11
 - tag release 1.5.3-11
 -- mprun: re-fix special character handling in arguments which was broken since 1.5.3-8
