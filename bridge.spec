@@ -1,7 +1,7 @@
 Summary: Bridge CEA In-House Batch Environment
 Name: bridge
 Version: 1.5.4
-Release: 0
+Release: 1
 License: GPL License
 Group: System Environment/Base
 URL: http://
@@ -193,6 +193,10 @@ rm -rf $RPM_BUILD_ROOT
 %endif
 
 %changelog
+* Tue Dec 17 2013 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.5.4-1
+- tag release 1.5.4-1
+-- addons/autompi: bind /usr/bin/mpirun to mpich2 mpi type (RHEL6 MPI package)
+
 * Wed Nov 27 2013 Francois Diakhate <francois.diakhate@cea.fr>  - 1.5.4-0
 - tag release 1.5.4-0
 -- addons: add missing shell.ad
