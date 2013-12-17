@@ -35,6 +35,7 @@
 	-- mpp: optimizations for loaded machines
 	-- intelmpi-slurm.ad: add a new BRIDGE_SLURM_INTELMPI_CMD_DEFAULT_OPTIONS env var
 	-- addons: fix mpmd bcast if the same name is used for different binaries
+	-- mprun: enhance BRIDGE_MPRUN_EXTRA_(ARRAY_)PARAMETERS support
 	-- addons: add shell addon for interactive usage of a node
 
 * Changes in bridge-1.5.2
