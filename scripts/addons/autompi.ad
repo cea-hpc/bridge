@@ -87,6 +87,15 @@ function bridge_addon_mprun_alteropt {
 	    bridge_mprun_mpi_type=hpmpi
 	    ;;
 
+	/usr/bin/mpirun )
+	    # consider /usr/bin/mpirun as the default MPI
+	    # distribution of the system which on RHEL6 is
+	    # mpich2 (which does not support "--" as a
+	    # separator between params and app command line
+	    bridge_mprun_mpi_type=mpich2
+	    spmd_run_separator=" "
+	    ;;
+
 	*)
 	    # let a potential default value
 	    ;;
