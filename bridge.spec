@@ -1,13 +1,3 @@
-Summary: Bridge CEA In-House Batch Environment
-Name: bridge
-Version: 1.5.4
-Release: 1
-License: GPL License
-Group: System Environment/Base
-URL: http://
-Source0: %{name}-%{version}.tar.gz
-BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
-
 ### Thanks to slurm packagers
 %define bridge_with_opt() %{expand:%%{!?_without_%{1}:%%global bridge_with_%{1} 1}}
 %define bridge_without_opt() %{expand:%%{?_with_%{1}:%%global bridge_with_%{1} 1}}
@@ -25,31 +15,22 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
 %define _unpackaged_files_terminate_build      0
 ### Thanks again
 
-#
-# By default, compile and package in Tera style
-# Set tgcc to one to do it for Tgcc or tera to 0
-# to do it in the default way
-%if %{!?tgcc:1}%{?tgcc:0}
-%if %{!?tera:1}%{?tera:0}
-%define tera 1
-%endif
-%endif
-
-#
-# Revert to using TGCC preferences by default
-#
-%define tgcc 1
+# Remove the space between % and trace to activate RPM debug traces
+# (Commenting %blabla does not really disable it)
+# % trace
 
 #
 # Set Tera options if requested
 # > program prefix is cea_
 # > scripts and apps in /usr/local/bridge
 # > configuration files in /etc
-%if %{?tera}0
+%if %{?ccc_tera}0
 %define _program_prefix cea_
 %define prefix /usr/local/bridge
 %define sysconfdir /etc
 %bridge_with_opt slurm
+%define compat_target ccc
+%define target tera
 %endif
 
 #
@@ -57,19 +38,42 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
 # > program prefix is ccc_
 # > scripts and apps in /usr
 # > configuration files in /etc
-%if %{?tgcc}0
+%if %{?ccc_tgcc}0
 %define _program_prefix ccc_
 %define prefix /usr
 %define sysconfdir /etc
 %bridge_with_opt slurm
+%define compat_target cea
+%define target tgcc
 %endif
 
+#
+# If no target specified (neither tera nor tgcc),
+# compile without SLURM but in TGCC style
+# with cea_compat links
+%if %{!?target:1}0
+%define _program_prefix ccc_
+%define prefix /usr
+%define sysconfdir /etc
+%define compat_target cea
+%define target ws
+%endif
 
-# by default program prefix is cea_
+Summary: Bridge CCC In-House Batch Environment
+Name: bridge
+Version: 1.5.4
+Release: 2.%{?target}
+License: GPL License
+Group: System Environment/Base
+URL: http://
+Source0: %{name}-%{version}.tar.gz
+BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
+
+# by default program prefix is ccc_
 # you can alter it using --define "_program_prefix foo_" or remove it
 # using --define "_program_prefix %{nil}"
 %if %{!?_program_prefix:1}%{?_program_prefix:0}
-%define _program_prefix cea_ 
+%define _program_prefix ccc_ 
 %endif
 
 # by default prefix is /usr
@@ -96,25 +100,25 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
 %define _docdir         %{_datadir}/doc
 %define _libexecdir     /usr/libexec
 
-# Compiled with slurm plugin as default (disable using --without slurm)
-%bridge_with_opt slurm
+# # Compiled with slurm plugin as default (disable using --without slurm)
+# % bridge_with_opt slurm
 
 # nqsII and LSF not yet supported
 %bridge_without_opt nqsII
 %bridge_without_opt lsf
 
 %description
-Bridge CEA In-House Batch Environment gives a uniform way to access external 
+Bridge CCC In-House Batch Environment gives a uniform way to access external 
 Batch scheduling systems.
 It currently provides plugins for slurm.
 
 %if %{bridge_with slurm}
 %package slurm
-Summary: Slurm plugins for Bridge CEA In-House Batch Environment
+Summary: Slurm plugins for Bridge CCC In-House Batch Environment
 Group: System Environment/Base
 Requires: slurm >= 1.3.6 bridge >= 1.3.12
 %description slurm
-Plugins that provides Slurm access accross the CEA Batch systems Bridge
+Plugins that provides Slurm access accross the CCC Batch systems Bridge
 %endif
 
 %prep
@@ -134,6 +138,17 @@ mkdir -p "$RPM_BUILD_ROOT"
 DESTDIR="$RPM_BUILD_ROOT" make install
 %if %{bridge_with slurm}
 chmod 755 ${RPM_BUILD_ROOT}/%{_prefix}/share/scripts/resource_manager/addons/get_task_info
+%endif
+%if %{?compat_target}0
+# create cea_ compatibility links
+for dr in %{buildroot}/%{_bindir} %{buildroot}/%{_sbindir} %{buildroot}/%{_sysconfdir}/init.d %{buildroot}/%{_sysconfdir}/sysconfig
+do
+	pushd $dr
+      	for fl in %{_program_prefix}* ; do
+      	    ln -s $fl %{?compat_target}_${fl##%{_program_prefix}}
+      	done
+	popd
+done
 %endif
 
 %clean
@@ -155,7 +170,7 @@ rm -rf $RPM_BUILD_ROOT
 %config (noreplace) %{_sysconfdir}/bridge.conf
 %config (noreplace) %{_sysconfdir}/bridge_bs.conf
 %config (noreplace) %{_sysconfdir}/bridge_rm.conf
-%{_bindir}/*
+%{_bindir}/%{_program_prefix}*
 %{_includedir}/bridge.h
 %{_includedir}/bridge_common.h
 %{_libdir}/libbridge.*
@@ -172,6 +187,23 @@ rm -rf $RPM_BUILD_ROOT
 %config %{_sysconfdir}/logrotate.d/%{_program_prefix}bridged
 %{_includedir}/bridgedapi.h
 %{_libdir}/libbridgedapi.*
+
+%if %{?compat_target}0
+%package %{?compat_target}_compat
+Summary: Compatibility links for alternative Bridge command prefix
+Group: System Environment/Base
+Requires: bridge
+%description %{?compat_target}_compat
+Additional package providing %{?compat_target}_* compatibility links to the 
+%{_program_prefix}* commands provided by the standard flavor of Bridge.
+
+%files %{?compat_target}_compat
+%defattr(-,root,root,-)
+%{_bindir}/%{?compat_target}_*
+%{_sbindir}/%{?compat_target}_*
+%config %{_sysconfdir}/init.d/%{?compat_target}_bridged
+%config (noreplace) %{_sysconfdir}/sysconfig/%{?compat_target}_bridged
+%endif
 
 %if %{bridge_with slurm}
 %files slurm
@@ -193,6 +225,22 @@ rm -rf $RPM_BUILD_ROOT
 %endif
 
 %changelog
+* Tue Dec 17 2013 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.5.4-2
+- tag release 1.5.4-2
+-- modify spec file to automate the generation of different styles of packaging :
+   --define "ccc_tera 1" : generate with cea_ prog prefix in /usr/local/bridge
+   	    	           compile with slurm support by default
+   	    	      	   add a bridge-ccc_compat for ccc_ links
+   --define "ccc_tgcc 1" : generate with ccc_ prog prefix in /usr
+   	    	       	   compile with slurm support by default
+   	    	       	   add a bridge-cea_compat for cea_ links
+   default : generate with ccc_ prog prefix in /usr
+   	     compile without slurm support
+	     add a bridge-cea_compat for cea_ links
+
+-- in tgcc mode (the default), create a bridge-cea_compat package providing
+   the cea_* compatibility links to the ccc_* equivalents
+
 * Tue Dec 17 2013 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.5.4-1
 - tag release 1.5.4-1
 -- addons/autompi: bind /usr/bin/mpirun to mpich2 mpi type (RHEL6 MPI package)
