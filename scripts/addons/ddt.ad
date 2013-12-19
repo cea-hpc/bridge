@@ -24,7 +24,7 @@
 #################################################################################
 #
 # Addon for DDT debuger support in Bridge
-# 
+#
 #################################################################################
 
 function bridge_addon_mprun_setopt {
@@ -43,17 +43,17 @@ function bridge_addon_mprun_setopt {
 }
 
 function bridge_addon_mprun_getopt {
-    
+
     ## on se place en mode debug si souhaite
     typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
     if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
 	then
 	set -x
     fi
-    
+
     ## on incremente le niveau de log
     typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
-    
+
     ## on ajoute une entete a la log
     typeset LOGGER="${LOGGER} DDT Addon :"
 
@@ -67,15 +67,15 @@ function bridge_addon_mprun_getopt {
     typeset USAGE="\
 \t*) DDT
 \t\t -d ddt: launch the application in debug mode using DDT\n"
-    
+
     ## on fixe le status de sortie par defaut
     typeset exit_status=0
-    
+
     ## on parse les arguments
     while getopts ${BRIDGE_MPRUN_GETOPT_OPTIONS} option
       do
       case ${option} in
-	  
+
 	  h)
 	      echo -e "${USAGE}" >&2
 	      return 0
@@ -109,7 +109,7 @@ function bridge_addon_mprun_alteropt {
 
     ## on incremente le niveau de log
     typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
-    
+
     ## on ajoute une entete a la log
     typeset LOGGER="${LOGGER} DDT Addon :"
 
@@ -135,14 +135,14 @@ function bridge_addon_mprun_alteropt {
 	case ${RESOURCE_MANAGER} in
 	    ws)
 	        export DDTMPIRUN=mpirun
-		export EXTRA_MPI_ARGUMENTS_TAG=${bridge_mprun_extra_parameters}
-		bridge_mprun_extra_parameters=
+		export EXTRA_MPI_ARGUMENTS_TAG="${bridge_mprun_extra_parameters[@]}"
+		bridge_mprun_extra_parameters=()
 		;;
 	    slurm)
 		export EXTRA_MPI_ARGUMENTS_TAG=${BRIDGE_SLURM_OMPI_CMD_OPTIONS}
 		;;
 	esac
-	
+
 	export DDT_NO_TIMEOUT=1
 	export DDT_PROCESS_TIMEOUT=0
 	export BRIDGE_BROADCAST_MODE=0
@@ -154,11 +154,11 @@ function bridge_addon_mprun_alteropt {
 	## on lance le programme en debug via DDT
 	${LOGGER} "swapping mprun program with DDT"
 	bridge_mprun_cmd="ddt"
-	bridge_mprun_args="-n ${bridge_mprun_nproc:-1} ${bridge_mprun_args}"
-	
+	bridge_mprun_args=( "-n" "${bridge_mprun_nproc:-1}" "${bridge_mprun_args[@]}")
+
 	## on fixe le code d'erreur
 	exit_status=0
-	
+
     fi
 
     return ${exit_status}
@@ -188,5 +188,5 @@ function bridge_addon_mprun_spmd_pre_run {
 function bridge_addon_mprun_spmd_post_run {
 
     return 0
-    
+
 }

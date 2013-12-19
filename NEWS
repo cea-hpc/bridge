@@ -1,3 +1,9 @@
+* Changes in bridge-1.5.4
+=========================
+	-- addons/autompi: bind /usr/bin/mpirun to mpich2 mpi type (RHEL6 MPI package)
+	-- addons/ddt: correct a bug introduced when switching to arrays when passing
+	   arguments from mprun to ddt addon
+
 * Changes in bridge-1.5.3
 =========================
 	-- Addons: add openmpi-slurm-direct addon
@@ -37,7 +43,6 @@
 	-- addons: fix mpmd bcast if the same name is used for different binaries
 	-- mprun: enhance BRIDGE_MPRUN_EXTRA_(ARRAY_)PARAMETERS support
 	-- addons: add shell addon for interactive usage of a node
-	-- addons/autompi: bind /usr/bin/mpirun to mpich2 mpi type (RHEL6 MPI package)
 
 * Changes in bridge-1.5.2
 =========================
