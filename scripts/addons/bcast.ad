@@ -76,7 +76,8 @@ function is_bcast_needed {
        fi
     fi
 
-    return 1
+    # by default, do not enable broadcast
+    return 0
 }
 
 
