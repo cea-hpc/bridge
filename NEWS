@@ -3,6 +3,7 @@
 	-- addons/autompi: bind /usr/bin/mpirun to mpich2 mpi type (RHEL6 MPI package)
 	-- addons/ddt: correct a bug introduced when switching to arrays when passing
 	   arguments from mprun to ddt addon
+	-- addons/autompi: correct a bug introduced when switching to arrays
 
 * Changes in bridge-1.5.3
 =========================

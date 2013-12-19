@@ -1,5 +1,5 @@
 #*****************************************************************************\
-#  scripts/addons/autompi.ad - 
+#  scripts/addons/autompi.ad -
 #******************************************************************************
 #  Copyright  CEA/DAM/DIF (2012)
 #
@@ -29,10 +29,10 @@
 #
 #     - openmpi : OpenMPI
 #     - mpich : MPICH V1
-#     - mpich2 : MPICH v2 
-#     - hpmpi : HP MPI 
+#     - mpich2 : MPICH v2
+#     - hpmpi : HP MPI
 #     - none : no mpicc found in the path
-# 
+#
 #################################################################################
 
 function bridge_addon_mprun_setopt {
@@ -42,7 +42,7 @@ function bridge_addon_mprun_setopt {
 }
 
 function bridge_addon_mprun_getopt {
-    
+
     return 0
 
 }
@@ -55,10 +55,10 @@ function bridge_addon_mprun_alteropt {
 	then
 	set -x
     fi
-    
+
     ## on incremente le niveau de log
     typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
-    
+
     ## on ajoute une entete a la log
     typeset LOGGER="${LOGGER} MPI Type autodetect Addon :"
 
@@ -122,17 +122,17 @@ function bridge_addon_mprun_spmd_post_allocate {
 
 function bridge_addon_mprun_spmd_pre_run {
 
-    case "${bridge_mprun_mpi_type}" in 
+    case "${bridge_mprun_mpi_type}" in
 	mpich)
-	    spmd_run_options="${spmd_run_options} -all-local"
+	    spmd_run_options+=( "-all-local" )
 	    ;;
 	openmpi)
-	    spmd_run_options="${spmd_run_options} --launch-agent \"LD_LIBRARY_PATH=$LD_LIBRARY_PATH orted\""
+	    spmd_run_options+=( "--launch-agent" "LD_LIBRARY_PATH=$LD_LIBRARY_PATH orted" )
 	    ;;
 	*)
 	    ;;
     esac
-    
+
     return 0
 
 }
@@ -140,5 +140,5 @@ function bridge_addon_mprun_spmd_pre_run {
 function bridge_addon_mprun_spmd_post_run {
 
     return 0
-    
+
 }
