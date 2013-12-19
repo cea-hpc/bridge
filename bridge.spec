@@ -62,7 +62,7 @@
 Summary: Bridge CCC In-House Batch Environment
 Name: bridge
 Version: 1.5.4
-Release: 2.%{?target}
+Release: 3.%{?target}
 License: GPL License
 Group: System Environment/Base
 URL: http://
@@ -225,6 +225,9 @@ Additional package providing %{?compat_target}_* compatibility links to the
 %endif
 
 %changelog
+* Thu Dec 19 2013 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.5.4-3
+-- addons/ddt: correct a bug introduced when switching to arrays when passing args
+
 * Tue Dec 17 2013 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.5.4-2
 - tag release 1.5.4-2
 -- modify spec file to automate the generation of different styles of packaging :
