@@ -283,6 +283,12 @@ function spmd_run_cmd {
 	    spmd_run_options+=( "-p" "${spmd_run_partition}" )
 	fi
 
+	# replace space separator by an empty array
+	if [[ ${spmd_run_separator} != " " ]]
+	then
+	    spmd_run_extra_parameters+=( "${spmd_run_separator}" )
+	fi
+
 	# then build full spmd cmd integrating the options
 	if [[ ${spmd_run_cmd} == "mpirun" ]] && [[ ${#spmd_run_options[@]} -ne 0 ]]
 	then
@@ -291,8 +297,8 @@ function spmd_run_cmd {
 
 	if [[ ${BRIDGE_MPRUN_ALLOCATION} == yes ]]
 	    then
-	    ${LOGGER} $(printf "%q " "${spmd_run_cmd[@]}" "${spmd_run_extra_parameters[@]}" "${spmd_run_separator}" "${spmd_run_args[@]}")
-	    "${spmd_run_cmd[@]}" ${spmd_run_extra_parameters[@]} "${spmd_run_separator}" "${spmd_run_args[@]}" 
+	    ${LOGGER} $(printf "%q " "${spmd_run_cmd[@]}" "${spmd_run_extra_parameters[@]}" "${spmd_run_args[@]}")
+	    "${spmd_run_cmd[@]}" "${spmd_run_extra_parameters[@]}" "${spmd_run_args[@]}"
 	else
 	    wrapper_cmd="ksh -c"
 	    # build options
@@ -305,8 +311,8 @@ function spmd_run_cmd {
 	    then
 		sub_cmd+=( "ulimit -t ${spmd_run_maxtime};" )
 	    fi
-	    ${LOGGER} "${wrapper_cmd} \"${sub_cmd[@]} $(printf "%q " "${spmd_run_cmd[@]}") ${spmd_run_extra_parameters[@]} ${spmd_run_separator} ${spmd_run_args[@]}\""
-	    ${wrapper_cmd} "${sub_cmd[*]} $(printf "%q " "${spmd_run_cmd[@]}") ${spmd_run_extra_parameters[*]} ${spmd_run_separator} $(printf "%q " ${spmd_run_args[@]})"
+	    ${LOGGER} "${wrapper_cmd} \"${sub_cmd[@]} $(printf "%q " "${spmd_run_cmd[@]}") ${spmd_run_extra_parameters[@]} ${spmd_run_args[@]}\""
+	    ${wrapper_cmd} "${sub_cmd[*]} $(printf "%q " "${spmd_run_cmd[@]}") ${spmd_run_extra_parameters[*]} $(printf "%q " ${spmd_run_args[@]})"
 	fi
 
 	exit_status=$?

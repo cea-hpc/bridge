@@ -73,6 +73,7 @@ function bridge_addon_mprun_alteropt {
 
 	*openmpi* )
 	    bridge_mprun_mpi_type=openmpi
+	    spmd_run_separator=" "
 	    ;;
 
 	*mpich-1* )
