@@ -355,7 +355,9 @@ function spmd_run_cmd {
 	then
 
         # build options if required (still srun after addons stages)
-	if [[ ${spmd_run_cmd} == "srun" ]]
+	# (or spmd_run_options is now "srun -a" meanings that a debug session like
+	# totalview will take over)
+	if [[ ${spmd_run_cmd} == "srun" ]] || [[ ${spmd_run_options} == "srun -a" ]]
 	   then
 
 	   if [[ -n ${spmd_run_ncore} ]]
