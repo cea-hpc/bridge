@@ -62,7 +62,7 @@
 Summary: Bridge CCC In-House Batch Environment
 Name: bridge
 Version: 1.5.4
-Release: 3.%{?target}
+Release: 4.%{?target}
 License: GPL License
 Group: System Environment/Base
 URL: http://
@@ -225,6 +225,9 @@ Additional package providing %{?compat_target}_* compatibility links to the
 %endif
 
 %changelog
+* Thu Dec 19 2013 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.5.4-4
+-- rm/plugins/ws|openmpi: correct separator management in mprun for openmpi and ws plugin
+
 * Thu Dec 19 2013 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.5.4-3
 -- addons/ddt: correct a bug introduced when switching to arrays when passing args
 

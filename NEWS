@@ -4,6 +4,9 @@
 	-- addons/ddt: correct a bug introduced when switching to arrays when passing
 	   arguments from mprun to ddt addon
 	-- addons/autompi: correct a bug introduced when switching to arrays
+	-- new specfile logic using tera|tgcc rpmspec env variables to generate according
+	   to the requirements of each platform
+	-- rm/plugins/ws|openmpi: correct separator management in mprun for openmpi and ws plugin
 
 * Changes in bridge-1.5.3
 =========================
