@@ -9,6 +9,8 @@
 	-- rm/plugins/ws|openmpi: correct separator management in mprun for openmpi and ws plugin
 	-- addons/totalview: ensure that a debug step not using the job resources
 	   (i.e. lower -n ... value) works properly
+	-- addons/mpmd-cluster-wrapper : ensure correct behavior of the plugin when args are
+	   passed using shell arrays
 
 * Changes in bridge-1.5.3
 =========================
