@@ -62,7 +62,7 @@
 Summary: Bridge CCC In-House Batch Environment
 Name: bridge
 Version: 1.5.4
-Release: 4.%{?target}
+Release: 5.%{?target}
 License: GPL License
 Group: System Environment/Base
 URL: http://
@@ -225,6 +225,13 @@ Additional package providing %{?compat_target}_* compatibility links to the
 %endif
 
 %changelog
+
+* Mon Jan 13 2014 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.5.4-5
+-- addons/totalview: ensure that a debug step not using the job resources
+   (i.e. lower -n ... value) works properly
+-- addons/mpmd-cluster-wrapper : ensure correct behavior of the plugin when args are
+   passed using shell arrays
+
 * Thu Dec 19 2013 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.5.4-4
 -- rm/plugins/ws|openmpi: correct separator management in mprun for openmpi and ws plugin
 
