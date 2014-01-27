@@ -35,6 +35,7 @@ dist_addonscripts_DATA		=	autoaccount.ad \
                                         qos.ad \
                                         relax_affinity.ad \
                                         spank-stats.ad \
+					strace.ad \
                                         shell.ad \
                                         tagoutput.ad \
                                         totalview.ad \
@@ -42,4 +43,4 @@ dist_addonscripts_DATA		=	autoaccount.ad \
                                         wrapper-DAM.ad \
                                         x11.ad
 
-dist_addonscripts_SCRIPTS	=	vtune.sh spank-stats.sh
+dist_addonscripts_SCRIPTS	=	vtune.sh spank-stats.sh strace.sh

@@ -11,6 +11,7 @@
 	   (i.e. lower -n ... value) works properly
 	-- addons/mpmd-cluster-wrapper : ensure correct behavior of the plugin when args are
 	   passed using shell arrays
+	-- addons: add new strace addon for mprun (enabling to trace parallel apps using strace)
 
 * Changes in bridge-1.5.3
 =========================
