@@ -62,7 +62,7 @@
 Summary: Bridge CCC In-House Batch Environment
 Name: bridge
 Version: 1.5.4
-Release: 5.%{?target}
+Release: 6.%{?target}
 License: GPL License
 Group: System Environment/Base
 URL: http://
@@ -225,6 +225,12 @@ Additional package providing %{?compat_target}_* compatibility links to the
 %endif
 
 %changelog
+
+* Tue Jan 28 2014 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.5.4-6
+-- addons: add new strace addon for mprun
+   (enabling to trace parallel apps using strace)
+-- switch to properly defined integers when managing ksh internal
+   debug/verbosity levels
 
 * Mon Jan 13 2014 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.5.4-5
 -- addons/totalview: ensure that a debug step not using the job resources
