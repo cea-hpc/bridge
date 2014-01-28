@@ -24,14 +24,14 @@
 function spmd_allocate_cmd {
 
     ## on se place en mode debug si souhaite
-    typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    typeset -i BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
     if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
 	then
 	set -x
     fi
 
     ## on incremente le niveau de log
-    typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+    typeset -i BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
 
     ## on indique le profile associe au plugin
     export BRIDGE_MPRUN_PROFILE=${BRIDGE_PROFILE_DIR}/torque.sh
@@ -157,14 +157,14 @@ function spmd_allocate_cmd {
 function spmd_run_cmd {
 
     ## on se place en mode debug si souhaite
-    typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    typeset -i BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
     if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
 	then
 	set -x
     fi
 
     ## on incremente le niveau de log
-    typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+    typeset -i BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
 
     ## on indique le profile associe au plugin
     export BRIDGE_MPRUN_PROFILE=${BRIDGE_PROFILE_DIR}/torque.sh

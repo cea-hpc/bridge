@@ -52,14 +52,14 @@ function bridge_addon_mprun_setopt {
 function bridge_addon_mprun_getopt {
     
     ## on se place en mode debug si souhaite
-    typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    typeset -i BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
     if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
 	then
 	set -x
     fi
     
     ## on incremente le niveau de log
-    typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+    typeset -i BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
     
     ## on ajoute une entete a la log
     typeset LOGGER="${LOGGER} IntelMPI Addon :"
@@ -102,14 +102,14 @@ function bridge_addon_mprun_getopt {
 function bridge_addon_mprun_alteropt {
 
     ## on se place en mode debug si souhaite
-    typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    typeset -i BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
     if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
 	then
 	set -x
     fi
     
     ## on incremente le niveau de log
-    typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+    typeset -i BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
     
     ## on ajoute une entete a la log
     typeset LOGGER="${LOGGER} IntelMPI Addon :"

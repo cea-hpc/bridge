@@ -103,11 +103,12 @@ typeset BRIDGE_CATEGORIES=""
 #------------------------------------------------------------------------------------------------------------------
 # on fixe les variables liees a la log
 #------------------------------------------------------------------------------------------------------------------
+typeset -i BRIDGE_DEBUG_MAXLEVEL=${BRIDGE_DEBUG_MAXLEVEL:-0}
 typeset BRIDGE_DEBUG_MODE=${BRIDGE_DEBUG_MODE:-no}
 typeset BRIDGE_CHECK_ONLY=${BRIDGE_CHECK_ONLY:-no}
 typeset BRIDGE_VERBOSE_MODE=${BRIDGE_VERBOSE_MODE:-no}
-typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-1}
-typeset BRIDGE_VERBOSE_MAXLEVEL=${BRIDGE_VERBOSE_MAXLEVEL:-0}
+typeset -i BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-1}
+typeset -i BRIDGE_VERBOSE_MAXLEVEL=${BRIDGE_VERBOSE_MAXLEVEL:-0}
 typeset BRIDGE_LOGFILE=""
 typeset EXIT_STATUS=1
 #------------------------------------------------------------------------------------------------------------------

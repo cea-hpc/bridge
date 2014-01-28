@@ -99,14 +99,14 @@ function _load_slurm_infos {
 function submit_cmd {
     
     ## on se place en mode debug si souhaite
-    typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    typeset -i BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
     if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
 	then
 	set -x
     fi
 
     ## on incremente le niveau de log
-    typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+    typeset -i BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
 
     ## on fixe les variables de travail
     typeset VERSION="Slurm-1.0"
@@ -530,14 +530,14 @@ function submit_cmd {
 function bsinfo_cmd {
 
     ## on se place en mode debug si souhaite
-    typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    typeset -i BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
     if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
 	then
 	set -x
     fi
 
     ## on incremente le niveau de log
-    typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+    typeset -i BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
 
     ## on fixe les variables de travail
     typeset VERSION="Slurm-1.0"
@@ -658,14 +658,14 @@ EOF
 function bsdel_cmd {
 
     ## on se place en mode debug si souhaite
-    typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    typeset -i BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
     if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
 	then
 	set -x
     fi
 
     ## on incremente le niveau de log
-    typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+    typeset -i BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
 
     ## on fixe les variables de travail
     typeset VERSION="Slurm-1.0"

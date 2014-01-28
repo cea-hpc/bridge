@@ -59,7 +59,7 @@
 function _check_lockdata_validity {
 
     ## On se place en mode verbeux si souhaite
-    typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    typeset -i BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
     if [ "${BRIDGE_DEBUG_MODE}" == "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_VERBOSE_MAXLEVEL} ]]
 	then
 	set -x
@@ -72,7 +72,7 @@ function _check_lockdata_validity {
     ## On definit le niveau de log en fonction du niveau
     ## d imbrication de la fonction c est a dire le niveau de la
     ## fonction appelante incrementer de 1
-    typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+    typeset -i BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
 
     ## on definit les variables locales
     typeset status=0
@@ -152,7 +152,7 @@ function _check_lockdata_validity {
 function _build_lock {
 
     ## On se place en mode verbeux si souhaite
-    typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    typeset -i BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
     if [ "${BRIDGE_DEBUG_MODE}" == "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_VERBOSE_MAXLEVEL} ]]
 	then
 	set -x
@@ -165,7 +165,7 @@ function _build_lock {
     ## On definit le niveau de log en fonction du niveau
     ## d imbrication de la fonction c est a dire le niveau de la
     ## fonction appelante incrementer de 1
-    typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+    typeset -i BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
 
     ## on definit les variables locales
     typeset status=0
@@ -279,7 +279,7 @@ function bridge_lock_mgr {
     ###############################################################
     # On se place en mode verbeux si souhaite
     #--------------------------------------------------------------
-    typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    typeset -i BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
     if [ "${BRIDGE_DEBUG_MODE}" == "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_VERBOSE_MAXLEVEL} ]]
 	then
 	set -x
@@ -296,7 +296,7 @@ function bridge_lock_mgr {
     # d imbrication de la fonction c est a dire le niveau de la
     # fonction appelante incrementer de 1
     #--------------------------------------------------------------
-    typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+    typeset -i BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
 
     ###############################################################
     # On definit les codes d'erreur
