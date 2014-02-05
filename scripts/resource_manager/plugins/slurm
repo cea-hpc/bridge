@@ -507,7 +507,7 @@ function mpinfo_print_status {
         if [  -z "$partition_arg" ] ; then
           printf "%-12s %-8s %6d  %6d  %6d  %6d  %6d  %6d  %6d  %6d   %4d  %2d  %2d  %2d  %2d\n" $PARTITION $STATE  $4 $3  $1 $2 $8 $7 $5 $6 $MEMPERCORE $CPUSPERNODE $SOCKETSPERNODE $CORESPERSOCKET $THREADSPERCORE
         else
-          printf "partition        : $PARTITION\nstatus           : $STATE\nnb noeuds        : $8\nnb coeurs        : $4\nmem par noeud    : $MEMPERNODE Mo\nmax mem par coeur: $MEMPERCORE Mo\ncpus par noeud   : $CPUSPERNODE\nsockets par noeud: $SOCKETSPERNODE\ncoeurs par socket: $CORESPERSOCKET\nthreads par coeur: $THREADSPERCORE\nliste des noeuds : $NODES\n"
+          printf "partition        : $PARTITION\nstatus           : $STATE\nnumber of nodes  : $8\nnumber of cores  : $4\nmemory per node  : $MEMPERNODE Mo\nmax mem per core : $MEMPERCORE Mo\ncpus per node    : $CPUSPERNODE\nsockets per node : $SOCKETSPERNODE\ncores per socket : $CORESPERSOCKET\nthreads per core : $THREADSPERCORE\nnodes list       : $NODES\n"
         fi
     done
     
