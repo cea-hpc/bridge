@@ -13,6 +13,8 @@
 	   passed using shell arrays
 	-- addons: add new strace addon for mprun (enabling to trace parallel apps using strace)
 	-- mprun: translate output from french to english when using -p
+	-- addons/intelmpi-slurm.ad: switch to intelmpi mode when intel|intel64 is
+	   detected in mpirun path
 
 * Changes in bridge-1.5.3
 =========================
