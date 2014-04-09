@@ -62,7 +62,7 @@
 Summary: Bridge CCC In-House Batch Environment
 Name: bridge
 Version: 1.5.4
-Release: 6.%{?target}
+Release: 7.%{?target}
 License: GPL License
 Group: System Environment/Base
 URL: http://
@@ -225,6 +225,9 @@ Additional package providing %{?compat_target}_* compatibility links to the
 %endif
 
 %changelog
+* Wed Apr 09 2014 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.5.4-7
+-- addons/intelmpi-slurm.ad: switch to intelmpi mode when intel|intel64 is
+   detected in mpirun path
 
 * Tue Jan 28 2014 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.5.4-6
 -- addons: add new strace addon for mprun
