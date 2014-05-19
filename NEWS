@@ -15,6 +15,8 @@
 	-- mprun: translate output from french to english when using -p
 	-- addons/intelmpi-slurm.ad: switch to intelmpi mode when intel|intel64 is
 	   detected in mpirun path
+	-- addons/reservation.ad: new addon to use a particular SLURM reservation
+	   as defined using the BRIDGE_RESERVATION env variable.
 
 * Changes in bridge-1.5.3
 =========================

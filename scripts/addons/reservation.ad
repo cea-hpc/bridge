@@ -1,0 +1,149 @@
+#*****************************************************************************\
+#  scripts/addons/reservation.ad - Add BRIDGE_RESERVATION env var support
+#******************************************************************************
+#  Copyright  CEA/DAM/DIF (2014)
+#
+#  This file is part of Bridge, an abstraction layer to ease batch system and
+#  resource manager usage in heterogeneous HPC environments.
+#
+#  Bridge is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  Bridge is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with Bridge.  If not, see <http://www.gnu.org/licenses/>
+#*****************************************************************************/
+
+## MSUB
+function bridge_addon_msub_setopt {
+    return 0
+}
+
+function bridge_addon_msub_getopt {
+    typeset USAGE="\
+\t*) Reservation addon
+\t This addon automatically enforces the usage of a particular SLURM reservation
+\t when the env variable BRIDGE_RESERVATION is set to the requested value.
+\t (note that it only works with SLURM >= 2.6)
+\n"
+
+    while getopts ${BRIDGE_MSUB_GETOPT_OPTIONS} option
+      do
+      case ${option} in
+
+	  h)
+	      echo -e "${USAGE}" >&2
+	      return 0
+	      ;;
+
+	  *)
+	      ;;
+      esac
+    done
+    return 0
+}
+
+
+function bridge_addon_msub_alteropt {
+    ## on se place en mode debug si souhaite
+    typeset -i BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+	then
+	set -x
+    fi
+
+    ## on incremente le niveau de log
+    typeset -i BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+
+    ## on ajoute une entete a la log
+    typeset LOGGER="${LOGGER} Bridge Reservation Addon :"
+
+    if [[ -n ${BRIDGE_RESERVATION} ]]; then
+	${LOGGER} "now requesting reservation ${BRIDGE_RESERVATION} usage"
+	export SBATCH_RESERVATION=${BRIDGE_RESERVATION}
+    fi
+
+    return 0
+}
+
+function bridge_addon_msub_alterscript {
+    return 0
+}
+
+
+
+##MPRUN
+function bridge_addon_mprun_setopt {
+    return 0
+}
+
+function bridge_addon_mprun_getopt {
+    typeset USAGE="\
+\t*) Reservation addon
+\t This addon automatically enforces the usage of a particular SLURM reservation
+\t when the env variable BRIDGE_RESERVATION is set to the requested value.
+\t (note that it only works with SLURM >= 2.6)
+\n"
+
+    while getopts ${BRIDGE_MPRUN_GETOPT_OPTIONS} option
+      do
+      case ${option} in
+
+	  h)
+	      echo -e "${USAGE}" >&2
+	      return 0
+	      ;;
+
+	  *)
+	      ;;
+      esac
+    done
+    return 0
+}
+
+function bridge_addon_mprun_alteropt {
+    ## on se place en mode debug si souhaite
+    typeset -i BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+	then
+	set -x
+    fi
+
+    ## on incremente le niveau de log
+    typeset -i BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+
+    ## on ajoute une entete a la log
+    typeset LOGGER="${LOGGER} Bridge Reservation Addon :"
+
+    if [[ -n ${BRIDGE_RESERVATION} ]]; then
+	${LOGGER} "now requesting reservation ${BRIDGE_RESERVATION} usage"
+	export SALLOC_RESERVATION=${BRIDGE_RESERVATION}
+	export SRUN_RESERVATION=${BRIDGE_RESERVATION}
+    fi
+
+    return 0
+}
+
+function bridge_addon_mprun_spmd_pre_allocate {
+    return 0
+}
+
+
+function bridge_addon_mprun_spmd_post_allocate {
+    return 0
+}
+
+
+function bridge_addon_mprun_spmd_pre_run {
+    return 0
+}
+
+function bridge_addon_mprun_spmd_post_run {
+    return 0
+}

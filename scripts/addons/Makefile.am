@@ -34,6 +34,7 @@ dist_addonscripts_DATA		=	autoaccount.ad \
                                         openmpi-slurm-direct.ad \
                                         qos.ad \
                                         relax_affinity.ad \
+                                        reservation.ad \
                                         spank-stats.ad \
 					strace.ad \
                                         shell.ad \
