@@ -17,6 +17,8 @@
 	   detected in mpirun path
 	-- addons/reservation.ad: new addon to use a particular SLURM reservation
 	   as defined using the BRIDGE_RESERVATION env variable.
+	-- addons/autoswitches-slurm.ad: new addons to automatically specify the value
+	   of the max number of switches requested in SLURM
 
 * Changes in bridge-1.5.3
 =========================

@@ -10,6 +10,7 @@ dist_addonscripts_DATA		=	autoaccount.ad \
                                         autompi.ad \
                                         autopacking.ad \
                                         autoqueue.ad \
+                                        autoswitches-slurm.ad \
                                         bcast.ad \
                                         bridge-profile.ad \
                                         bullmpi-slurm.ad \

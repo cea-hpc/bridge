@@ -1,0 +1,189 @@
+#*****************************************************************************\
+#  scripts/addons/autoswitches-slurm.ad - 
+#******************************************************************************
+#  Copyright  CEA/DAM/DIF (2014)
+#
+#  This file is part of Bridge, an abstraction layer to ease batch system and
+#  resource manager usage in heterogeneous HPC environments.
+#
+#  Bridge is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  Bridge is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with Bridge.  If not, see <http://www.gnu.org/licenses/>
+#*****************************************************************************/
+
+################################################################################
+#
+# This addon enables to automatically set the SLURM_REQ_SWITCHES env var
+# according to the value defined by the detailed configuration.
+#
+# The switches count configuration is provided by the value of the 
+# BRIDGE_ADDON_AUTOSWITCHES_CONF env variable
+# 
+# The following pattern is looked for :
+#
+# %partname:%ncores/%nswitches[,nc/ns[...]] [%partname2:...]
+#
+# The algorithm is the following :
+# 
+# - if SLURM_REQ_SWITCHES is not set and the number of requested cores and
+#   partition are known, then
+#   - iterate on the different subelement nc/ns looking for the
+#     nswitches value of the corresponding partition having req cores <= ncores
+# 
+################################################################################
+
+# synopsis: enforce_autoswitches_conf partname req_ncores
+function enforce_autoswitches_conf {
+    if [[ $# -eq 2 ]]
+    then
+	typeset LOGGER="${LOGGER} SLURM Auto-Switches Addon :"
+    
+	req_part=$1
+	req_ncores=$2
+	# conf element is of the form "part_name:ncores/nswitches[,ncores/nswitches[...]]"
+	for part_conf in ${BRIDGE_ADDON_AUTOSWITCHES_CONF}
+	do
+	    typeset part=${part_conf%%:*}
+	    typeset conf=${part_conf##*:}
+	    if [[ ${part} == ${conf} ]] || [[ ${part} != ${req_part} ]]
+	    then
+		${LOGGER} "skipping conf element ${part_conf}"
+	    else
+		${LOGGER} "using conf element ${part}=${conf}"
+		for couple in ${conf/,/\ }
+		do
+		    nc=${couple%%\/*}
+		    ns=${couple##*\/}
+		    if [[ ${ns} != ${nc} ]]
+		    then
+			if [[ ${req_ncores} -le ${nc} ]]
+			then
+			    ${LOGGER} "using conf subelement ${nc}/${ns}"
+			    ${LOGGER} "setting SLURM_REQ_SWITCHES=${ns}"
+			    export SLURM_REQ_SWITCHES=${ns}
+			    break
+			else
+			    ${LOGGER} "skipping conf subelement ${nc}/${ns}"
+			fi
+		    fi
+		done
+	    fi
+	done
+    fi
+}
+
+################################################################################
+#
+# MSUB RELATED FUNCTIONS MSUB RELATED FUNCTIONS MSUB RELATED FUNCTIONS
+#
+################################################################################
+
+function bridge_addon_msub_setopt {
+    return 0
+}
+
+function bridge_addon_msub_getopt {
+    return 0
+}
+
+
+function bridge_addon_msub_alteropt {
+
+    ## on se place en mode debug si souhaite
+    typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+	then
+	set -x
+    fi
+    
+    ## on incremente le niveau de log
+    typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+    
+    ## do autoswitches check
+    if  [[ -n ${BRIDGE_MSUB_NPROC} ]] && \
+	[[ -n ${BRIDGE_MSUB_QUEUE} ]] && \
+	[[ ${BRIDGE_MSUB_QUEUE} != "special" ]] && \
+	[[ -z ${SLURM_REQ_SWITCHES} ]] && \
+	[[ -n ${BRIDGE_ADDON_AUTOSWITCHES_CONF} ]]
+    then
+	enforce_autoswitches_conf ${BRIDGE_MSUB_QUEUE} \
+	    $(( ${BRIDGE_MSUB_NPROC} * ${BRIDGE_MSUB_NCORE:-1} ))
+    fi
+    
+    return 0
+
+}
+
+
+function bridge_addon_msub_alterscript {
+    return 0
+}
+
+
+################################################################################
+#
+# MPRUN RELATED FUNCTIONS MPRUN RELATED FUNCTIONS MPRUN RELATED FUNCTIONS
+#
+################################################################################
+
+function bridge_addon_mprun_setopt {
+    return 0
+}
+
+function bridge_addon_mprun_getopt {
+    return 0
+}
+
+
+function bridge_addon_mprun_alteropt {
+
+    ## on se place en mode debug si souhaite
+    typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+	then
+	set -x
+    fi
+    
+    ## on incremente le niveau de log
+    typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+    
+    ## do auto switches check
+    if  [[ "${BRIDGE_MPRUN_ALLOCATION}" != yes ]] && \
+	[[ -n ${bridge_mprun_nproc} ]] && \
+	[[ -z ${SLURM_REQ_SWITCHES} ]] && \
+	[[ -n ${bridge_mprun_partition} ]] && \
+	[[ -n ${BRIDGE_ADDON_AUTOSWITCHES_CONF} ]] && [[ ${BRIDGE_MPRUN_ADDON_QOS} != "special" ]]
+    then
+	enforce_autoswitches_conf ${bridge_mprun_partition} \
+	    $(( ${bridge_mprun_nproc} * ${bridge_mprun_ncore:-1} ))
+    fi
+
+    return 0
+}
+
+function bridge_addon_mprun_spmd_pre_allocate {
+    return 0
+}
+
+
+function bridge_addon_mprun_spmd_post_allocate {
+    return 0
+}
+
+
+function bridge_addon_mprun_spmd_pre_run {
+    return 0
+}
+
+function bridge_addon_mprun_spmd_post_run {
+    return 0
+}
