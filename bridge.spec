@@ -62,7 +62,7 @@
 Summary: Bridge CCC In-House Batch Environment
 Name: bridge
 Version: 1.5.4
-Release: 7.%{?target}
+Release: 8.%{?target}
 License: GPL License
 Group: System Environment/Base
 URL: http://
@@ -225,6 +225,12 @@ Additional package providing %{?compat_target}_* compatibility links to the
 %endif
 
 %changelog
+* Tue May 20 2014 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.5.4-8
+-- addons/reservation.ad: new addon to use a particular SLURM reservation
+   as defined using the BRIDGE_RESERVATION env variable.
+-- addons/autoswitches-slurm.ad: new addons to automatically specify the value
+   of the max number of switches requested in SLURM
+
 * Wed Apr 09 2014 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.5.4-7
 -- addons/intelmpi-slurm.ad: switch to intelmpi mode when intel|intel64 is
    detected in mpirun path
