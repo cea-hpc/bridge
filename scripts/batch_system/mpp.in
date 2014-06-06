@@ -164,7 +164,7 @@ typeset PROG_VERSION="1.0.0"
 typeset BASE_DIR=`dirname $0`
 typeset PROGNAME=`basename $0`
 #------------------------------------------------------------------------------------------------------------------
-typeset BRIDGE_BASEDIR=/usr
+typeset BRIDGE_BASEDIR=@prefix@
 if [[ ! -d ${BRIDGE_BASEDIR} ]]
     then
     BRIDGE_BASEDIR=${BRIDGE_BASEDIR:-${BASE_DIR}/../}
