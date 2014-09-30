@@ -243,7 +243,7 @@ int main(int argc,char** argv){
   int active_only_flag=0;
 
   char * optstring="hcCu:r:p:o:s:f:vn:N:aV";
-  char option;
+  int option;
 
   progname=strrchr(argv[0],'/');
   if(progname==NULL)

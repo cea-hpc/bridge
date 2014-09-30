@@ -173,7 +173,7 @@ int main(int argc,char **argv){
   bridge_nodelist_t list;
   
   char * optstring="hvcCdDu:b:q:H:o:s:f:ln:N:V";
-  char option;
+  int option;
 
   progname=strrchr(argv[0],'/');
   if(progname==NULL)

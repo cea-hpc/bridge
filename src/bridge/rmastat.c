@@ -366,7 +366,7 @@ int main(int argc,char** argv){
   int date_nb;
 
   char * optstring="hcCu:r:p:n:N:o:s:f:viIV";
-  char option;
+  int option;
 
   progname=strrchr(argv[0],'/');
   if(progname==NULL)

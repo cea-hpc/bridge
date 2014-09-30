@@ -24,7 +24,7 @@ int bridge_mpmd_wrapper(int argc, char** argv)
 
 	char *progname;
 	char *optstring = "hf:E:";
-	char option;
+	int  option;
 	char* short_options_desc="\nUsage : %s [-h] [-E env_var] -f mpmd_desc\n\n";
 	char* addon_options_desc="\
 \tThis wrapper executes the command specified in the MPMD description file and that\n\

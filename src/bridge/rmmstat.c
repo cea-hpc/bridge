@@ -102,7 +102,7 @@ int main(int argc,char **argv){
   int display_mode=EXTENDED_DISPLAY;
 
   char * optstring="ho:s:cvV";
-  char option;
+  int option;
 
   progname=strrchr(argv[0],'/');
   if(progname==NULL)
