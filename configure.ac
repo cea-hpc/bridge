@@ -13,6 +13,10 @@ AM_INIT_AUTOMAKE([-Wall -Werror foreign])
 dnl build configure.h
 AC_CONFIG_HEADERS([config.h])
 
+dnl check ar for static libraries
+dnl AM_PROG_AR was introduced in automake 1.11.2 so we cannot use it directly
+m4_ifdef([AM_PROG_AR], [AM_PROG_AR])
+
 dnl build lib using autotools .la format
 AC_PROG_LIBTOOL
 
