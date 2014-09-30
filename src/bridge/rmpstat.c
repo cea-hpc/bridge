@@ -570,7 +570,7 @@ int display_by_fields_bridge_rm_partition_on_file_stream(FILE * stream,bridge_rm
 	  default :
 	    state="unknown";
 	  }
-	  fprintf(stream,state);
+	  fprintf(stream, "%s", state);
 	}
 	else if(strcmp(token,"reason")==0){
 	  display_string_field(rmp->reason);	  
