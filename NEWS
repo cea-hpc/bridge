@@ -20,6 +20,9 @@
 	-- addons/autoswitches-slurm.ad: new addons to automatically specify the value
 	   of the max number of switches requested in SLURM
 	-- mpp: ensure that scripts basedir is extracted from autotools prefix
+	-- fix multiple incorrect usage of getopt in different command line clients
+	   (bugs triggered when compiled with unsigned char, like on ARM processors)
+	-- check for AR in autotools
 
 * Changes in bridge-1.5.3
 =========================
