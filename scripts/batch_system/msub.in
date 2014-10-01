@@ -162,7 +162,7 @@ typeset USAGE="usage : ${PROGNAME} [-dvhV] \\
         [-N node_limit ] [ -n proc_limit ] [ -c core_limit ] \\
         [-T time_limit] [-t time_limit] [-M mem_limit] [-m mem_limit] \\
         [-W] [-w] [-K] [-L \"appli1=nb1,appli2=nb2,...\"] \\
-        [-E \"extra_parameters...\"] [-S starttime] [-q queue] [script]
+        [-E \"extra_parameters...\"] [-S starttime] [-q queue] [script [params]]
 
  ${PROGNAME} is the CCC batch submission interface.
  Depending on the underlying batch system characteristics, some parameters can be disabled.
@@ -311,13 +311,12 @@ do
   esac
 done
 OPTIND2=`expr $OPTIND - 1`
-i=1
-while [ $i -le $OPTIND2 ]
-  do
-        shift
-        i=`expr $i + 1` 
-done
-[ $# != 0 ] && eval BRIDGE_MSUB_SCRIPTFILE=$`echo $#`
+shift ${OPTIND2}
+if [ $# != 0 ]
+then
+    BRIDGE_MSUB_SCRIPTFILE=$1
+    shift
+fi
 #------------------------------------------------------------------------------------------------------------------
 # on appelle les functions msub_getopt des differents addons avec les arguments d'entree
 bridge_addons_call_function bridge_addon_msub_getopt ${in_args}
@@ -984,8 +983,8 @@ export BRIDGE_MSUB_EXCLUSIVE
 #------------------------------------------------------------------------------------------------------------------
 if [[ ${EXIT_STATUS} -eq 0 ]]
     then
-    ${LOGGER} "${submit_cmd} $(printf "%q " ${submit_args[@]}) -E \"${BRIDGE_MSUB_EXTRA_PARAMETERS}\" ${BRIDGE_MSUB_SCRIPTFILE}"
-    ${submit_cmd} "${submit_args[@]}" -E "${BRIDGE_MSUB_EXTRA_PARAMETERS}" ${BRIDGE_MSUB_SCRIPTFILE}
+    ${LOGGER} "${submit_cmd} $(printf "%q " ${submit_args[@]}) -E \"${BRIDGE_MSUB_EXTRA_PARAMETERS}\" ${BRIDGE_MSUB_SCRIPTFILE} $(printf "%q " "$@")"
+    ${submit_cmd} "${submit_args[@]}" -E "${BRIDGE_MSUB_EXTRA_PARAMETERS}" ${BRIDGE_MSUB_SCRIPTFILE} "$@"
     EXIT_STATUS=$?
 fi
 ###################################################################################################################

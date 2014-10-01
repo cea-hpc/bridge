@@ -245,6 +245,7 @@ function submit_cmd {
         echo "$0 : argument absent" >&2
         exit 2
     fi
+    shift
     
     ## on fixe le nom de la requete a partir du nom du script a executer ou par STDIN si lecture sur STDIN
     ## on le fixe tout d'abord a la valeur de scriptname pour commencer afin de charger la valeur devinee par msub
@@ -478,8 +479,8 @@ function submit_cmd {
 	then
 	## on va faire une allocation dans slurm, donc pas besoin d'en refaire par la suite
 	export BRIDGE_MPRUN_ALLOCATION=yes
-	${LOGGER} "${local_submit_cmd} $(printf "%q " ${local_submit_args[@]}) ${extra_parameters} $LOCAL_SCRIPTFILE"
-	output=$(${local_submit_cmd} "${local_submit_args[@]}" ${extra_parameters} $LOCAL_SCRIPTFILE 2>/tmp/errmsub$$)
+	${LOGGER} "${local_submit_cmd} $(printf "%q " ${local_submit_args[@]}) ${extra_parameters} $LOCAL_SCRIPTFILE $(printf "%q " "$@")"
+	output=$(${local_submit_cmd} "${local_submit_args[@]}" ${extra_parameters} $LOCAL_SCRIPTFILE "$@" 2>/tmp/errmsub$$)
 	exit_status=$?
 	output_err=`cat /tmp/errmsub$$`
 	if [ -f /tmp/errmsub$$ ]
