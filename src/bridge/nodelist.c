@@ -55,7 +55,7 @@ int main(int argc,char** argv){
     "\t-V\t\t\tPrint bridge and app versions and exit\n";
 
   char * optstring="hcenV";
-  char option;
+  int option;
 
   progname=strrchr(argv[0],'/');
   if(progname==NULL)

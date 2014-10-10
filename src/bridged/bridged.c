@@ -437,7 +437,7 @@ int main(int argc,char** argv){
 \t-d\t\tincrease debug level\n\
 \t-v\t\tincrease verbose level\n\
 \t-f conffile\tConfiguration file\n\n";
-  char  option;
+  int   option;
   
   /* signal handling variables */
   struct sigaction saction;

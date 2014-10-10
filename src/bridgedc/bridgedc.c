@@ -42,7 +42,7 @@ int main(int argc,char** argv){
 
   /* options processing variables */
   char* progname;
-  char  option;
+  int   option;
   char* optstring="dvhf:pgb:r:";
   char* short_options_desc="\nUsage : %s [-h] [-dv] [-f conffile] [-b batchid] [-r rmid] [-p|g]\n\n";
   char* addon_options_desc="\

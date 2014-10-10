@@ -254,8 +254,8 @@ function submit_cmd {
     # pas de probleme, on soumet
     if [ ${exit_status} -eq 0 ]
 	then
-	${LOGGER} -- ${local_submit_cmd} ${local_submit_args} $@
-	${local_submit_cmd} ${local_submit_args} $@
+	${LOGGER} -- ${local_submit_cmd} ${local_submit_args} $(printf "%q " "$@")
+	${local_submit_cmd} ${local_submit_args} "$@"
     fi
     
     return ${exit_status}

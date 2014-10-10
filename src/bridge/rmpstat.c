@@ -243,7 +243,7 @@ int main(int argc,char** argv){
   int active_only_flag=0;
 
   char * optstring="hcCu:r:p:o:s:f:vn:N:aV";
-  char option;
+  int option;
 
   progname=strrchr(argv[0],'/');
   if(progname==NULL)
@@ -570,7 +570,7 @@ int display_by_fields_bridge_rm_partition_on_file_stream(FILE * stream,bridge_rm
 	  default :
 	    state="unknown";
 	  }
-	  fprintf(stream,state);
+	  fprintf(stream, "%s", state);
 	}
 	else if(strcmp(token,"reason")==0){
 	  display_string_field(rmp->reason);	  
