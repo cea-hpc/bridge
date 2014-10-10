@@ -62,7 +62,7 @@
 Summary: Bridge CCC In-House Batch Environment
 Name: bridge
 Version: 1.5.4
-Release: 8.%{?target}
+Release: 9.%{?target}
 License: GPL License
 Group: System Environment/Base
 URL: http://
@@ -225,6 +225,10 @@ Additional package providing %{?compat_target}_* compatibility links to the
 %endif
 
 %changelog
+* Fri Oct 10 2014 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.5.4-9
+-- mpp: ensure that scripts basedir is extracted from autotools prefix
+-- autotools: add missing helpers Makefile.in file
+
 * Tue May 20 2014 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.5.4-8
 -- addons/reservation.ad: new addon to use a particular SLURM reservation
    as defined using the BRIDGE_RESERVATION env variable.
