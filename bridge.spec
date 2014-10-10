@@ -228,6 +228,11 @@ Additional package providing %{?compat_target}_* compatibility links to the
 * Fri Oct 10 2014 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.5.4-9
 -- mpp: ensure that scripts basedir is extracted from autotools prefix
 -- autotools: add missing helpers Makefile.in file
+-- fix multiple incorrect usage of getopt in different command line clients
+   (bugs triggered when compiled with unsigned char, like on ARM processors)
+-- check for AR in autotools
+-- msub|bs/slurm: allow trailing script parameters in msub. The synopsis
+   of msub with Slurm is now "msub [args] script [params]"
 
 * Tue May 20 2014 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.5.4-8
 -- addons/reservation.ad: new addon to use a particular SLURM reservation
