@@ -129,8 +129,6 @@ function bridge_addon_mprun_alteropt {
 	    bridge_mprun_force_allocation=yes
 	else
 	    export spmd_run_cmd=${BRIDGE_SLURM_INTELMPI_CMD:-mpirun}
-	    typeset -a spmd_run_options
-	    export spmd_run_options
 	    export spmd_run_separator=" "
 	    if [[ ${spmd_run_cmd} == "mpirun" ]]
 		then
@@ -142,10 +140,11 @@ function bridge_addon_mprun_alteropt {
 		    then
 		    spmd_run_options="${spmd_run_options} ${BRIDGE_SLURM_INTELMPI_CMD_OPTIONS}"
 		fi
-		if [[ "$(echo ${spmd_run_options} | grep 'rsh=ssh')" = "" ]]
-		    then
-		    spmd_run_options="--rsh=ssh ${spmd_run_options} "
-		fi
+		# No longer consider as necessary with 4.x versions of IntelMPI
+		# if [[ "$(echo ${spmd_run_options} | grep 'rsh=ssh')" = "" ]]
+		#     then
+		#     spmd_run_options="--rsh=ssh ${spmd_run_options} "
+		# fi
 	    fi
 	fi
 	${LOGGER} "IntelMPI mode is now enabled"
