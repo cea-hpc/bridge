@@ -425,22 +425,31 @@ function submit_cmd {
 
     ## Slurm ne supporte pas les deux types de temps, par default l'exclusive(parallele)
     ## est prefere
+    ## On calcule le temps min et le temps max lorsque possible
+    typeset -i mintime
+    typeset -i maxtime
     if [[ -n ${exclusive_timelimit} ]]
 	then
-	typeset runlimit
-	typeset residu
-	(( runlimit = exclusive_timelimit / 60 ))
-	(( residu = exclusive_timelimit % 60 ))
-	runlimit="${runlimit}:${residu}"
-	local_submit_args+=( "-t" "${runlimit[@]}" )
+	mintime=${exclusive_timelimit%%-*}
+	maxtime=${exclusive_timelimit##*-}
     elif [[ -n ${time_sharing_timelimit} ]]
 	then
+	mintime=${time_sharing_timelimit%%-*}
+	maxtime=${time_sharing_timelimit##*-}
+    fi
+    if [[ -n ${mintime} ]] && [[ -n ${maxtime} ]]
+    then
 	typeset runlimit
 	typeset residu
-	(( runlimit = time_sharing_timelimit / 60 ))
-	(( residu = time_sharing_timelimit % 60 ))
-	runlimit="${runlimit}:${residu}"
-	local_submit_args+=( "-t" "${runlimit[@]}" )
+	if [[ ${mintime} -lt ${maxtime} ]]
+	then
+	    (( runlimit = mintime / 60 ))
+	    (( residu = mintime % 60 ))
+	    local_submit_args+=( "--time-min" "${runlimit}:${residu}" )
+	fi
+	(( runlimit = maxtime / 60 ))
+	(( residu = maxtime % 60 ))
+	local_submit_args+=( "--time" "${runlimit}:${residu}" )
     fi
 
     ## gestion des allocations exclusives

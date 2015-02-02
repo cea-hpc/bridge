@@ -113,7 +113,7 @@ typeset EXIT_STATUS=1
 #------------------------------------------------------------------------------------------------------------------
 typeset USAGE="\
 usage : ${PROGNAME} [-hDvV] [-c ncore] [-n nproc] [-N nnode] [-A projid] \\
-    [-p partition] [-M mem] [-T time] [-K] [program [args...]]
+    [-p partition] [-M mem] [-T [timemin-]time] [-K] [program [args...]]
 
  ${PROGNAME} is the CCC parallel launch interface
 

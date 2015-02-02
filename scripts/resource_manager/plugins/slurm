@@ -208,14 +208,26 @@ function spmd_allocate_cmd {
 	    then
 	    spmd_allocate_options="${spmd_allocate_options} ${slurm_mem_param:---task-mem}=${spmd_allocate_maxmem}"
 	fi
+	typeset -i mintime
+	typeset -i maxtime
 	if [[ -n ${spmd_allocate_maxtime} ]]
 	    then
+	    mintime=${spmd_allocate_maxtime%%-*}
+	    maxtime=${spmd_allocate_maxtime##*-}
+	fi
+	if [[ -n ${mintime} ]] && [[ -n ${maxtime} ]]
+	then
 	    typeset runlimit
 	    typeset residu
-	    (( runlimit = spmd_allocate_maxtime / 60 ))
-	    (( residu = spmd_allocate_maxtime % 60 ))
-	    runlimit="${runlimit}:${residu}"
-	    spmd_allocate_options="${spmd_allocate_options} -t ${runlimit}"
+	    if [[ ${mintime} -lt ${maxtime} ]]
+	    then
+		(( runlimit = mintime / 60 ))
+		(( residu = mintime % 60 ))
+		spmd_allocate_options="${spmd_allocate_options} --time-min ${runlimit}:${residu}"
+	    fi
+	    (( runlimit = maxtime / 60 ))
+	    (( residu = maxtime % 60 ))
+		spmd_allocate_options="${spmd_allocate_options} --time ${runlimit}:${residu}"
 	fi
 	if [[ -n ${spmd_allocate_requestname} ]]
 	    then
@@ -384,16 +396,27 @@ function spmd_run_cmd {
 	       then
 	       spmd_run_options="${spmd_run_options} ${slurm_mem_param:---task-mem}=${spmd_run_maxmem}"
 	   fi
+	   typeset -i mintime
+	   typeset -i maxtime
 	   if [[ -n ${spmd_run_maxtime} ]]
-	       then
+	   then
+	       mintime=${spmd_run_maxtime%%-*}
+	       maxtime=${spmd_run_maxtime##*-}
+	   fi
+	   if [[ -n ${mintime} ]] && [[ -n ${maxtime} ]]
+	   then
 	       typeset runlimit
 	       typeset residu
-	       (( runlimit = spmd_run_maxtime / 60 ))
-	       (( residu = spmd_run_maxtime % 60 ))
-	       runlimit="${runlimit}:${residu}"
-	       spmd_run_options="${spmd_run_options} -t ${runlimit}"
+	       if [[ ${mintime} -lt ${maxtime} ]]
+	       then
+		   (( runlimit = mintime / 60 ))
+		   (( residu = mintime % 60 ))
+		   spmd_run_options="${spmd_run_options} --time-min ${runlimit}:${residu}"
+	       fi
+	       (( runlimit = maxtime / 60 ))
+	       (( residu = maxtime % 60 ))
+	       spmd_run_options="${spmd_run_options} --time ${runlimit}:${residu}"
 	   fi
-
 	elif [[ ${spmd_run_cmd} == "mpirun" ]]
 	    then
             if [[ "$BRIDGE_MPRUN_CHECK" =  "yes" ]] && [[ "$BRIDGE_MPRUN_ALLOCATION" = "yes" ]]  ;then

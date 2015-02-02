@@ -160,7 +160,7 @@ fi
 typeset USAGE="usage : ${PROGNAME} [-dvhV] \\
         [-o output_file] [-e error_file] [-r reqname] [-A projid ] [-s study] \\
         [-N node_limit ] [ -n proc_limit ] [ -c core_limit ] \\
-        [-T time_limit] [-t time_limit] [-M mem_limit] [-m mem_limit] \\
+        [-T [timemin-]time] [-t [timemin-]time] [-M mem_limit] [-m mem_limit] \\
         [-W] [-w] [-K] [-L \"appli1=nb1,appli2=nb2,...\"] \\
         [-E \"extra_parameters...\"] [-S starttime] [-q queue] [script [params]]
 
@@ -447,7 +447,7 @@ AWKSCRIPT='
                 if ($i=="-lT") {
                         printf("OPTION_T=")
                         i++
-                        printf("%d ", $i)
+                        printf("%s ", $i)
 			opt=1
                 }
                 else if ($i=="-lM") {
@@ -506,13 +506,13 @@ AWKSCRIPT='
                 if ($i=="-T") {
                         printf("OPTION_T=")
                         i++
-                        printf("%d ", $i)
+                        printf("%s ", $i)
                         opt=1
                 }
 		else if ($i=="-t") {
 			printf("OPTION_t=")
                         i++
-                        printf("%d ", $i)
+                        printf("%s ", $i)
                         opt=1
                 }
                 else if ($i=="-e") {

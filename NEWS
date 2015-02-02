@@ -9,6 +9,7 @@
 	   -q option is set
 	-- addons/intelmpi-slurm: correct a bug preventing from using -e with IntelMPI
 	   when used in salloc/mpirun mode with BRIDGE_SLURM_INTELMPI_CMD=mpirun
+	-- msub/mprun: add -t|T [min-]max support for Slurm backend
 
 * Changes in bridge-1.5.4
 =========================
