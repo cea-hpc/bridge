@@ -1,7 +1,3 @@
-### Thanks to slurm packagers
-%define bridge_with_opt() %{expand:%%{!?_without_%{1}:%%global bridge_with_%{1} 1}}
-%define bridge_without_opt() %{expand:%%{?_with_%{1}:%%global bridge_with_%{1} 1}}
-%define bridge_with() %{expand:%%{?bridge_with_%{1}:1}%%{!?bridge_with_%{1}:0}}
 #
 # Never allow rpm to strip binaries as this will break
 #  parallel debugging capability
@@ -10,10 +6,8 @@
 %define debug_package %{nil}
 #
 # Should unpackaged files in a build root terminate a build?
-#
 # Note: The default value should be 0 for legacy compatibility.
 %define _unpackaged_files_terminate_build      0
-### Thanks again
 
 # Remove the space between % and trace to activate RPM debug traces
 # (Commenting %blabla does not really disable it)
@@ -28,7 +22,7 @@
 %define _program_prefix cea_
 %define prefix /usr/local/bridge
 %define sysconfdir /etc
-%bridge_with_opt slurm
+%bcond_without slurm
 %define compat_target ccc
 %define target tera
 %endif
@@ -42,7 +36,7 @@
 %define _program_prefix ccc_
 %define prefix /usr
 %define sysconfdir /etc
-%bridge_with_opt slurm
+%bcond_without slurm
 %define compat_target cea
 %define target tgcc
 %endif
@@ -61,8 +55,8 @@
 
 Summary: Bridge CCC In-House Batch Environment
 Name: bridge
-Version: 1.5.4
-Release: 9.%{?target}
+Version: 1.5.5
+Release: 1.%{?target}
 License: GPL License
 Group: System Environment/Base
 URL: http://
@@ -104,39 +98,35 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
 # % bridge_with_opt slurm
 
 # nqsII and LSF not yet supported
-%bridge_without_opt nqsII
-%bridge_without_opt lsf
+%bcond_with nqsII
+%bcond_with lsf
 
 %description
 Bridge CCC In-House Batch Environment gives a uniform way to access external 
 Batch scheduling systems.
 It currently provides plugins for slurm.
 
-%if %{bridge_with slurm}
+%if %{with slurm}
 %package slurm
 Summary: Slurm plugins for Bridge CCC In-House Batch Environment
 Group: System Environment/Base
-Requires: slurm >= 1.3.6 bridge >= 1.3.12
+Requires: slurm >= 1.3.6
+Requires: bridge >= %{version}
 %description slurm
 Plugins that provides Slurm access accross the CCC Batch systems Bridge
 %endif
 
 %prep
-%setup -n %{name}-%{version}
+%setup -q
 
 %build
 autoreconf -fvi
-%configure --prefix=%{_prefix} --sysconfdir=%{_sysconfdir} \
-	   --program-prefix=%{?_program_prefix:%{_program_prefix}} \
-	   %{?bridge_with_slurm:--with-slurm}
-
+%configure %{?with_slurm:--with-slurm}
 make %{?_smp_mflags} 
 
 %install
-rm -rf $RPM_BUILD_ROOT
-mkdir -p "$RPM_BUILD_ROOT"
-DESTDIR="$RPM_BUILD_ROOT" make install
-%if %{bridge_with slurm}
+make install DESTDIR="$RPM_BUILD_ROOT"
+%if %{with slurm}
 chmod 755 ${RPM_BUILD_ROOT}/%{_prefix}/share/scripts/resource_manager/addons/get_task_info
 %endif
 %if %{?compat_target}0
@@ -150,9 +140,6 @@ do
 	popd
 done
 %endif
-
-%clean
-rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(-,root,root,-)
@@ -205,7 +192,7 @@ Additional package providing %{?compat_target}_* compatibility links to the
 %config (noreplace) %{_sysconfdir}/sysconfig/%{?compat_target}_bridged
 %endif
 
-%if %{bridge_with slurm}
+%if %{with slurm}
 %files slurm
 %defattr(-,root,root,-)
 %dir %{_prefix}/share/scripts/batch_system
@@ -225,6 +212,23 @@ Additional package providing %{?compat_target}_* compatibility links to the
 %endif
 
 %changelog
+* Mon Feb 02 2015 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.5.5-1
+-- switch to bridge-1.5.5, see NEWS file for changes
+-- simplify spec file
+
+* Mon Feb 02 2015 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.5.4-10
+-- integrate recent patches from prod sites
+   -- addons: translate usage in english and add support for ltrace, valgrind
+   -- addons: ensure that bcast.ad uses which using /usr/bin/which
+   -- addons: fix arguments passing in strace addons and a bug in strace.sh
+   -- add -t|T [min-]max support in msub and mprun for Slurm backend
+   -- correct a bug preventing from using -e with IntelMPI when used in
+      salloc/mpirun
+   -- ensure that BRIDGE_MSUB_QUEUE env var is used in msub when
+      no -q option is set
+   -- autoexclusive.ad: add BRIDGE_ADDON_AUTOEXCLUSIVE_FEATURES support
+   -- totalview.ad: add BRIDGE_TOTALVIEW_CMD and BRIDGE_TOTALVIEW_PARAMS
+
 * Fri Oct 10 2014 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.5.4-9
 -- mpp: ensure that scripts basedir is extracted from autotools prefix
 -- autotools: add missing helpers Makefile.in file
