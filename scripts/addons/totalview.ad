@@ -18,6 +18,11 @@
 #
 #  You should have received a copy of the GNU General Public License
 #  along with Bridge.  If not, see <http://www.gnu.org/licenses/>
+#
+# Variables defined to configure the behavior :
+#
+# BRIDGE_TOTALVIEW_CMD : default is totalview
+# BRIDGE_TOTALVIEW_PARAMS : default is unset
 #*****************************************************************************/
 
 function bridge_addon_mprun_setopt {
@@ -58,7 +63,10 @@ function bridge_addon_mprun_getopt {
     ## on fixe le message d'aide a afficher si demande
     typeset USAGE="\
 \t*) Totalview
-\t\t -d tv : launch the application in debug mode using Totalview\n"
+\t\t -d tv : launch the application in debug mode using Totalview\n
+\t\t         BRIDGE_TOTALVIEW_CMD can be used to alter the totalview cmd to use\n
+\t\t         (default: BRIDGE_TOTALVIEW_CMD=totalview)\n
+\t\t         BRIDGE_TOTALVIEW_PARAMS can be used to define the totalview params\n"
     
     ## on fixe le status de sortie par defaut
     typeset exit_status=0
@@ -141,12 +149,12 @@ function bridge_addon_mprun_spmd_pre_run {
 	typeset -i BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
 
 	## on remplace la commande a executer
-	spmd_run_cmd_new="totalview"
+	spmd_run_cmd_new="${BRIDGE_TOTALVIEW_CMD:-totalview}"
 	case ${spmd_run_cmd} in
 	    prun|srun)
 	        if [[ ${BRIDGE_MPRUN_TOTALVIEW_MODE} != "basic" ]]
 		    then
-		    spmd_run_options_new="${spmd_run_cmd} -a"
+		    spmd_run_options_new="${BRIDGE_TOTALVIEW_PARAMS} ${spmd_run_cmd} -a"
 		    spmd_run_separator_new="${spmd_run_options}"
 		else
 		    echo "#########################"
@@ -159,7 +167,7 @@ function bridge_addon_mprun_spmd_pre_run {
 		    echo "#  - set the required tasks number you want to launch"
 		    echo "#"
 		    echo "#########################"
-		    spmd_run_options_new=""
+		    spmd_run_options_new="${BRIDGE_TOTALVIEW_PARAMS}"
 		    spmd_run_separator_new="-args"
 		    export BRIDGE_SLURM_OMPI_BASIC=1
 		fi
@@ -175,7 +183,7 @@ function bridge_addon_mprun_spmd_pre_run {
 		echo "#  - set the required tasks number you want to launch"
 		echo "#"
 		echo "#########################"
-		spmd_run_options_new=""
+		spmd_run_options_new="${BRIDGE_TOTALVIEW_PARAMS}"
 		spmd_run_separator_new="-args"
 		;;
 	esac

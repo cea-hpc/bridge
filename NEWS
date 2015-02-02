@@ -3,6 +3,8 @@
 	-- addons/autoexclusive: add the capability to automatically request particular
 	   features in addition to exclusive resources using the env variable 
 	   BRIDGE_ADDON_AUTOEXCLUSIVE_FEATURES
+	-- addons/totalview: allow to specify a particular command and set of params
+	   to start totalview using BRIDGE_TOTALVIEW_CMD and BRIDGE_TOTALVIEW_PARAMS
 
 * Changes in bridge-1.5.4
 =========================
