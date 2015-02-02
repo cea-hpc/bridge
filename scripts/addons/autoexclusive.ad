@@ -29,6 +29,9 @@
 #
 # The exclusive threshold is configured using the value of the 
 # BRIDGE_ADDON_AUTOEXCLUSIVE_CORES_THRESHOLD env variable
+#
+# A set of Slurm constraints (features) can be automatically added in conjunction
+# with the exclusive flag using the BRIDGE_ADDON_AUTOEXCLUSIVE_FEATURES env var
 # 
 # The deny threshold is configured using the value of the 
 # BRIDGE_ADDON_AUTODENY_CORES_THRESHOLD env variable
@@ -76,6 +79,15 @@ function bridge_addon_msub_alteropt {
 	    ${LOGGER} "setting exclusive mode as requested cores nb ${total_cores} >= threshold " \
 		"${BRIDGE_ADDON_AUTOEXCLUSIVE_CORES_THRESHOLD}"
 	    export BRIDGE_MSUB_EXCLUSIVE=yes
+	    if [[ -n ${BRIDGE_ADDON_AUTOEXCLUSIVE_FEATURES} ]]
+	    then
+		if [[ -z ${BRIDGE_MSUB_EXTRA_PARAMETERS} ]]
+		then
+		    BRIDGE_MSUB_EXTRA_PARAMETERS="-C${BRIDGE_ADDON_AUTOEXCLUSIVE_FEATURES}"
+		else
+		    BRIDGE_MSUB_EXTRA_PARAMETERS="-C${BRIDGE_ADDON_AUTOEXCLUSIVE_FEATURES} ${BRIDGE_MSUB_EXTRA_PARAMETERS}"
+		fi
+	    fi
 	fi
     fi
 
@@ -144,6 +156,10 @@ function bridge_addon_mprun_alteropt {
 	    ${LOGGER} "setting exclusive mode as requested cores nb ${total_cores} >= threshold " \
 		"(${BRIDGE_ADDON_AUTOEXCLUSIVE_CORES_THRESHOLD})"
 	    export exclusive=yes
+	    if [[ -n ${BRIDGE_ADDON_AUTOEXCLUSIVE_FEATURES} ]]
+	    then
+	    	bridge_mprun_extra_parameters+=( "-E" "-C" "-E" "${BRIDGE_ADDON_AUTOEXCLUSIVE_FEATURES}" )
+	    fi
 	fi
     fi
 
