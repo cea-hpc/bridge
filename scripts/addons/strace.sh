@@ -1,4 +1,5 @@
 #! /bin/bash
+# exec 2>/tmp/trx_cea_strace_$$ ; set -x
 : numargs=$# : $@
 
 function usage
@@ -70,7 +71,7 @@ typeset ARGV0=${0##*/}			# basename de la commande
 typeset OPTSTRING=":o:O:R:t:"		# liste des options
 typeset STRACE_OPTIONS=""		# addtional strace options
 typeset MPI_ALLPROCS="mpi[0-$((SLURM_NTASKS - 1))]"	# all mpi process
-typeset MPI_RANGE="$MPI_ALLPROCS="	# by default, trace all process
+typeset MPI_RANGE="$MPI_ALLPROCS"	# by default, trace all process
 typeset tracer="strace"
 #
 while getopts $OPTSTRING option

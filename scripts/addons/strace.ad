@@ -27,10 +27,10 @@
 
 function bridge_addon_mprun_setopt {
 
-    typeset MYGETOPTOPTION="d:R:o:O:t:"
+    typeset MYGETOPTOPTION="d:R:o:O:t:T:"
 
     if echo "${BRIDGE_MPRUN_GETOPT_OPTIONS}" | grep -q ${MYGETOPTOPTION} ; then
-    	BRIDGE_MPRUN_GETOPT_OPTIONS="${BRIDGE_MPRUN_GETOPT_OPTIONS}${MYGETOPTOPTION}"
+        BRIDGE_MPRUN_GETOPT_OPTIONS="${BRIDGE_MPRUN_GETOPT_OPTIONS}${MYGETOPTOPTION}"
     fi
 
     return 0
@@ -41,7 +41,7 @@ function bridge_addon_mprun_getopt {
     ## on se place en mode debug si souhaite
     typeset -i BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
     if [[ $BRIDGE_DEBUG_MODE == "yes" ]] && (( BRIDGE_DEBUG_LEVEL <= BRIDGE_DEBUG_MAXLEVEL )) ; then
-	    set -x
+        set -x
     fi
     
     ## on incremente le niveau de log
@@ -57,75 +57,121 @@ function bridge_addon_mprun_getopt {
     BRIDGE_MPRUN_ADDON_STRACE_OPTIONS=${BRIDGE_MPRUN_ADDON_STRACE_OPTIONS:-}
     BRIDGE_MPRUN_ADDON_STRACE_MPI_RANK=${BRIDGE_MPRUN_ADDON_STRACE_MPI_RANK:-}
     BRIDGE_MPRUN_ADDON_STRACE_TRACER=${BRIDGE_MPRUN_ADDON_STRACE_TRACER:-}
+    BRIDGE_MPRUN_ADDON_STRACE_TRACER_OUTOPT=${BRIDGE_MPRUN_ADDON_STRACE_TRACER_OUTOPT:-}
 
     ## on fixe le message d'aide a afficher si demande
-    typeset USAGE="\
-\t*) Strace\n\
-\t\t -d strace    : execution de l application en mode strace
-\t\t -o dir       : repertoire de stockage des traces (defaut: home -t)
-\t\t -O 'options' : options complementaires a passer a strace
-\t\t -R 'range'   : rangs des processus MPI a tracer
-\t\t -t 'tracer'  : utilise la commande tracer a la place de strace
-\t\tLes rangs mpi peuvent s'ecrire 
-\t\t- soit sous la forme de liste de rangs et/ou d'intervalle 
-\t\t- soit avec la syntaxe nodeset avec comme prefixe 'mpi'
-\t\tEx: -R 1-4,8-9  ou -R mpi[1-4,8-9] ou -R 'mpi[1-9]!mpi[5-7]'
-\t\tces 3 options  activent strace sur les rangs MPI 1, 2, 3, 4, 8, 9.
+    typeset USAGE_US="
+\t*) Strace
+\t   -d strace        to profile with strace
+\t   -o <dir>         to write trace outputs under directory <dir> (default: home -t)
+\t   -O <opt>         to transmit <opt> option to the tracer
+\t   -R <mpi_rank>    to trace only some MPI processes
+\t   -t <tracer>      to use <tracer> command instead of strace
+\t   -T <opt>         to use <opt> option instead of -o to specify output file for the <tracer> command
 
-\tLes traces sont generees sous une arbrorescence:
+\tMpi ranks may be specified
+\t- as a list of numerical ranges
+\t- or using 'nodeset' command synatx with 'mpi' as nodename
+
+\tEx: -R 1-4,8-9
+\t\t-R mpi[1-4,8-9]
+\t\t-R 'mpi[1-9]!mpi[5-7]'
+\t\ttrace only MPI rank: 1, 2, 3, 4, 8, 9.
+
+\ttraces are generated using the following name convention:
 \t\$(home -t)/strace_{JOBID}.{STEPID}/{HOSTNAME}/trx_proc_{MPIRANK}
 
-\t
-\t Les variables d'environnement correspondantes peuvent aussi etre utilisees pour
-\t parametrer le profiling:
-\t
-\t BRIDGE_MPRUN_ADDON_STRACE : une valeur de 1 active le profiling
-\t BRIDGE_MPRUN_ADDON_STRACE_PACKAGE_DIR
-\t BRIDGE_MPRUN_ADDON_STRACE_OPTIONS
-\t BRIDGE_MPRUN_ADDON_STRACE_MPI_RANK
-\t BRIDGE_MPRUN_ADDON_STRACE_TRACER
+\tTracers already recognized are : strace, ltrace, valgrind, valgrind-xml.
+\tOthers may require usage of -T option.
+   
+\tThe tracer's behaviour may be tuned with the following environment variables:
+
+\tBRIDGE_MPRUN_ADDON_STRACE : 1 activate strace
+\tBRIDGE_MPRUN_ADDON_STRACE_PACKAGE_DIR
+\tBRIDGE_MPRUN_ADDON_STRACE_OPTIONS
+\tBRIDGE_MPRUN_ADDON_STRACE_MPI_RANK
+\tBRIDGE_MPRUN_ADDON_STRACE_TRACER
+\tBRIDGE_MPRUN_ADDON_STRACE_TRACER_OUTOPT
 \n"
     
+    typeset USAGE_FR="
+\t*) Strace
+\t   -d strace        pour profiler avec strace
+\t   -o <dir>         écrit les fichiers de trace dans le répertoire <dir>
+\t   -O <opt>         transmet les options <opt> a la commande strace
+\t   -R <mpi_rank>    lance la commande strace seulement sur les rangs MPI indiqués
+\t   -t <tracer>      remplace la commande strace par la commande <tracer>.
+\t   -T <opt>         remplace l'option '-o' par l'option <opt> pour specifier le fichier de sortie de la commande <tracer>
+
+\tLes rangs MPI peuvent etre spécifiés
+\t- soit par une liste de rangs d'indices MPI,
+\t- soit par une syntaxe 'nodeset' en utilisant mpi comme nom de machine.
+
+\tEx: -R 1-4,8-9
+\t\t-R mpi[1-4,8-9]
+\t\t-R 'mpi[1-9]!mpi[5-7]'
+\t\ttrace seulement les rangs MPI : 1, 2, 3, 4, 8, 9.
+
+\tPour chaque processus MPI, un fichier de trace est généré avec le nom suivant :
+\t\$(home -t)/strace_{JOBID}.{STEPID}/{HOSTNAME}/trx_proc_{MPIRANK}
+
+\tLes traceurs reconnus sont :  strace, ltrace, valgrind, valgrind-xml.
+\tLes autres pourraient necessiter l'usage de l'option -T.
+
+
+\tLe comportement du traceur peut etre configure avec les variables d'environnement:
+\tparametrer le profiling:
+
+\tBRIDGE_MPRUN_ADDON_STRACE : 1 active le strace
+\tBRIDGE_MPRUN_ADDON_STRACE_PACKAGE_DIR
+\tBRIDGE_MPRUN_ADDON_STRACE_OPTIONS
+\tBRIDGE_MPRUN_ADDON_STRACE_MPI_RANK
+\tBRIDGE_MPRUN_ADDON_STRACE_TRACER
+\tBRIDGE_MPRUN_ADDON_STRACE_TRACER_OUTOPT
+\n"
     ## on fixe le status de sortie par defaut
     typeset exit_status=0
     
-
+    USAGE="$USAGE_US"
     BRIDGE_MPRUN_ADDON_STRACE_LMODE=0
     ## on parse les arguments
     while getopts ${BRIDGE_MPRUN_GETOPT_OPTIONS} option
     do
       case ${option} in
-	  
-	  h)
-	      echo -e "${USAGE}" >&2
-	      return 0
-	      ;;
+      
+      h)
+          echo -e "${USAGE}" >&2
+          return 0
+          ;;
 
-	  d)
-	      if [[ ${OPTARG} == strace ]] ; then
-		     BRIDGE_MPRUN_ADDON_STRACE=1
-		     ${LOGGER} "debug with strace is now enabled"
-		     # on ne supporte pas le broadcast
-#		     (( BRIDGE_BROADCAST_MODE == 1) && export BRIDGE_BROADCAST_MODE=0
-	      fi
-	      ;;
-	  R)
-	      BRIDGE_MPRUN_ADDON_STRACE_MPI_RANK="${OPTARG}"
-	      ;;
+      d)
+          if [[ ${OPTARG} == strace ]] ; then
+             BRIDGE_MPRUN_ADDON_STRACE=1
+             ${LOGGER} "debug with strace is now enabled"
+             # on ne supporte pas le broadcast
+#             (( BRIDGE_BROADCAST_MODE == 1) && export BRIDGE_BROADCAST_MODE=0
+          fi
+          ;;
+      R)
+          BRIDGE_MPRUN_ADDON_STRACE_MPI_RANK="${OPTARG}"
+          ;;
 
-	  o)
-	      BRIDGE_MPRUN_ADDON_STRACE_PACKAGE_DIR="${OPTARG}"
-	      ;;
+      o)
+          BRIDGE_MPRUN_ADDON_STRACE_PACKAGE_DIR="${OPTARG}"
+          ;;
 
-	  O)
-	      BRIDGE_MPRUN_ADDON_STRACE_OPTIONS="$BRIDGE_MPRUN_ADDON_STRACE_OPTIONS -O${OPTARG}"
-	      ;;
-	  t)
-	      BRIDGE_MPRUN_ADDON_STRACE_TRACER="$OPTARG"
-	      ;;
+      O)
+          BRIDGE_MPRUN_ADDON_STRACE_OPTIONS="$BRIDGE_MPRUN_ADDON_STRACE_OPTIONS -O${OPTARG}"
+          ;;
+      t)
+          BRIDGE_MPRUN_ADDON_STRACE_TRACER="$OPTARG"
+          ;;
+      T)
+          BRIDGE_MPRUN_ADDON_STRACE_TRACER_OUTOPT="$OPTARG"
+          ;;
 
-	  *)
-	      ;;
+      *)
+          ;;
       esac
     done
     export BRIDGE_MPRUN_ADDON_STRACE
@@ -133,6 +179,7 @@ function bridge_addon_mprun_getopt {
     export BRIDGE_MPRUN_ADDON_STRACE_OPTIONS
     export BRIDGE_MPRUN_ADDON_STRACE_MPI_RANK
     export BRIDGE_MPRUN_ADDON_STRACE_TRACER
+    export BRIDGE_MPRUN_ADDON_STRACE_TRACER_OUTOPT
 
     
     return ${exit_status}
@@ -162,66 +209,68 @@ function bridge_addon_mprun_spmd_pre_run {
 
     if (( BRIDGE_MPRUN_ADDON_STRACE == 1 )) ; then
 
-	    ## on se place en mode debug si souhaite
-	    typeset -i BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+        ## on se place en mode debug si souhaite
+        typeset -i BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
         if [[ $BRIDGE_DEBUG_MODE == "yes" ]] && (( BRIDGE_DEBUG_LEVEL <= BRIDGE_DEBUG_MAXLEVEL )) ; then
-	        set -x
-	        : show arguments $@
-	    fi
+            set -x
+            : show arguments $@
+        fi
     
-	    ## on incremente le niveau de log
-	    typeset -i BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+        ## on incremente le niveau de log
+        typeset -i BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
     
-	    ## on genere la nouvelle ligne de commande
-	    typeset strace_wrapper=${BRIDGE_ADDON_SCRIPTSDIR}/$(bridge_command_enhance strace.sh)
+        ## on genere la nouvelle ligne de commande
+        typeset strace_wrapper=${BRIDGE_ADDON_SCRIPTSDIR}/$(bridge_command_enhance strace.sh)
 
         # old style
-#	    typeset strace_wrapper_args=""
-#	    [[ -n ${BRIDGE_MPRUN_ADDON_STRACE_PACKAGE_DIR} ]] && \
-#		    strace_wrapper_args="$strace_wrapper_args -o${BRIDGE_MPRUN_ADDON_STRACE_PACKAGE_DIR}"
-#	    [[ -n ${BRIDGE_MPRUN_ADDON_STRACE_OPTIONS} ]] && \
-#		    strace_wrapper_args="$strace_wrapper_args ${BRIDGE_MPRUN_ADDON_STRACE_OPTIONS}"
-#	    [[ -n ${BRIDGE_MPRUN_ADDON_STRACE_MPI_RANK} ]] && \
-#		    strace_wrapper_args="$strace_wrapper_args -R${BRIDGE_MPRUN_ADDON_STRACE_MPI_RANK}"
-#	    [[ -n ${BRIDGE_MPRUN_ADDON_STRACE_TRACER} ]] && \
-#		    strace_wrapper_args="$strace_wrapper_args -t${BRIDGE_MPRUN_ADDON_STRACE_TRACER}"
+#        typeset strace_wrapper_args=""
+#        [[ -n ${BRIDGE_MPRUN_ADDON_STRACE_PACKAGE_DIR} ]] && \
+#            strace_wrapper_args="$strace_wrapper_args -o${BRIDGE_MPRUN_ADDON_STRACE_PACKAGE_DIR}"
+#        [[ -n ${BRIDGE_MPRUN_ADDON_STRACE_OPTIONS} ]] && \
+#            strace_wrapper_args="$strace_wrapper_args ${BRIDGE_MPRUN_ADDON_STRACE_OPTIONS}"
+#        [[ -n ${BRIDGE_MPRUN_ADDON_STRACE_MPI_RANK} ]] && \
+#            strace_wrapper_args="$strace_wrapper_args -R${BRIDGE_MPRUN_ADDON_STRACE_MPI_RANK}"
+#        [[ -n ${BRIDGE_MPRUN_ADDON_STRACE_TRACER} ]] && \
+#            strace_wrapper_args="$strace_wrapper_args -t${BRIDGE_MPRUN_ADDON_STRACE_TRACER}"
 #    
-#	    strace_wrapper_args="$strace_wrapper_args -- ${spmd_run_args}"
+#        strace_wrapper_args="$strace_wrapper_args -- ${spmd_run_args}"
 #
-#	    ${LOGGER} "Strace addon : swapping current args '${spmd_run_args}' with '$strace_wrapper_args'"
+#        ${LOGGER} "Strace addon : swapping current args '${spmd_run_args}' with '$strace_wrapper_args'"
 #
-#	    spmd_run_args="${strace_wrapper} ${strace_wrapper_args} -- ${spmd_run_args}"
+#        spmd_run_args="${strace_wrapper} ${strace_wrapper_args} -- ${spmd_run_args}"
     
         # new style
- 	    typeset -a spmd_run_args_new
+         typeset -a spmd_run_args_new
         spmd_run_args_new+=( $strace_wrapper )
-	    [[ -n ${BRIDGE_MPRUN_ADDON_STRACE_PACKAGE_DIR} ]] && \
-		    spmd_run_args_new+=( "-o${BRIDGE_MPRUN_ADDON_STRACE_PACKAGE_DIR}" )
-	    [[ -n ${BRIDGE_MPRUN_ADDON_STRACE_OPTIONS} ]] && \
+        [[ -n ${BRIDGE_MPRUN_ADDON_STRACE_PACKAGE_DIR} ]] && \
+            spmd_run_args_new+=( "-o${BRIDGE_MPRUN_ADDON_STRACE_PACKAGE_DIR}" )
+        [[ -n ${BRIDGE_MPRUN_ADDON_STRACE_OPTIONS} ]] && \
             spmd_run_args_new+=( "${BRIDGE_MPRUN_ADDON_STRACE_OPTIONS}" )
-	    [[ -n ${BRIDGE_MPRUN_ADDON_STRACE_MPI_RANK} ]] && \
+        [[ -n ${BRIDGE_MPRUN_ADDON_STRACE_MPI_RANK} ]] && \
             spmd_run_args_new+=( "-R${BRIDGE_MPRUN_ADDON_STRACE_MPI_RANK}" )
-	    [[ -n ${BRIDGE_MPRUN_ADDON_STRACE_TRACER} ]] && \
+        [[ -n ${BRIDGE_MPRUN_ADDON_STRACE_TRACER} ]] && \
             spmd_run_args_new+=( "-t${BRIDGE_MPRUN_ADDON_STRACE_TRACER}" )
+        [[ -n ${BRIDGE_MPRUN_ADDON_STRACE_TRACER_OUTOPT} ]] && \
+            spmd_run_args_new+=( "-T${BRIDGE_MPRUN_ADDON_STRACE_TRACER_OUTOPT}" )
 
         spmd_run_args_new+=( "--" )
         spmd_run_args_new+=( "${spmd_run_args[@]}" )
 
-	    ${LOGGER} "Strace addon : swapping current args '${spmd_run_args}' with '${pmd_run_args_new[*]}'"
+        ${LOGGER} "Strace addon : swapping current args '${spmd_run_args}' with '${pmd_run_args_new[*]}'"
 
         # should be the following with bridge-1.5.4 but with priori
         # versions, args are not passed using arrays so it can't work
-        spmd_run_args="${spmd_run_args_new[@]}"
+        spmd_run_args=(${spmd_run_args_new[@]})
         #spmd_run_args="${spmd_run_args_new[*]}"
     
     
-	    BRIDGE_MPRUN_ADDON_STRACE=0
-	    typeset exit_status=0
+        BRIDGE_MPRUN_ADDON_STRACE=0
+        typeset exit_status=0
 
-	    return 0
-	
+        return 0
+    
     else
-    	return 0
+        return 0
     fi
 }
 
