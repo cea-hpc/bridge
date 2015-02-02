@@ -32,8 +32,8 @@ function is_bcast_needed {
     typeset analyzed_file=( "$@" )
     if [[ ${BRIDGE_BROADCAST_MODE} -eq 1 ]] && [[ -n ${BRIDGE_BROADCAST_INCLUDE_PATTERN} ]]
     then
-	typeset exec_file="$(which "${analyzed_file[0]}")"
-	which "${exec_file}" 2>/dev/null | egrep -q "${BRIDGE_BROADCAST_INCLUDE_PATTERN}"
+	typeset exec_file="$(/usr/bin/which "${analyzed_file[0]}")"
+	/usr/bin/which "${exec_file}" 2>/dev/null | egrep -q "${BRIDGE_BROADCAST_INCLUDE_PATTERN}"
 	if [[ $? -ne 0 ]]
 	then
 	    ${LOGGER} "avoiding to broadcast ${exec_file} because of inclusion pattern \"${BRIDGE_BROADCAST_INCLUDE_PATTERN}\""
@@ -43,8 +43,8 @@ function is_bcast_needed {
 	fi
     elif [[ ${BRIDGE_BROADCAST_MODE} -eq 1 ]] && [[ -n ${BRIDGE_BROADCAST_EXCLUDE_PATTERN} ]]
     then
-	typeset exec_file="$(which "${analyzed_file[0]}")"
-	which ${exec_file} 2>/dev/null | egrep -q "${BRIDGE_BROADCAST_EXCLUDE_PATTERN}"
+	typeset exec_file="$(/usr/bin/which "${analyzed_file[0]}")"
+	/usr/bin/which ${exec_file} 2>/dev/null | egrep -q "${BRIDGE_BROADCAST_EXCLUDE_PATTERN}"
 	if [[ $? -eq 0 ]]
 	then
 	    ${LOGGER} "avoiding to broadcast ${exec_file} because of exclusion pattern \"${BRIDGE_BROADCAST_EXCLUDE_PATTERN}\""
@@ -67,8 +67,8 @@ function is_bcast_needed {
 
     if [[ -n ${BRIDGE_BROADCAST_LOCAL_CP_INCLUDE_PATTERN} ]]
     then
-       typeset exec_file="$(which "${analyzed_file[0]}")"
-       which ${exec_file} 2>/dev/null | egrep -q "${BRIDGE_BROADCAST_LOCAL_CP_INCLUDE_PATTERN}"
+       typeset exec_file="$(/usr/bin/which "${analyzed_file[0]}")"
+       /usr/bin/which ${exec_file} 2>/dev/null | egrep -q "${BRIDGE_BROADCAST_LOCAL_CP_INCLUDE_PATTERN}"
        if [[ $? -eq 0 ]]
        then
            ${LOGGER} "broadcasting ${exec_file} using parallel local cp because of inclusion pattern \"${BRIDGE_BROADCAST_LOCAL_CP_INCLUDE_PATTERN}\""
@@ -233,7 +233,7 @@ function bridge_addon_mprun_spmd_pre_run {
 
     if [[ ${BRIDGE_MPRUN_ADDON_MPMD_STAGE} -eq 2 ]] && [[ -n ${BRIDGE_MPRUN_ADDON_MPMD_SCRIPT} ]]
     then
-	typeset gen_script="$(which "${spmd_run_args[0]}")"
+	typeset gen_script="$(/usr/bin/which "${spmd_run_args[0]}")"
 	typeset bcast_mode=0
 
 	CMD_ID=0	
@@ -250,7 +250,7 @@ function bridge_addon_mprun_spmd_pre_run {
 	    if [[ $bcast_mode -ne 0 ]]
 	    then
 	    ## on broadcast le job
-		typeset exec_file="$(which "${CMD[1]}")"
+		typeset exec_file="$(/usr/bin/which "${CMD[1]}")"
 		typeset dst_file="$(compute_bcast_name "$exec_file")_${CMD_ID}"
 		do_bcast "${bcast_mode}" "${exec_file}" "${dst_file}"
 		if [[ $? -ne 0 ]]
@@ -274,7 +274,7 @@ function bridge_addon_mprun_spmd_pre_run {
     if [[ ${BRIDGE_BROADCAST_MODE} -eq 1 ]] && [[ ${bcast_mode} -ne 0 ]]
     then
 	## on broadcast le job
-	typeset exec_file="$(which "${spmd_run_args[0]}")"
+	typeset exec_file="$(/usr/bin/which "${spmd_run_args[0]}")"
 
 	export BRIDGE_BROADCAST_ORIGINAL_CMD="${exec_file}"
 	typeset dst_file="$(compute_bcast_name "$exec_file")"

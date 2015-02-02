@@ -12,6 +12,10 @@
 	-- msub/mprun: add -t|T [min-]max support for Slurm backend
 	-- addons/strace: fix agrs passing, strace.sh bug, translate usage in english
 	   and add support for ltrace, valgrind
+	-- addons/bcast: use /usr/bin/which to avoid alias magic option --show-dot
+	   preventing from correctly getting the full path of executables accessed
+	   using relative paths and thus not doing the right assumption whether or
+	   not it should be broadcasted
 
 * Changes in bridge-1.5.4
 =========================
