@@ -10,7 +10,6 @@
 %define _unpackaged_files_terminate_build      0
 
 # Remove the space between % and trace to activate RPM debug traces
-# (Commenting %blabla does not really disable it)
 # % trace
 
 #
@@ -56,18 +55,20 @@
 Summary: Bridge CCC In-House Batch Environment
 Name: bridge
 Version: 1.5.5
-Release: 1.%{?target}
+Release: 2%{?dist}.%{?target}
 License: GPL License
 Group: System Environment/Base
-URL: http://
+URL: https://github.com/cea-hpc/bridge
 Source0: %{name}-%{version}.tar.gz
-BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
+BuildRequires: autoconf
+BuildRequires: automake
+BuildRequires: libtool
 
 # by default program prefix is ccc_
 # you can alter it using --define "_program_prefix foo_" or remove it
-# using --define "_program_prefix %{nil}"
+# using --define "_program_prefix %%{nil}"
 %if %{!?_program_prefix:1}%{?_program_prefix:0}
-%define _program_prefix ccc_ 
+%define _program_prefix ccc_
 %endif
 
 # by default prefix is /usr
@@ -82,29 +83,34 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
 %define sysconfdir /etc
 %endif
 
-%define _prefix         %{prefix}
-%define _bindir         %{prefix}/bin
-%define _sbindir        %{prefix}/sbin
-%define _sysconfdir     %{sysconfdir}
-%define _datadir        %{prefix}/share
-%define _includedir     %{prefix}/include
-%define _sharedstatedir %{prefix}/share
-%define _mandir         %{_datadir}/man
-%define _infodir        %{_datadir}/info
-%define _docdir         %{_datadir}/doc
-%define _libexecdir     /usr/libexec
-
-# # Compiled with slurm plugin as default (disable using --without slurm)
-# % bridge_with_opt slurm
+%define	_prefix		%{prefix}
+%define	_bindir		%{prefix}/bin
+%define _sbindir	%{prefix}/sbin
+%define _sysconfdir	%{sysconfdir}
+%define _datadir	%{prefix}/share
+%define _includedir	%{prefix}/include
+%define _sharedstatedir	%{prefix}/share
+%define _mandir		%{_datadir}/man
+%define _infodir	%{_datadir}/info
+%define _docdir		%{_datadir}/doc
+%define _libexecdir	/usr/libexec
 
 # nqsII and LSF not yet supported
 %bcond_with nqsII
 %bcond_with lsf
 
 %description
-Bridge CCC In-House Batch Environment gives a uniform way to access external 
+Bridge CCC In-House Batch Environment gives a uniform way to access external
 Batch scheduling systems.
 It currently provides plugins for slurm.
+
+%package devel
+Summary: Development package for Bridge.
+Group: Development/System
+Requires: bridge
+%description devel
+Development package for bridge. This package includes the header files
+for the bridge API as well as the material to link against the dynamic library.
 
 %if %{with slurm}
 %package slurm
@@ -112,8 +118,9 @@ Summary: Slurm plugins for Bridge CCC In-House Batch Environment
 Group: System Environment/Base
 Requires: slurm >= 1.3.6
 Requires: bridge >= %{version}
+BuildRequires: slurm-devel >= 1.3.6
 %description slurm
-Plugins that provides Slurm access accross the CCC Batch systems Bridge
+Plugin that provides Slurm access accross the CCC Batch systems Bridge
 %endif
 
 %prep
@@ -122,7 +129,7 @@ Plugins that provides Slurm access accross the CCC Batch systems Bridge
 %build
 autoreconf -fvi
 %configure %{?with_slurm:--with-slurm}
-make %{?_smp_mflags} 
+make %{?_smp_mflags}
 
 %install
 make install DESTDIR="$RPM_BUILD_ROOT"
@@ -134,9 +141,9 @@ chmod 755 ${RPM_BUILD_ROOT}/%{_prefix}/share/scripts/resource_manager/addons/get
 for dr in %{buildroot}/%{_bindir} %{buildroot}/%{_sbindir} %{buildroot}/%{_sysconfdir}/init.d %{buildroot}/%{_sysconfdir}/sysconfig
 do
 	pushd $dr
-      	for fl in %{_program_prefix}* ; do
-      	    ln -s $fl %{?compat_target}_${fl##%{_program_prefix}}
-      	done
+	for fl in %{_program_prefix}* ; do
+	    ln -s $fl %{?compat_target}_${fl##%{_program_prefix}}
+	done
 	popd
 done
 %endif
@@ -158,9 +165,7 @@ done
 %config (noreplace) %{_sysconfdir}/bridge_bs.conf
 %config (noreplace) %{_sysconfdir}/bridge_rm.conf
 %{_bindir}/%{_program_prefix}*
-%{_includedir}/bridge.h
-%{_includedir}/bridge_common.h
-%{_libdir}/libbridge.*
+%{_libdir}/libbridge.so.*
 %{_prefix}/share/scripts/common/*
 %{_prefix}/share/scripts/addons/*
 %{_prefix}/share/scripts/batch_system/plugins/generic
@@ -175,13 +180,24 @@ done
 %{_includedir}/bridgedapi.h
 %{_libdir}/libbridgedapi.*
 
+%files devel
+%{_includedir}/bridge.h
+%{_includedir}/bridge_common.h
+%{_libdir}/libbridge.so
+
+%files slurm
+%defattr(-,root,root,-)
+%{_includedir}/bridge.h
+%{_includedir}/bridge_common.h
+%{_libdir}/libbridge.so
+
 %if %{?compat_target}0
 %package %{?compat_target}_compat
 Summary: Compatibility links for alternative Bridge command prefix
 Group: System Environment/Base
 Requires: bridge
 %description %{?compat_target}_compat
-Additional package providing %{?compat_target}_* compatibility links to the 
+Additional package providing %{?compat_target}_* compatibility links to the
 %{_program_prefix}* commands provided by the standard flavor of Bridge.
 
 %files %{?compat_target}_compat
@@ -212,6 +228,10 @@ Additional package providing %{?compat_target}_* compatibility links to the
 %endif
 
 %changelog
+* Mon Feb 02 2015 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.5.5-2
+-- more spec file cleaning
+-- move devel files to a dedicated bridge-devel package
+
 * Mon Feb 02 2015 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.5.5-1
 -- switch to bridge-1.5.5, see NEWS file for changes
 -- simplify spec file
@@ -269,16 +289,13 @@ Additional package providing %{?compat_target}_* compatibility links to the
 * Tue Dec 17 2013 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.5.4-2
 - tag release 1.5.4-2
 -- modify spec file to automate the generation of different styles of packaging :
-   --define "ccc_tera 1" : generate with cea_ prog prefix in /usr/local/bridge
-   	    	           compile with slurm support by default
-   	    	      	   add a bridge-ccc_compat for ccc_ links
-   --define "ccc_tgcc 1" : generate with ccc_ prog prefix in /usr
-   	    	       	   compile with slurm support by default
-   	    	       	   add a bridge-cea_compat for cea_ links
-   default : generate with ccc_ prog prefix in /usr
-   	     compile without slurm support
-	     add a bridge-cea_compat for cea_ links
-
+   -- define "ccc_tera 1" : generate with cea_ prog prefix in /usr/local/bridge
+      compile with slurm support by default, add a bridge-ccc_compat for ccc_
+      links
+   -- define "ccc_tgcc 1" : generate with ccc_ prog prefix in /usr, compile with
+      slurm support by default add a bridge-cea_compat for cea_ links
+   -- default : generate with ccc_ prog prefix in /usr, compile without slurm
+      support, add a bridge-cea_compat for cea_ links
 -- in tgcc mode (the default), create a bridge-cea_compat package providing
    the cea_* compatibility links to the ccc_* equivalents
 
@@ -409,12 +426,12 @@ Additional package providing %{?compat_target}_* compatibility links to the
   launcher and its options
 * Mon Feb 9 2009 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.3.12-1
 - Add openmpi support in mprun for Slurm using external addon and some
-  minor changes 
+  minor changes
 * Fri Jan 30 2009 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.3.11-4
 - Correct a bug in msub -W processing
 
 * Thu Dec 18 2008 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.3.11-3
 - Move conf load in mprun to set addon in conf file
 - Add a patch to use /etc as a default config directory
-* Mon Dec 15 2008 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 
+* Mon Dec 15 2008 Matthieu Hautreux <matthieu.hautreux@cea.fr> -
 - Initial build.
