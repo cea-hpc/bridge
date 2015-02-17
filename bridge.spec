@@ -1,10 +1,6 @@
-#
-# Never allow rpm to strip binaries as this will break
-#  parallel debugging capability
-#
-%define __os_install_post /usr/lib/rpm/brp-compress
+%undefine _enable_debug_packages
 %define debug_package %{nil}
-#
+
 # Should unpackaged files in a build root terminate a build?
 # Note: The default value should be 0 for legacy compatibility.
 %define _unpackaged_files_terminate_build      0
@@ -55,7 +51,7 @@
 Summary: Bridge CCC In-House Batch Environment
 Name: bridge
 Version: 1.5.5
-Release: 2%{?dist}.%{?target}
+Release: 3%{?target}%{?dist}
 License: GPL License
 Group: System Environment/Base
 URL: https://github.com/cea-hpc/bridge
@@ -67,9 +63,7 @@ BuildRequires: libtool
 # by default program prefix is ccc_
 # you can alter it using --define "_program_prefix foo_" or remove it
 # using --define "_program_prefix %%{nil}"
-%if %{!?_program_prefix:1}%{?_program_prefix:0}
-%define _program_prefix ccc_
-%endif
+%{!?_program_prefix: %global _program_prefix "ccc_"}
 
 # by default prefix is /usr
 # you can alter it using --define "prefix /usr/local/bridge"
@@ -185,27 +179,21 @@ done
 %{_includedir}/bridge_common.h
 %{_libdir}/libbridge.so
 
-%files slurm
-%defattr(-,root,root,-)
-%{_includedir}/bridge.h
-%{_includedir}/bridge_common.h
-%{_libdir}/libbridge.so
-
 %if %{?compat_target}0
-%package %{?compat_target}_compat
+%package %{compat_target}_compat
 Summary: Compatibility links for alternative Bridge command prefix
 Group: System Environment/Base
 Requires: bridge
-%description %{?compat_target}_compat
-Additional package providing %{?compat_target}_* compatibility links to the
+%description %{compat_target}_compat
+Additional package providing %{compat_target}_* compatibility links to the
 %{_program_prefix}* commands provided by the standard flavor of Bridge.
 
-%files %{?compat_target}_compat
+%files %{compat_target}_compat
 %defattr(-,root,root,-)
-%{_bindir}/%{?compat_target}_*
-%{_sbindir}/%{?compat_target}_*
-%config %{_sysconfdir}/init.d/%{?compat_target}_bridged
-%config (noreplace) %{_sysconfdir}/sysconfig/%{?compat_target}_bridged
+%{_bindir}/%{compat_target}_*
+%{_sbindir}/%{compat_target}_*
+%config %{_sysconfdir}/init.d/%{compat_target}_bridged
+%config (noreplace) %{_sysconfdir}/sysconfig/%{compat_target}_bridged
 %endif
 
 %if %{with slurm}
@@ -228,6 +216,9 @@ Additional package providing %{?compat_target}_* compatibility links to the
 %endif
 
 %changelog
+* Mon Feb 17 2015 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.5.5-3
+-- more spec cleanup
+
 * Mon Feb 02 2015 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.5.5-2
 -- more spec file cleaning
 -- move devel files to a dedicated bridge-devel package
