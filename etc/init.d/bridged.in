@@ -6,7 +6,6 @@
 # description: Bridge Stats Daemon
 #
 # processname: bridged
-# pidfile: /var/run/bridged.pid
 
 # source function library
 . /etc/rc.d/init.d/functions
