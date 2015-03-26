@@ -22,6 +22,7 @@ AC_PROG_LIBTOOL
 
 dnl C code
 AC_PROG_CC
+AM_PROG_CC_C_O
 
 dnl lex an yacc support
 AC_PROG_LEX
