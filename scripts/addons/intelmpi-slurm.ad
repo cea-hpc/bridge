@@ -132,6 +132,8 @@ function bridge_addon_mprun_alteropt {
 	    export spmd_run_separator=" "
 	    if [[ ${spmd_run_cmd} == "mpirun" ]]
 		then
+		${LOGGER} "Waiting for nodes availability (scontrol wait_job ${SLURM_JOBID})"
+		scontrol wait_job ${SLURM_JOBID} >/dev/null 2>&1
 		if [[ -n ${BRIDGE_SLURM_INTELMPI_CMD_DEFAULT_OPTIONS} ]]
 		    then
 		    spmd_run_options="${spmd_run_options} ${BRIDGE_SLURM_INTELMPI_CMD_DEFAULT_OPTIONS}"

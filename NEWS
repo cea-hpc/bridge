@@ -4,6 +4,7 @@
 	-- bridged: remove unused pidfile from initscript header
 	-- addons/intelmpi-slurm.ad: switch to intelmpi mode when intel|intel64|intelmpi is
 	   detected in mpirun path
+	-- addons/intelmpi-slurm.ad: wait for nodes availability
 
 * Changes in bridge-1.5.5
 =========================
