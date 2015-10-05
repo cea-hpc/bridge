@@ -1,0 +1,120 @@
+#*****************************************************************************\
+#  scripts/addons/preload.ad -
+#******************************************************************************
+#  Copyright  CEA/DAM/DIF (2015)
+#
+#  This file is part of Bridge, an abstraction layer to ease batch system and
+#  resource manager usage in heterogeneous HPC environments.
+#
+#  Bridge is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  Bridge is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with Bridge.  If not, see <http://www.gnu.org/licenses/>
+#*****************************************************************************/
+
+#################################################################################
+#
+# Addon for preload support in Bridge for both msub and mprun
+#
+#################################################################################
+
+#################################################################################
+# MSUB QOS support
+#--------------------------------------------------------------------------------
+function bridge_addon_msub_setopt {
+
+    return 0
+
+}
+
+function bridge_addon_msub_getopt {
+
+    return 0
+}
+
+function bridge_addon_msub_alteropt {
+
+    return 0
+}
+
+function bridge_addon_msub_alterscript {
+    return 0
+}
+#################################################################################
+
+
+#################################################################################
+# MPRUN QOS support
+#--------------------------------------------------------------------------------
+function bridge_addon_mprun_setopt {
+
+    return 0
+
+}
+
+function bridge_addon_mprun_getopt {
+
+    return 0
+}
+
+function bridge_addon_mprun_alteropt {
+
+    return 0
+
+}
+
+function bridge_addon_mprun_spmd_pre_allocate {
+
+    return 0
+
+}
+
+function bridge_addon_mprun_spmd_post_allocate {
+
+    return 0
+
+}
+
+function bridge_addon_mprun_spmd_pre_run {
+
+    ## Debug mode
+    typeset -i BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+	then
+	set -x
+    fi
+
+    ## Increase verbosity level
+    typeset -i BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+
+    ## Header for log
+    typeset LOGGER="${LOGGER} Bridge Preload Addon :"
+    typeset ERROR="${ERROR} Bridge Preload Addon :"
+
+    ## Set LD_PRELOAD only if BRIDGE_MPRUN_PRELOAD exist
+    if [ -n "${BRIDGE_MPRUN_PRELOAD}" ]
+	then
+	export LD_PRELOAD="${BRIDGE_MPRUN_PRELOAD}:${LD_PRELOAD}"
+	${LOGGER} "LD_PRELOAD is now ${LD_PRELOAD}"
+    else
+	${LOGGER} "LD_PRELOAD was not modified"
+    fi
+
+    return 0
+
+}
+
+function bridge_addon_mprun_spmd_post_run {
+
+    return 0
+
+}
+#################################################################################

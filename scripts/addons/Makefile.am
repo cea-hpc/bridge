@@ -33,11 +33,12 @@ dist_addonscripts_DATA		=	autoaccount.ad \
                                         mvapich-slurm.ad \
                                         openmpi-slurm.ad \
                                         openmpi-slurm-direct.ad \
+                                        preload.ad \
                                         qos.ad \
                                         relax_affinity.ad \
                                         reservation.ad \
                                         spank-stats.ad \
-					strace.ad \
+                    					strace.ad \
                                         shell.ad \
                                         tagoutput.ad \
                                         totalview.ad \
