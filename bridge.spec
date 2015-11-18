@@ -50,8 +50,8 @@
 
 Summary: Bridge CCC In-House Batch Environment
 Name: bridge
-Version: 1.5.5
-Release: 3%{?target}%{?dist}
+Version: 1.5.6
+Release: 1.%{?target}%{?dist}
 License: GPL License
 Group: System Environment/Base
 URL: https://github.com/cea-hpc/bridge
@@ -216,6 +216,9 @@ Additional package providing %{compat_target}_* compatibility links to the
 %endif
 
 %changelog
+* Wed Nov 18 2015 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.5.6-1
+-- switch to bridge-1.5.6, see NEWS file for changes
+
 * Mon Feb 17 2015 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.5.5-3
 -- more spec cleanup
 
