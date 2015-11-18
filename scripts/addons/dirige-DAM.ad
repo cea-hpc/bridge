@@ -89,18 +89,26 @@ function bridge_addon_msub_alteropt {
 	if [[ $? -eq 0 ]]
 	    then
 
+	    if [[ -z ${BRIDGE_DIRIGE_CMD} ]]
+	    then
+		BRIDGE_DIRIGE_CMD="/usr/local/bridge-dam/dirige"
+	    fi
+	    if [[ -z ${BRIDGE_DIRIGE_SPOOLDIR} ]]
+	    then
+		BRIDGE_DIRIGE_SPOOLDIR="${CCC_SPOOLDIR}/listings/files"
+	    fi
+
 	    # on initialise les repertoires de travail necessaire a l'aide de la
 	    # commande dirige
-	    /usr/local/bridge/dam/dirige -I
+	    ${BRIDGE_DIRIGE_CMD} -I
 
-	    typeset user_spooldir="/cea/spool/home/$(id -un)/listings/files"
-	    if [[ ! -d ${user_spooldir} ]]
+	    if [[ ! -d ${BRIDGE_DIRIGE_SPOOLDIR} ]]
 		then
-		${ERROR} "dirige requested but user spool directory '${user_spooldir}' does not exist. fatal"
+		${ERROR} "dirige requested but user spool directory '${BRIDGE_DIRIGE_SPOOLDIR}' does not exist. fatal"
 		exit 1
 	    else
-		export BRIDGE_MSUB_STDOUT="${user_spooldir}/${BRIDGE_MSUB_REQNAME}.%j.o"
-		export BRIDGE_MSUB_STDERR="${user_spooldir}/${BRIDGE_MSUB_REQNAME}.%j.e"
+		export BRIDGE_MSUB_STDOUT="${BRIDGE_DIRIGE_SPOOLDIR}/${BRIDGE_MSUB_REQNAME}.%j.o"
+		export BRIDGE_MSUB_STDERR="${BRIDGE_DIRIGE_SPOOLDIR}/${BRIDGE_MSUB_REQNAME}.%j.e"
 		${LOGGER} "dirige mode activated"
 	    fi
 

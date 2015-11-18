@@ -5,8 +5,9 @@
 	-- addons/intelmpi-slurm.ad: switch to intelmpi mode when intel|intel64|intelmpi is
 	   detected in mpirun path
 	-- addons/intelmpi-slurm.ad: wait for nodes availability
-    -- addons/preload: allows prepending LD_PRELOAD env variable with the
-       content of BRIDGE_MPRUN_PRELOAD when set
+	-- addons/preload: allows prepending LD_PRELOAD env variable with the
+      	   content of BRIDGE_MPRUN_PRELOAD when set
+	-- addons/dirige-DAM: make it more generic
 
 * Changes in bridge-1.5.5
 =========================
