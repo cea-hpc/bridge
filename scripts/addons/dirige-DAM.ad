@@ -95,7 +95,7 @@ function bridge_addon_msub_alteropt {
 	    fi
 	    if [[ -z ${BRIDGE_DIRIGE_SPOOLDIR} ]]
 	    then
-		BRIDGE_DIRIGE_SPOOLDIR="${CCC_SPOOLDIR}/listings/files"
+		BRIDGE_DIRIGE_SPOOLDIR="${CCCSPOOLDIR}/listings/files"
 	    fi
 
 	    # on initialise les repertoires de travail necessaire a l'aide de la
