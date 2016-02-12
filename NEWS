@@ -1,4 +1,5 @@
-    -- addons/dirige-DAM: use CCCSPOOLDIR instead of CCC_SPOOLDIR
+        -- msub: allow -m|-M to specify 'default' to override #MSUB pragmas
+        -- addons/dirige-DAM: use CCCSPOOLDIR instead of CCC_SPOOLDIR
 
 * Changes in bridge-1.5.6
 =========================

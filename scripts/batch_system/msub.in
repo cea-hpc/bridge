@@ -186,6 +186,7 @@ typeset USAGE="usage : ${PROGNAME} [-dvhV] \\
 
  -T time_limit : maximum walltime of the batch job in seconds (default=18000)
  -M mem_limit  : maximum memory amount required per allocated core in Mo (default is chosen by the underlying system)
+                 ('default' can be explicitely specified to override existing '#MSUB -M' pragmas in the provided script)
 
  -W            : let multiple jobs sharing the same name and user run simultaneously (default is ${singleton_W_default})
  -w            : prevent multiple jobs sharing the same name and user to run simultaneously (default is ${singleton_w_default})
@@ -667,8 +668,16 @@ eval $ARGEXP1
 # Post-traitement des parametres
 #------------------------------------------------------------------------------------------------------------------
 # on s'assure que les valeurs memoires sont exprimees en Mo
+if [[ ${OPTION_m} == "default" ]
+then
+    OPTION_m=
+fi
 if [ "$OPTION_m" != "" ] ; then 
     OPTION_m=$(bridge_get_memlimit $OPTION_m)   # MEMLIMIT en Mo
+fi
+if [[ ${OPTION_M} == "default" ]
+then
+    OPTION_M=
 fi
 if [ "$OPTION_M" != "" ] ; then 
     OPTION_M=$(bridge_get_memlimit $OPTION_M)   # MEMLIMIT en Mo
