@@ -149,11 +149,9 @@ done
 %dir %{_prefix}/share/scripts/addons
 %dir %{_prefix}/share/scripts/batch_system
 %dir %{_prefix}/share/scripts/batch_system/profiles
-%dir %{_prefix}/share/scripts/batch_system/addons
 %dir %{_prefix}/share/scripts/batch_system/plugins
 %dir %{_prefix}/share/scripts/resource_manager
 %dir %{_prefix}/share/scripts/resource_manager/profiles
-%dir %{_prefix}/share/scripts/resource_manager/addons
 %dir %{_prefix}/share/scripts/resource_manager/plugins
 %config (noreplace) %{_sysconfdir}/bridge.conf
 %config (noreplace) %{_sysconfdir}/bridge_bs.conf
@@ -219,7 +217,7 @@ Additional package providing %{compat_target}_* compatibility links to the
 * Wed Nov 18 2015 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.5.6-1
 -- switch to bridge-1.5.6, see NEWS file for changes
 
-* Mon Feb 17 2015 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.5.5-3
+* Tue Feb 17 2015 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.5.5-3
 -- more spec cleanup
 
 * Mon Feb 02 2015 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.5.5-2
@@ -297,7 +295,7 @@ Additional package providing %{compat_target}_* compatibility links to the
 - tag release 1.5.4-1
 -- addons/autompi: bind /usr/bin/mpirun to mpich2 mpi type (RHEL6 MPI package)
 
-* Wed Nov 27 2013 Francois Diakhate <francois.diakhate@cea.fr>  - 1.5.4-0
+* Wed Nov 27 2013 Francois Diakhate <francois.diakhate@cea.fr> - 1.5.4-0
 - tag release 1.5.4-0
 -- addons: add missing shell.ad
 
@@ -328,7 +326,7 @@ Additional package providing %{compat_target}_* compatibility links to the
   spaces as single block parameters to the underlying resource manager command
 -- msub: add support for whitespaces in submission parameters with SLURM
 
-* Tue Apr 19 2013 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.5.3-8
+* Fri Apr 19 2013 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.5.3-8
 - tag release 1.5.3-8
 -- autopacking: remove useless export which caused a bug in recursive submissions
 -- rm/ws: add spmd_run_separator support in ws resource manager plugin
@@ -364,7 +362,7 @@ Additional package providing %{compat_target}_* compatibility links to the
 - tag release 1.4.15-6
 * Fri Jul 27 2012 Francois Diakhate <francois.diakhate@cea.fr> - 1.4.15-5
 - tag release 1.4.15-5
-* Mon Jul 17 2012 Francois Diakhate <francois.diakhate@cea.fr> - 1.4.15-4
+* Tue Jul 17 2012 Francois Diakhate <francois.diakhate@cea.fr> - 1.4.15-4
 - tag release 1.4.15-4
 * Mon Jul 16 2012 Francois Diakhate <francois.diakhate@cea.fr> - 1.4.15-3
 - tag release 1.4.15-3
@@ -377,10 +375,10 @@ Additional package providing %{compat_target}_* compatibility links to the
 - tag release 1.4.12-1
 * Tue Nov 08 2011 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.4.10-1
 - tag release 1.4.10
-* Fri Jul 07 2011 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.4.8-1
+* Wed Jul 06 2011 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.4.8-1
 - tag release 1.4.8
 
-* Wed Aug 27 2010 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.4.5-1
+* Wed Aug 25 2010 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.4.5-1
 - tag release 1.4.5
 * Wed Jun 16 2010 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.4.4-1
 - tag release 1.4.4
@@ -405,7 +403,7 @@ Additional package providing %{compat_target}_* compatibility links to the
 * Fri Jul 24 2009 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.3.24-3
 - add patch1 to correctly set BRIDGE env variables when openmpi is used
   with slurm and the slurm.sh profile is sourced
-* Mon Jul 2 2009 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.3.24-2
+* Thu Jul 2 2009 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.3.24-2
 - add patch0 to compile with surm-2.1
 * Tue Jun 2 2009 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.3.21-1
 - 1.3.21 release (see Changelog)

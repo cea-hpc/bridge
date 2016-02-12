@@ -1,3 +1,4 @@
+	-- some specfile cleanup
         -- msub: allow -m|-M to specify 'default' to override #MSUB pragmas
         -- addons/dirige-DAM: use CCCSPOOLDIR instead of CCC_SPOOLDIR
 
