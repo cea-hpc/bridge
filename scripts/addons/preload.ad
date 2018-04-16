@@ -46,6 +46,30 @@ function bridge_addon_msub_alteropt {
 }
 
 function bridge_addon_msub_alterscript {
+
+    ## Debug mode
+    typeset -i BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+    then
+        set -x
+    fi
+
+    ## Increase verbosity level
+    typeset -i BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+
+    ## Header for log
+    typeset LOGGER="${LOGGER} Bridge Preload Addon:"
+    typeset ERROR="${ERROR} Bridge Preload Addon:"
+
+    ## Set LD_PRELOAD only if BRIDGE_MSUB_PRELOAD exist
+    if [ -n "${BRIDGE_MSUB_PRELOAD}" ]
+    then
+        export LD_PRELOAD="${BRIDGE_MSUB_PRELOAD}:${LD_PRELOAD}"
+        ${LOGGER} "LD_PRELOAD is now ${LD_PRELOAD} for msub"
+    else
+        ${LOGGER} "LD_PRELOAD was not modified for msub"
+    fi
+
     return 0
 }
 #################################################################################
