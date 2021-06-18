@@ -303,7 +303,8 @@ function submit_cmd {
     if [[ ${same_request_at_same_time_flag} -eq 0 ]] ; then
 	if [[ -n ${after_jobs} ]]
 	then
-	    ${LOGGER} "ignoring \"-a ...\" option as -w takes precedence"
+	    ${ERROR} "the \"-a ...\" option can not be used in conjunction with \"-w\", add -W to avoid that issue"
+	    exit 2
 	fi
 	typeset put_singleton=1
 	if [[ ${slurm_major} -eq 1 ]] && [[ ${slurm_minor} -eq 3 ]] && [[ ${slurm_release} -ge 10 ]]

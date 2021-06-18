@@ -585,14 +585,14 @@ int display_classic_bridge_rm_allocation_on_file_stream(FILE * stream,bridge_rm_
   char* state;
 
   if(rm==NULL){
-    fprintf(stream,"RESID   USER      RES_STAT   NCORES NNODES  ELAPSED TIME   EFF      BATCHID   SUBHOST     MEM       PARTITION    ");
+    fprintf(stream,"RESID    USER          RES_STAT   NCORES NNODES  ELAPSED TIME   EFF      BATCHID   SUBHOST     MEM       PARTITION    ");
     if(long_flag){
       fprintf(stream,"  JOBS and NODES\n");
     }
     else{
       fprintf(stream,"  NODES\n");
     }
-    fprintf(stream,"------  --------  ---------  ------ ------  -------------  -------  --------  ----------  --------  -------------");
+    fprintf(stream,"-------  ------------  ---------  ------ ------  -------------  -------  --------  ----------  --------  -------------");
     if(long_flag){
       fprintf(stream,"  --------------\n");
     }
@@ -636,10 +636,10 @@ int display_classic_bridge_rm_allocation_on_file_stream(FILE * stream,bridge_rm_
     }
 
 
-    //    printf("%5d  %-8s %-9s  %4d %11s %12s %12s  %3d %5d  %-8s  %6s  %8d  %2d %3d %s\n",
+    //    printf("%5d  %-12s %-9s  %4d %11s %12s %12s  %3d %5d  %-8s  %6s  %8d  %2d %3d %s\n",
 
     fprintf(stream,"%-6s%s",rm->id != NULL ? rm->id : "-" ,interspace);
-    fprintf(stream,"%-8s%s",rm->username != NULL ? rm->username : "-" ,interspace);
+    fprintf(stream,"%-12s%s",rm->username != NULL ? rm->username : "-" ,interspace);
     fprintf(stream,"%-9s%s",state,interspace);
     fprintf(stream,"%5d%s",rm->total_cores_nb,interspace);
     fprintf(stream,"%6d%s",rm->total_nodes_nb,interspace);

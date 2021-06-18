@@ -197,7 +197,7 @@ get_batch_queues(bridge_batch_manager_t* p_batch_manager,
 		bn->name=strdup(ppi->name);
 
 		bn->default_queue = (uint32_t) ( ppi->flags | PART_FLAG_DEFAULT);
-		bn->priority = (uint32_t) ppi->priority;
+		bn->priority = (uint32_t) ppi->priority_tier;
 
 		/* queue activity */
 		if(ppi->state_up == PARTITION_UP) {

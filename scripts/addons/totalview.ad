@@ -154,7 +154,7 @@ function bridge_addon_mprun_spmd_pre_run {
 	    prun|srun)
 	        if [[ ${BRIDGE_MPRUN_TOTALVIEW_MODE} != "basic" ]]
 		    then
-		    spmd_run_options_new="${BRIDGE_TOTALVIEW_PARAMS} ${spmd_run_cmd} -a"
+		    spmd_run_options_new="${BRIDGE_TOTALVIEW_PARAMS} -args ${spmd_run_cmd} -n $BRIDGE_MPRUN_NPROC"
 		    spmd_run_separator_new="${spmd_run_options}"
 		else
 		    echo "#########################"

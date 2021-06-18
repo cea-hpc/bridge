@@ -53,7 +53,7 @@ init_batch_manager(bridge_batch_manager_t* p_batch_manager)
 	long api_version;
 	char version[128];
 
-	size_t mll;
+        int i;
 
 	p_batch_manager->cluster=NULL;
 	p_batch_manager->master=NULL;
@@ -82,8 +82,8 @@ init_batch_manager(bridge_batch_manager_t* p_batch_manager)
 	p_batch_manager->description=strdup("no desc");
 
 	/* get master name */
-	if (pscc->control_machine != NULL)
-		p_batch_manager->master = strdup(pscc->control_machine);
+	if (pscc->control_machine[0] != NULL)
+		p_batch_manager->master = strdup(pscc->control_machine[0]);
 
 	/* get cluster name */
 	if (pscc->cluster_name != NULL)
@@ -93,13 +93,13 @@ init_batch_manager(bridge_batch_manager_t* p_batch_manager)
 		char* p;
 		char* cluster;
 		char* separator;
-		cluster = strdup(pscc->control_machine);
+		cluster = strdup(pscc->control_machine[0]);
 		if (cluster != NULL) {
 
 			separator=index(cluster,'-');
 			if (separator==NULL) {
 				p=cluster;
-				while (!isdigit(*p) || *p=='\0')
+				while (!isdigit(*p) && *p!='\0')
 					p++;
 				if (*p!='\0') {
 					*p='\0';
@@ -125,20 +125,10 @@ init_batch_manager(bridge_batch_manager_t* p_batch_manager)
 	}
 
 	/* build masters list */
-	if (pscc->control_machine != NULL &&
-	    pscc->backup_controller != NULL) {
-
-		mll = strlen(pscc->control_machine) +
-			strlen(pscc->backup_controller) + 2;
-
-		p_batch_manager->masters_list = (char*) 
-			malloc(mll*sizeof(char));
-		if (p_batch_manager->masters_list != NULL) {
-			snprintf(p_batch_manager->masters_list[0],
-				 mll,"%s %s",
-				 pscc->control_machine,
-				 pscc->backup_controller);
-			
+	if (pscc->control_cnt >= 2) {
+		p_batch_manager->masters_list = malloc(sizeof(char *) * pscc->control_cnt);
+                for (i = 0; i < pscc->control_cnt; i++) {
+        	        p_batch_manager->masters_list[i] = strdup(pscc->control_machine[i]);
 		}
 
 	}

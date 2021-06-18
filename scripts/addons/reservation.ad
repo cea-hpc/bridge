@@ -67,6 +67,7 @@ function bridge_addon_msub_alteropt {
     if [[ -n ${BRIDGE_RESERVATION} ]]; then
 	${LOGGER} "now requesting reservation ${BRIDGE_RESERVATION} usage"
 	export SBATCH_RESERVATION=${BRIDGE_RESERVATION}
+	export SLURM_RESERVATION=${BRIDGE_RESERVATION}
     fi
 
     return 0
@@ -125,6 +126,7 @@ function bridge_addon_mprun_alteropt {
 	${LOGGER} "now requesting reservation ${BRIDGE_RESERVATION} usage"
 	export SALLOC_RESERVATION=${BRIDGE_RESERVATION}
 	export SRUN_RESERVATION=${BRIDGE_RESERVATION}
+	export SLURM_RESERVATION=${BRIDGE_RESERVATION}
     fi
 
     return 0

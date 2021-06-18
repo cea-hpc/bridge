@@ -21,7 +21,7 @@ dist_addonscripts_DATA		=	autoaccount.ad \
                                         bullxmpi-slurm-pin.ad \
                                         compat-DAM.ad \
                                         ddt.ad \
-                                        dirige-DAM.ad \
+                                        dirige.ad \
                                         example.ad \
                                         intelmpi-slurm.ad \
                                         inter-para-limits.ad \
@@ -37,6 +37,7 @@ dist_addonscripts_DATA		=	autoaccount.ad \
                                         qos.ad \
                                         relax_affinity.ad \
                                         reservation.ad \
+                                        filesystems.ad \
                                         spank-stats.ad \
                     					strace.ad \
                                         shell.ad \

@@ -25,8 +25,8 @@
 #include <stdio.h>
 
 /* for marshalling */
-#include <rpc/types.h>
-#include <rpc/xdr.h>
+#include <tirpc/rpc/types.h>
+#include <tirpc/rpc/xdr.h>
 
 #include <string.h>
 

@@ -160,7 +160,7 @@ fi
 typeset USAGE="usage : ${PROGNAME} [-dvhV] \\
         [-o output_file] [-e error_file] [-r reqname] [-A projid ] [-s study] \\
         [-N node_limit ] [ -n proc_limit ] [ -c core_limit ] \\
-        [-T [timemin-]time] [-t [timemin-]time] [-M mem_limit] [-m mem_limit] \\
+        [-T [timemin-]time] [-t [timemin-]time] [-M mem_limit] \\
         [-W] [-w] [-K] [-L \"appli1=nb1,appli2=nb2,...\"] \\
         [-E \"extra_parameters...\"] [-S starttime] [-q queue] [script [params]]
 
@@ -186,7 +186,7 @@ typeset USAGE="usage : ${PROGNAME} [-dvhV] \\
 
  -T time_limit : maximum walltime of the batch job in seconds (default=18000)
  -M mem_limit  : maximum memory amount required per allocated core in Mo (default is chosen by the underlying system)
-                 ('default' can be explicitely specified to override existing '#MSUB -M' pragmas in the provided script)
+                 ('default' can be explicitely specified to override existing '#MSUB -M' pragmas)
 
  -W            : let multiple jobs sharing the same name and user run simultaneously (default is ${singleton_W_default})
  -w            : prevent multiple jobs sharing the same name and user to run simultaneously (default is ${singleton_w_default})
@@ -282,7 +282,6 @@ do
       n) ARGEXP1="$ARGEXP1""OPTION_n=\"$OPTARG\"; " ; DISABLE_OVERRIDE_OPTION_N=1 ;  DISABLE_OVERRIDE_OPTION_x=1 ;  DISABLE_OVERRIDE_OPTION_c=1 ;;
       c) ARGEXP1="$ARGEXP1""OPTION_c=\"$OPTARG\"; " ; DISABLE_OVERRIDE_OPTION_N=1 ;  DISABLE_OVERRIDE_OPTION_x=1 ;  DISABLE_OVERRIDE_OPTION_n=1 ;;
       M) ARGEXP1="$ARGEXP1""OPTION_M=\"$OPTARG\"; ";;
-      m) ARGEXP1="$ARGEXP1""OPTION_m=\"$OPTARG\"; ";;
       W) ARGEXP1="$ARGEXP1""OPTION_W=1; ";;
       w) ARGEXP1="$ARGEXP1""OPTION_W=0; ";;
       K) ARGEXP1="$ARGEXP1""OPTION_K=1; ";;
@@ -543,7 +542,9 @@ AWKSCRIPT='
                 else if ($i=="-S") {
                         printf("OPTION_S=")
                         i++
-                        printf("%s ", $i)
+                        for ( j=i ; j<=NF ; j++ )
+                          printf("%s ", $j)
+                        printf(" ")
                         opt=1
                 }
                 else if ($i=="-p" || $i=="-A") {
@@ -578,12 +579,6 @@ AWKSCRIPT='
                 }
 		else if ($i=="-M") {
                         printf("OPTION_M=")
-                        i++
-                        printf("%s ", $i)
-                        opt=1
-                }
-		else if ($i=="-m") {
-                        printf("OPTION_m=")
                         i++
                         printf("%s ", $i)
                         opt=1
@@ -668,14 +663,7 @@ eval $ARGEXP1
 # Post-traitement des parametres
 #------------------------------------------------------------------------------------------------------------------
 # on s'assure que les valeurs memoires sont exprimees en Mo
-if [[ ${OPTION_m} == "default" ]
-then
-    OPTION_m=
-fi
-if [ "$OPTION_m" != "" ] ; then 
-    OPTION_m=$(bridge_get_memlimit $OPTION_m)   # MEMLIMIT en Mo
-fi
-if [[ ${OPTION_M} == "default" ]
+if [[ ${OPTION_M} == "default" ]]
 then
     OPTION_M=
 fi
@@ -735,8 +723,6 @@ export BRIDGE_MSUB_NNODE=${OPTION_N}
 export BRIDGE_MSUB_NPROC=${OPTION_n}
 # requested core per process number
 export BRIDGE_MSUB_NCORE=${OPTION_c}
-# requested memory for shared parts of job
-export BRIDGE_MSUB_MAXSMEM=${OPTION_m}
 # requested time for shared parts of job
 export BRIDGE_MSUB_MAXSTIME=${OPTION_t}
 # requested memory per core in exclusive mode
@@ -930,12 +916,6 @@ else
     export BRIDGE_MPRUN_NCORE=
 fi
 export BRIDGE_MSUB_NCORE
-# requested memory for shared parts of job
-if [[ -n ${BRIDGE_MSUB_MAXSMEM} ]]
-    then
-    submit_args+=( "-m" "${BRIDGE_MSUB_MAXSMEM[@]}" )
-fi
-export BRIDGE_MSUB_MAXSMEM
 # requested time for shared parts of job
 if [[ -n ${BRIDGE_MSUB_MAXSTIME} ]]
     then

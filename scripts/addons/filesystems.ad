@@ -1,5 +1,5 @@
 #*****************************************************************************\
-#  scripts/addons/qos.ad - 
+#  scripts/addons/filesystems.ad -
 #******************************************************************************
 #  Copyright  CEA/DAM/DIF (2012)
 #
@@ -22,84 +22,130 @@
 
 #################################################################################
 #
-# Addon for QOS support in Bridge for both msub and mprun
-# 
+# Addon for filesystem selection support in Bridge for both msub and mprun
+#
 #################################################################################
 
-#################################################################################
-# MSUB QOS support
-#--------------------------------------------------------------------------------
-function bridge_addon_msub_setopt {
 
-    typeset MYGETOPTOPTION="Q:"
+function test_filesystems {
+    # Debug mode
+    typeset -i BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+    then
+	set -x
+    fi
 
-    echo "${BRIDGE_MSUB_GETOPT_OPTIONS}" | grep -q ${MYGETOPTOPTION}
+    ## Increase verbosity level
+    typeset -i BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
 
-    if [ $? -ne 0 ]
-	then
-	BRIDGE_MSUB_GETOPT_OPTIONS="${BRIDGE_MSUB_GETOPT_OPTIONS}Q:"
+    ## Header for log
+    typeset LOGGER="${LOGGER} Bridge Filesystems Addon :"
+    typeset ERROR="${ERROR} Bridge Filesystems Addon :"
+
+    if [[ "${BRIDGE_MPRUN_ALLOCATION}" == yes ]] && [[ "$1" == "allocate" ]]; then
+        ${LOGGER} "wrapping allocation detected: skipping"
+    	return 0
+    fi
+
+    if [ -n "${BRIDGE_REQUEST_PFS}" ]
+    then
+        IFS=',' read -A req_fs <<< "${BRIDGE_REQUEST_PFS}"
+        IFS=',' read -A avail_fs <<< "${BRIDGE_AVAILABLE_PFS}"
+    	fs_licenses="fs_unshare"
+
+	if [[ ${BRIDGE_REQUEST_PFS} != "none" ]]; then
+    	    for fs in "${req_fs[@]}"
+    	    do
+		if  ! array_contains $fs "${avail_fs[@]}"; then
+    		    ${ERROR} "Unknown fs: $fs"
+    		    exit 1
+    		fi
+		fs_licenses+=",fs_"$fs
+    	    done
+	fi
+    	${LOGGER} "requesting filesystem licenses: $fs_licenses"
+        if [[ $1 == "allocate" ]]; then
+            spmd_allocate_extra_parameters+=( "--licenses=$fs_licenses" )
+            spmd_run_extra_parameters+=( "--licenses=$fs_licenses" )
+    	elif [[ -n "$BRIDGE_MSUB_LICENSES" ]]; then
+    	    BRIDGE_MSUB_LICENSES="$BRIDGE_MSUB_LICENSES,$fs_licenses"
+	else
+    	    BRIDGE_MSUB_LICENSES=$fs_licenses
+    	fi
+    else
+	${LOGGER} "requesting default features"
     fi
 
     return 0
 }
 
-function bridge_addon_msub_getopt {
+function array_contains {
+    typeset e
+    for e in "${@:2}"; do [[ "$e" == "$1" ]] && return 0; done
+    return 1
+}
 
+
+#################################################################################
+# MSUB FILESYSTEMS support
+#--------------------------------------------------------------------------------
+function bridge_addon_msub_setopt {
+
+    typeset MYGETOPTOPTION="m:"
+
+    echo "${BRIDGE_MSUB_GETOPT_OPTIONS}" | grep -q ${MYGETOPTOPTION}
+
+    if [ $? -ne 0 ]
+    then
+	BRIDGE_MSUB_GETOPT_OPTIONS="${BRIDGE_MSUB_GETOPT_OPTIONS}${MYGETOPTOPTION}"
+    fi
+
+    return 0
+
+}
+
+function bridge_addon_msub_getopt {
     ## on se place en mode debug si souhaite
     typeset -i BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
     if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
-	then
+    then
 	set -x
     fi
-    
+
     ## on incremente le niveau de log
     typeset -i BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
-    
-    ## on supprime un eventuel placement d'une QOS dans l'environnement
-    ## (afin de ne pas heriter de la configuration sbatch)
-    case ${BATCH_SYSTEM} in
-        slurm)
-	    unset SBATCH_QOS
-	    ;;
-    esac
-
-    if [[ ${BRIDGE_MSUB_ADDON_QOS_INHERITANCE:-0} -ne 1 ]]
-    then
-	export BRIDGE_MSUB_ADDON_QOS=
-    fi
 
     ## on ajoute une entete a la log
-    typeset LOGGER="${LOGGER} QOS Addon :"
-    typeset ERROR="${ERROR} QOS Addon :"
+    typeset LOGGER="${LOGGER} Bridge Filesystems Addon :"
 
     ## on fixe le message d'aide a afficher si demande
     typeset USAGE="\
-\t*) QOS
-\t\t -Q sla : enable QOS using provided SLA\n"
-    
+\t*) Mounted filesystems
+\t\t -m work,store : specify that only work and store are required for the job.
+"
     ## on fixe le status de sortie par defaut
     typeset exit_status=0
 
     ## on parse les arguments
     while getopts ${BRIDGE_MSUB_GETOPT_OPTIONS} option
-      do
-      case ${option} in
-	  
-	  h)
-	      echo -e "${USAGE}" >&2
-	      return 0
-	      ;;
+    do
+	case ${option} in
 
-	  Q)
-	      QOS_ARGEXP1="BRIDGE_MSUB_ADDON_QOS=${OPTARG}"
-	      ;;
-	  
-	  *)
-	      ;;
-      esac
+	    h)
+	        echo -e "${USAGE}" >&2
+		return 0
+		;;
+
+	    m)
+		BRIDGE_REQUEST_PFS="${OPTARG}"
+		;;
+
+	    *)
+		;;
+	esac
     done
 
-    return ${exit_status:-1}
+    return 0
 }
 
 function bridge_addon_msub_alteropt {
@@ -110,21 +156,23 @@ function bridge_addon_msub_alteropt {
 	then
 	set -x
     fi
-    
+
     ## on incremente le niveau de log
     typeset -i BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
-    
-    ## on ajoute une entete a la log
-    typeset LOGGER="${LOGGER} QOS Addon :"
-    typeset ERROR="${ERROR} QOS Addon :"
 
-    ## on parse le script msub
-    QOS_AWKSCRIPT='
+    ## on ajoute une entete a la log
+    typeset LOGGER="${LOGGER} Bridge Filesystems Addon :"
+    typeset ERROR="${ERROR} Bridge Filesystems Addon :"
+
+    ## On ne lit le fichier que si on n'a pas deja active l'addon par ailleurs
+    if [[ -z ${BRIDGE_REQUEST_PFS} ]]; then
+	## on parse le script msub
+	FILESYSTEMS_AWKSCRIPT='
 /^#MSUB/ {
         opt=0
         for(i=2; i<=NF; i++)
-                if ($i=="-Q") {
-                        printf("BRIDGE_MSUB_ADDON_QOS=")
+                if ($i=="-m") {
+                        printf("BRIDGE_REQUEST_PFS=")
                         i++
                         printf("%s ", $i)
                         opt=1
@@ -132,49 +180,11 @@ function bridge_addon_msub_alteropt {
         if ($opt==1) { printf("; ") }
  }
 '
-    QOS_ARGEXP2=`$AWK "$QOS_AWKSCRIPT" < ${BRIDGE_MSUB_SCRIPTFILE}`
-
-    eval $QOS_ARGEXP2
-    eval $QOS_ARGEXP1
-
-
-    ## on active la QOS
-    if [[ -n ${BRIDGE_MSUB_ADDON_QOS} ]]
-    then
-	if [[ -n ${BRIDGE_MSUB_ADDON_QOS_ALLOWED_QOS} ]]
-	then
-	    echo ${BRIDGE_MSUB_ADDON_QOS} | egrep -qw "${BRIDGE_MSUB_ADDON_QOS_ALLOWED_QOS}"
-	    if [[ $? -eq 0 ]]
-	    then
-		${LOGGER} "SLA is now ${BRIDGE_MSUB_ADDON_QOS}"
-	    else
-		${ERROR} "unknown SLA ${BRIDGE_MSUB_ADDON_QOS}, usable SLA are \"${BRIDGE_MSUB_ADDON_QOS_ALLOWED_QOS}\". skipping QOS"
-		BRIDGE_MSUB_ADDON_QOS=
-	    fi
-	else
-	    ${LOGGER} "SLA is now ${BRIDGE_MSUB_ADDON_QOS}"
-	fi
-	export BRIDGE_MSUB_ADDON_QOS
-    fi
-    if [[ -n ${BRIDGE_MSUB_ADDON_QOS} ]]
-    then
-	case ${BATCH_SYSTEM} in
-            slurm)
-		export SBATCH_QOS=${BRIDGE_MSUB_ADDON_QOS}
-		;;
-	    *)
-		${ERROR} "not supported with ${BATCH_SYSTEM}"
-		;;
-	esac
-	
-	# on s'assure que la QoS mprun est la meme pour le job batch
-	if [[ -n ${BRIDGE_MPRUN_ADDON_QOS} ]]
-	then
-	    export BRIDGE_MPRUN_ADDON_QOS=${BRIDGE_MSUB_ADDON_QOS}
-	fi
-	
+	FILESYSTEMS_ARGEXP=`${AWK:-awk} "$FILESYSTEMS_AWKSCRIPT" < ${BRIDGE_MSUB_SCRIPTFILE}`
+	eval $FILESYSTEMS_ARGEXP
     fi
 
+    test_filesystems "batch"
     return 0
 }
 
@@ -185,120 +195,76 @@ function bridge_addon_msub_alterscript {
 
 
 #################################################################################
-# MPRUN QOS support
+# MPRUN FILESYSTEMS support
 #--------------------------------------------------------------------------------
 function bridge_addon_mprun_setopt {
 
-    typeset MYGETOPTOPTION="Q:"
+    typeset MYGETOPTOPTION="m:"
 
     echo "${BRIDGE_MPRUN_GETOPT_OPTIONS}" | grep -q ${MYGETOPTOPTION}
 
     if [ $? -ne 0 ]
-	then
+    then
 	BRIDGE_MPRUN_GETOPT_OPTIONS="${BRIDGE_MPRUN_GETOPT_OPTIONS}${MYGETOPTOPTION}"
     fi
+
 
     return 0
 
 }
 
 function bridge_addon_mprun_getopt {
-    
     ## on se place en mode debug si souhaite
     typeset -i BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
     if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
-	then
+    then
 	set -x
     fi
-    
+
     ## on incremente le niveau de log
     typeset -i BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
-    
+
     ## on ajoute une entete a la log
-    typeset LOGGER="${LOGGER} QOS Addon :"
-    typeset ERROR="${ERROR} QOS Addon :"
+    typeset LOGGER="${LOGGER} Bridge Filesystems Addon :"
 
     ## on fixe le message d'aide a afficher si demande
     typeset USAGE="\
-\t*) QOS
-\t\t -Q sla : enable QOS using provided SLA\n"
-    
+\t*) Mounted filesystems
+\t\t -m fs1,fs2 : specify that only fs1 and fs2 are required for the job
+\t\t The following filesystems may be specified: ${BRIDGE_AVAILABLE_PFS}
+"
     ## on fixe le status de sortie par defaut
     typeset exit_status=0
-    
+
     ## on parse les arguments
     while getopts ${BRIDGE_MPRUN_GETOPT_OPTIONS} option
-      do
-      case ${option} in
-	  
-	  h)
-	      echo -e "${USAGE}" >&2
-	      return 0
-	      ;;
+    do
+	case ${option} in
 
-	  Q)
-	      BRIDGE_MPRUN_ADDON_QOS=${OPTARG}
-	      if [[ -n ${BRIDGE_MPRUN_ADDON_QOS_ALLOWED_QOS} ]]
-	      then
-		  echo ${BRIDGE_MPRUN_ADDON_QOS} | egrep -qw "${BRIDGE_MPRUN_ADDON_QOS_ALLOWED_QOS}"
-		  if [[ $? -eq 0 ]]
-		  then
-		      ${LOGGER} "SLA is now ${BRIDGE_MPRUN_ADDON_QOS}"
-		  else
-		      ${ERROR} "unknown SLA ${BRIDGE_MPRUN_ADDON_QOS}, usable SLA are \"${BRIDGE_MPRUN_ADDON_QOS_ALLOWED_QOS}\". skipping QOS"
-		      BRIDGE_MPRUN_ADDON_QOS=
-		  fi
-	      else
-		  ${LOGGER} "SLA is now ${BRIDGE_MPRUN_ADDON_QOS}"
-	      fi
-	      ;;
-	  
-	  *)
-	      ;;
-      esac
+	    h)
+	        echo -e "${USAGE}" >&2
+		return 0
+		;;
+
+	    m)
+		BRIDGE_REQUEST_PFS="${OPTARG}"
+		;;
+
+	    *)
+		;;
+	esac
     done
 
-    return ${exit_status:-1}
+    return 0
 }
 
 function bridge_addon_mprun_alteropt {
-
-    ## on se place en mode debug si souhaite
-    typeset -i BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
-    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
-	then
-	set -x
-    fi
-    
-    ## on incremente le niveau de log
-    typeset -i BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
-    
-    ## on ajoute une entete a la log
-    typeset LOGGER="${LOGGER} QOS Addon :"
-    typeset ERROR="${ERROR} QOS Addon :"
-
-    ## on active la QOS
-    if [[ -n ${BRIDGE_MPRUN_ADDON_QOS} ]]
-    then
-	case ${RESOURCE_MANAGER} in
-            slurm)
-		export SALLOC_QOS=${BRIDGE_MPRUN_ADDON_QOS}
-		export SLURM_QOS=${BRIDGE_MPRUN_ADDON_QOS}
-		;;
-	    *)
-		${ERROR} "not supported with ${RESOURCE_MANAGER}"
-		;;
-	esac
-    fi
-
+    test_filesystems "allocate"
     return 0
-
 }
 
 function bridge_addon_mprun_spmd_pre_allocate {
-
     return 0
-
 }
 
 function bridge_addon_mprun_spmd_post_allocate {
@@ -310,12 +276,10 @@ function bridge_addon_mprun_spmd_post_allocate {
 function bridge_addon_mprun_spmd_pre_run {
 
     return 0
-
 }
 
 function bridge_addon_mprun_spmd_post_run {
 
     return 0
-    
 }
 #################################################################################

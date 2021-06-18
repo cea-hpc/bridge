@@ -114,7 +114,7 @@ function bridge_addon_mprun_alteropt {
     ## on ajoute une entete a la log
     typeset LOGGER="${LOGGER} IntelMPI Addon :"
 
-    echo $(which mpicc 2>/dev/null) | egrep -wq "intel|intel64|intelmpi"
+    echo $(which mpicc 2>/dev/null) | egrep -wq "intelmpi"
     if [ $? -ne 0 ]
 	then
 	return 0

@@ -27,8 +27,8 @@
 #include <string.h>
 
 /* for marshalling */
-#include <rpc/types.h>
-#include <rpc/xdr.h>
+#include <tirpc/rpc/types.h>
+#include <tirpc/rpc/xdr.h>
 
 /* logging */
 #include "xternal/xlogger.h"

@@ -66,7 +66,8 @@ function bridge_addon_mprun_getopt {
     ## on fixe le message d'aide a afficher si demande
     typeset USAGE="\
 \t*) DDT
-\t\t -d ddt: launch the application in debug mode using DDT\n"
+\t\t -d ddt: launch the application in debug mode using DDT
+\t\t         BRIDGE_DDT_PARAMS env var can be used to define the DDT params\n"
 
     ## on fixe le status de sortie par defaut
     typeset exit_status=0
@@ -154,7 +155,11 @@ function bridge_addon_mprun_alteropt {
 	## on lance le programme en debug via DDT
 	${LOGGER} "swapping mprun program with DDT"
 	bridge_mprun_cmd="ddt"
-	bridge_mprun_args=( "-n" "${bridge_mprun_nproc:-1}" "${bridge_mprun_args[@]}")
+    if [[ -n ${BRIDGE_DDT_PARAMS} ]]
+    then
+        bridge_mprun_args=( "${BRIDGE_DDT_PARAMS}" "${bridge_mprun_args[@]}")
+    fi
+    bridge_mprun_args=( "-n" "${bridge_mprun_nproc:-1}" "${bridge_mprun_args[@]}")
 
 	## on fixe le code d'erreur
 	exit_status=0

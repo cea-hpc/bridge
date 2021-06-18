@@ -112,7 +112,9 @@ typeset cmd_mode=stat
 typeset u_flag=no
 typeset r_flag=no
 typeset a_flag=
+typeset p_flag=
 typeset resid=
+typeset partition=
 #------------------------------------------------------------------------------------------------------------------
 ###################################################################################################################
 # Analyse des options de la ligne de commande (priorite 1)
@@ -139,7 +141,8 @@ do
 	  exit 0
 	  ;;
       p)
-	  stat_args="${stat_args} -p ${OPTARG}"
+      p_flag=yes
+	  partition=${OPTARG}
 	  ;;
       u)
 	  u_flag=yes
@@ -241,7 +244,7 @@ if [[ ${cmd_mode} = stat ]]
     if  [[ ${u_flag} = yes ]]
 	then
         stat_cmd=${BRIDGE_RMASTAT_CMD}
-        stat_args="-c"
+        stat_args="${stat_args} -c"
 	dispmode=1
 	if [[ $# -eq 0 ]]
 	    then
@@ -264,6 +267,11 @@ if [[ ${cmd_mode} = stat ]]
     elif  [[ ${n_flag} = yes ]]
         then
         stat_args="-n ${nodeid}"
+    elif  [[ ${p_flag} = yes ]]
+        then
+	    stat_cmd=${BRIDGE_RMASTAT_CMD}
+        stat_args="-c -p ${partition}"
+	dispmode=1
     else
 	stat_cmd=${BRIDGE_RMASTAT_CMD}
         stat_args="-c"

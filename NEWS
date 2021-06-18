@@ -1,6 +1,7 @@
-	-- some specfile cleanup
-        -- msub: allow -m|-M to specify 'default' to override #MSUB pragmas
-        -- addons/dirige-DAM: use CCCSPOOLDIR instead of CCC_SPOOLDIR
+    -- mstat supports only new format
+    -- addons/dirige-DAM: use CCCSPOOLDIR instead of CCC_SPOOLDIR
+    -- rename addons/dirige-DAM in addons/dirige
+    -- add filesystem addon                     
 
 * Changes in bridge-1.5.6
 =========================

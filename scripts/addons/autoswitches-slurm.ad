@@ -22,7 +22,7 @@
 
 ################################################################################
 #
-# This addon enables to automatically set the SLURM_REQ_SWITCHES env var
+# This addon enables to automatically set the SLURM_REQ_SWITCH env var
 # according to the value defined by the detailed configuration.
 #
 # The switches count configuration is provided by the value of the 
@@ -34,7 +34,7 @@
 #
 # The algorithm is the following :
 # 
-# - if SLURM_REQ_SWITCHES is not set and the number of requested cores and
+# - if SLURM_REQ_SWITCH is not set and the number of requested cores and
 #   partition are known, then
 #   - iterate on the different subelement nc/ns looking for the
 #     nswitches value of the corresponding partition having req cores <= ncores
@@ -59,7 +59,7 @@ function enforce_autoswitches_conf {
 		${LOGGER} "skipping conf element ${part_conf}"
 	    else
 		${LOGGER} "using conf element ${part}=${conf}"
-		for couple in ${conf/,/\ }
+		for couple in ${conf//,/\ }
 		do
 		    nc=${couple%%\/*}
 		    ns=${couple##*\/}
@@ -68,8 +68,8 @@ function enforce_autoswitches_conf {
 			if [[ ${req_ncores} -le ${nc} ]]
 			then
 			    ${LOGGER} "using conf subelement ${nc}/${ns}"
-			    ${LOGGER} "setting SLURM_REQ_SWITCHES=${ns}"
-			    export SLURM_REQ_SWITCHES=${ns}
+			    ${LOGGER} "setting SLURM_REQ_SWITCH=${ns}"
+			    export SLURM_REQ_SWITCH=${ns}
 			    break
 			else
 			    ${LOGGER} "skipping conf subelement ${nc}/${ns}"
@@ -107,15 +107,21 @@ function bridge_addon_msub_alteropt {
     
     ## on incremente le niveau de log
     typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
-    
+
+    typeset autosw_queue=${BRIDGE_MSUB_QUEUE}
+    if [[ -z ${autosw_queue} ]]
+    then
+	autosw_queue="${BRIDGE_MSUB_DEFAULT_QUEUE}"
+    fi
+
     ## do autoswitches check
     if  [[ -n ${BRIDGE_MSUB_NPROC} ]] && \
-	[[ -n ${BRIDGE_MSUB_QUEUE} ]] && \
+	[[ -n ${autosw_queue} ]] && \
 	[[ ${BRIDGE_MSUB_QUEUE} != "special" ]] && \
-	[[ -z ${SLURM_REQ_SWITCHES} ]] && \
+	[[ -z ${SLURM_REQ_SWITCH} ]] && \
 	[[ -n ${BRIDGE_ADDON_AUTOSWITCHES_CONF} ]]
     then
-	enforce_autoswitches_conf ${BRIDGE_MSUB_QUEUE} \
+	enforce_autoswitches_conf ${autosw_queue} \
 	    $(( ${BRIDGE_MSUB_NPROC} * ${BRIDGE_MSUB_NCORE:-1} ))
     fi
     
@@ -155,15 +161,21 @@ function bridge_addon_mprun_alteropt {
     
     ## on incremente le niveau de log
     typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+
+    typeset autosw_part=${bridge_mprun_partition}
+    if [[ -z ${autosw_part} ]]
+    then
+	autosw_part="${BRIDGE_MPRUN_DEFAULT_PARTITION}"
+    fi
     
     ## do auto switches check
     if  [[ "${BRIDGE_MPRUN_ALLOCATION}" != yes ]] && \
 	[[ -n ${bridge_mprun_nproc} ]] && \
-	[[ -z ${SLURM_REQ_SWITCHES} ]] && \
-	[[ -n ${bridge_mprun_partition} ]] && \
+	[[ -z ${SLURM_REQ_SWITCH} ]] && \
+	[[ -n ${autosw_part} ]] && \
 	[[ -n ${BRIDGE_ADDON_AUTOSWITCHES_CONF} ]] && [[ ${BRIDGE_MPRUN_ADDON_QOS} != "special" ]]
     then
-	enforce_autoswitches_conf ${bridge_mprun_partition} \
+	enforce_autoswitches_conf ${autosw_part} \
 	    $(( ${bridge_mprun_nproc} * ${bridge_mprun_ncore:-1} ))
     fi
 
