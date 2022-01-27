@@ -81,12 +81,10 @@ do
         NBTASKS=
     else # lancement srun
       if [ "$TASK_SELECTION" = "MPI_TASKS_ONLY" ] ;then
-        if [ "$LOCALID"  = "-" ] ;then
-          continue
-        fi
-        if [ "$LOCALID" = "0"  -a "$STEPID" = "4294967294" ]  ; then
-          continue
-        fi 
+        ### processus dont il ne faut pas tenir compte
+        if [ "$PID"  = "-1" ] ;then continue  ; fi
+        if [ "$LOCALID"  = "-" ] ;then continue  ; fi
+        if [ "$STEPID"  = "batch" ] ;then continue  ; fi
         case "$(readlink /proc/$PID/exe)" in
         *auks | /bin/bash* | /bin/ksh* | orterun | mpirun | srun | ""  )
               continue ;;  # pour skipper auks
