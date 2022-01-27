@@ -505,58 +505,58 @@ function spmd_run_cmd {
 }
 
 function mpinfo_print_status {
-    
+
     typeset cmd="sinfo"
     partition_arg=
     if [[ -n $1 ]]
     then
         partition_arg=$1
-	cmd="${cmd} -p $1"
+        cmd="${cmd} -p $1"
     fi
 
-    if [  -z "$partition_arg"  ] ; then 
+if [  -z "$partition_arg"  ] ; then
       echo "                      --------------CPUS------------  -------------NODES------------"
-      echo "PARTITION    STATUS   TOTAL   DOWN    USED    FREE    TOTAL   DOWN    USED    FREE     MpC  CpN SpN CpS TpC"
-      echo "---------    ------   ------  ------  ------  ------  ------  ------  ------  ------   ---- --- --- --- ---"
-    fi
-    ${cmd} -eo "%R %a %C %F %m %X %Y %Z %c %N" -h | sort -nr -k 3 | while read PARTITION STATE CPUS_STATE NODES_STATE MEMPERNODE SOCKETSPERNODE CORESPERSOCKET THREADSPERCORE CPUSPERNODE NODES
+      echo "PARTITION    STATUS   TOTAL   DOWN    USED    FREE    TOTAL   DOWN    USED    FREE     MpC    CpN SpN CpS TpC  GpN"
+      echo "---------    ------   ------  ------  ------  ------  ------  ------  ------  ------   -----  --- --- --- ---  -----"
+fi
+
+${cmd} -eo  "%R %a %C %F %m %X %Y %Z %c %G %N" -h | sort -nr -k 3 | while read PARTITION STATE CPUS_STATE NODES_STATE MEMPERNODE SOCKETSPERNODE CORESPERSOCKET THREADSPERCORE CPUSPERNODE GRES NODES
+do
+    set $(echo $CPUS_STATE $NODES_STATE | tr -s "/" " ")
+    (( MEMPERCORE = MEMPERNODE / CPUSPERNODE ))
+    GPUSPERNODE=
+    for TAG in $(echo $GRES | tr -s "," " ")
     do
-	if [[ ${cmd} == "sinfo" ]] && [[ -n ${BRIDGE_MPSTAT_EXCLUDED_PARTITIONS} ]]
-	then
-	    echo ${PARTITION} | egrep -q "${BRIDGE_MPSTAT_EXCLUDED_PARTITIONS}"
-	    if [[ $? -eq 0 ]]
-	    then
-		continue
-	    fi
-	fi
-        set $(echo $CPUS_STATE $NODES_STATE | tr -s "/" " ")
-	if [[ $CPUSPERNODE -eq 0 ]]
-	then
-	    continue
-	fi
-	nodeinfo_file="/etc/ccc_nodeinfo/${PARTITION}.conf"
-	if [[ -f ${nodeinfo_file} ]]
-	then
-	    boards=$(cat ${nodeinfo_file} | egrep "^Boards=" | sed 's/^Boards=//')
-	    socketsperboard=$(cat ${nodeinfo_file} | egrep "^SocketsPerBoard=" | sed 's/^SocketsPerBoard=//')
-	    SOCKETSPERNODE=$(( socketsperboard * boards ))
-	    CORESPERSOCKET=$(cat ${nodeinfo_file} | egrep "^CoresPerSocket=" | sed 's/^CoresPerSocket=//')
-	    THREADSPERCORE=$(cat ${nodeinfo_file} | egrep "^ThreadsPerCore=" | sed 's/^ThreadsPerCore=//')
-	    MEMPERCORE=$(cat ${nodeinfo_file} | egrep "^MemoryPerCore=" | sed 's/^MemoryPerCore=//')
-	    CPUSPERNODE=$(( SOCKETSPERNODE * CORESPERSOCKET ))
-	    MEMPERNODE=$(( MEMPERCORE * SOCKETSPERNODE * CORESPERSOCKET ))
-	else
-	    (( MEMPERCORE = MEMPERNODE / CPUSPERNODE ))
-	fi
-        if [  -z "$partition_arg" ] ; then
-          printf "%-12s %-8s %6d  %6d  %6d  %6d  %6d  %6d  %6d  %6d   %4d  %2d  %2d  %2d  %2d\n" $PARTITION $STATE  $4 $3  $1 $2 $8 $7 $5 $6 $MEMPERCORE $CPUSPERNODE $SOCKETSPERNODE $CORESPERSOCKET $THREADSPERCORE
-        else
-          printf "partition        : $PARTITION\nstatus           : $STATE\nnumber of nodes  : $8\nnumber of cores  : $4\nmemory per node  : $MEMPERNODE Mo\nmax mem per core : $MEMPERCORE Mo\ncpus per node    : $CPUSPERNODE\nsockets per node : $SOCKETSPERNODE\ncores per socket : $CORESPERSOCKET\nthreads per core : $THREADSPERCORE\nnodes list       : $NODES\n"
-        fi
+       if [ "$(echo $TAG | grep gpu)" != "" ] ;then
+           GPUSPERNODE=$(echo $TAG | cut -d":" -f2-)
+           break
+       fi
     done
-    
-    
+    GPUSPERNODE=${GPUSPERNODE:=0}
+    if [  -z "$partition_arg" ] ; then
+          printf "%-12s %-8s %6d  %6d  %6d  %6d  %6d  %6d  %6d  %6d   %5d  %3d  %2d  %2d  %2d  %s\n" $PARTITION $STATE  $4 $3  $1 $2 $8 $7 $5 $6 $MEMPERCORE $CPUSPERNODE $SOCKETSPERNODE $CORESPERSOCKET $THREADSPERCORE $GPUSPERNODE
+    else
+          RESERVED_NODES=$(sinfo -t reserved -p  $PARTITION  | tail -1 | awk '{if ($4 != 0) {print $4, $6}}')
+          printf "\
+partition           : $PARTITION
+status              : $STATE
+number of nodes     : $8
+number of cores     : $4
+memory per node     : $MEMPERNODE Mo
+max mem per core    : $MEMPERCORE Mo
+cpus per node       : $CPUSPERNODE
+sockets per node    : $SOCKETSPERNODE
+cores per socket    : $CORESPERSOCKET
+threads per core    : $THREADSPERCORE
+gpus per node       : $GPUSPERNODE
+nodes list          : $NODES
+reserved nodes      : $(echo $RESERVED_NODES | cut -d' ' -f1)
+reserved nodes list : $(echo $RESERVED_NODES | cut -d' ' -f2)\n"
+    fi
+done
+
 }
+
 
 function mpinfo_print_limits {
 
