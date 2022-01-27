@@ -516,25 +516,29 @@ function mpinfo_print_status {
 
 if [  -z "$partition_arg"  ] ; then
       echo "                      --------------CPUS------------  -------------NODES------------"
-      echo "PARTITION    STATUS   TOTAL   DOWN    USED    FREE    TOTAL   DOWN    USED    FREE     MpC    CpN SpN CpS TpC  GpN"
-      echo "---------    ------   ------  ------  ------  ------  ------  ------  ------  ------   -----  --- --- --- ---  -----"
+      echo "PARTITION    STATUS   TOTAL   DOWN    USED    FREE    TOTAL   DOWN    USED    FREE     MpC    CpN  SpN CpS  TpC GpN GPU Type"
+      echo "---------    ------   ------  ------  ------  ------  ------  ------  ------  ------   ------ ---- --- ---- --- --- --------"
 fi
 
-${cmd} -eo  "%R %a %C %F %m %X %Y %Z %c %G %N" -h | sort -nr -k 3 | while read PARTITION STATE CPUS_STATE NODES_STATE MEMPERNODE SOCKETSPERNODE CORESPERSOCKET THREADSPERCORE CPUSPERNODE GRES NODES
+${cmd} -eo  "%R %a %C %F %m %X %Y %Z %c %G %N" -h | sort -nr -k 4 -t'/' | while read PARTITION STATE CPUS_STATE NODES_STATE MEMPERNODE SOCKETSPERNODE CORESPERSOCKET THREADSPERCORE CPUSPERNODE GRES NODES
 do
     set $(echo $CPUS_STATE $NODES_STATE | tr -s "/" " ")
-    (( MEMPERCORE = MEMPERNODE / CPUSPERNODE ))
+    if [ $CPUSPERNODE != 0 ]; then
+        (( MEMPERCORE = MEMPERNODE / CPUSPERNODE ))
+    fi
     GPUSPERNODE=
+    GPUSTYPE=
     for TAG in $(echo $GRES | tr -s "," " ")
     do
        if [ "$(echo $TAG | grep gpu)" != "" ] ;then
-           GPUSPERNODE=$(echo $TAG | cut -d":" -f2-)
+           GPUSTYPE=$(echo $TAG | cut -d":" -f2)
+           GPUSPERNODE=$(echo $TAG | cut -d":" -f3)
            break
        fi
     done
     GPUSPERNODE=${GPUSPERNODE:=0}
     if [  -z "$partition_arg" ] ; then
-          printf "%-12s %-8s %6d  %6d  %6d  %6d  %6d  %6d  %6d  %6d   %5d  %3d  %2d  %2d  %2d  %s\n" $PARTITION $STATE  $4 $3  $1 $2 $8 $7 $5 $6 $MEMPERCORE $CPUSPERNODE $SOCKETSPERNODE $CORESPERSOCKET $THREADSPERCORE $GPUSPERNODE
+          printf "%-12s %-8s %6d  %6d  %6d  %6d  %6d  %6d  %6d  %6d   %6d  %3d  %2d  %3d  %2d  %2d  %s\n" $PARTITION $STATE  $4 $3  $1 $2 $8 $7 $5 $6 $MEMPERCORE $CPUSPERNODE $SOCKETSPERNODE $CORESPERSOCKET $THREADSPERCORE $GPUSPERNODE $GPUSTYPE
     else
           RESERVED_NODES=$(sinfo -t reserved -p  $PARTITION  | tail -1 | awk '{if ($4 != 0) {print $4, $6}}')
           printf "\
