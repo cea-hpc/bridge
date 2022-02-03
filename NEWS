@@ -1,3 +1,5 @@
+    -- addons/dirige-DAM: use CCCSPOOLDIR instead of CCC_SPOOLDIR
+
 * Changes in bridge-1.5.6
 =========================
 	-- autotools: add AM_PROG_CC_C_O
