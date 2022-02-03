@@ -526,11 +526,24 @@ function mpinfo_print_status {
 	    fi
 	fi
         set $(echo $CPUS_STATE $NODES_STATE | tr -s "/" " ")
-    if [[ $CPUSPERNODE -eq 0 ]]
-    then
-		continue
-    fi
-	(( MEMPERCORE = MEMPERNODE / CPUSPERNODE ))
+	if [[ $CPUSPERNODE -eq 0 ]]
+	then
+	    continue
+	fi
+	nodeinfo_file="/etc/ccc_nodeinfo/${PARTITION}.conf"
+	if [[ -f ${nodeinfo_file} ]]
+	then
+	    boards=$(cat ${nodeinfo_file} | egrep "^Boards=" | sed 's/^Boards=//')
+	    socketsperboard=$(cat ${nodeinfo_file} | egrep "^SocketsPerBoard=" | sed 's/^SocketsPerBoard=//')
+	    SOCKETSPERNODE=$(( socketsperboard * boards ))
+	    CORESPERSOCKET=$(cat ${nodeinfo_file} | egrep "^CoresPerSocket=" | sed 's/^CoresPerSocket=//')
+	    THREADSPERCORE=$(cat ${nodeinfo_file} | egrep "^ThreadsPerCore=" | sed 's/^ThreadsPerCore=//')
+	    MEMPERCORE=$(cat ${nodeinfo_file} | egrep "^MemoryPerCore=" | sed 's/^MemoryPerCore=//')
+	    CPUSPERNODE=$(( SOCKETSPERNODE * CORESPERSOCKET ))
+	    MEMPERNODE=$(( MEMPERCORE * SOCKETSPERNODE * CORESPERSOCKET ))
+	else
+	    (( MEMPERCORE = MEMPERNODE / CPUSPERNODE ))
+	fi
         if [  -z "$partition_arg" ] ; then
           printf "%-12s %-8s %6d  %6d  %6d  %6d  %6d  %6d  %6d  %6d   %4d  %2d  %2d  %2d  %2d\n" $PARTITION $STATE  $4 $3  $1 $2 $8 $7 $5 $6 $MEMPERCORE $CPUSPERNODE $SOCKETSPERNODE $CORESPERSOCKET $THREADSPERCORE
         else
