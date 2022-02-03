@@ -734,7 +734,18 @@ function mpstat_cmd {
 
     elif  [[ ${t_flag} = yes ]]
     then
-        stat_cmd="clustack slurmjob:$resid"
+	if [[ ! -f ~/.padb-secret ]]
+	then
+	    padb --create-secret-file >/dev/null 2>&1
+	fi
+        resid=${fullid%%.*}
+        if [ "$resid" != "$fullid" ] ;then
+             stepid=${fullid#$resid.}
+        else
+             stepid=0
+        fi
+	stat_cmd="padb -Ormgr=slurm -t -x -Oslurm-job-step=$stepid  ${resid}"
+
     elif  [[ ${n_flag} = yes ]]
     then  
 #	stat_cmd="RESID_LIST=\$(${BRIDGE_RMASTAT_CMD} -n ${nodeid} -o id) ; ${BRIDGE_MPSTAT_CMD} -r \$(echo \$RESID_LIST | tr -s ' ' ',')"
