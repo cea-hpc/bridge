@@ -137,6 +137,7 @@ function bridge_addon_mprun_alteropt {
 		chmod +x "${temporary_file}"
 		#### on cree le fichier spmd temporaire qui permettra de lancer 
 		#### l'appli mpmd
+		export LC_CTYPE="C"
 		typeset NBTASK_CUMUL=0
 		typeset NBTASK
 		typeset RAWCMD
@@ -159,7 +160,7 @@ exit \$?
 fi
 EOF
 		done < "${BRIDGE_MPRUN_ADDON_MPMD_SCRIPT}"
-
+                unset LC_CTYPE
 		export BRIDGE_MPRUN_ADDON_MPMD_STAGE=2
 		export BRIDGE_MPRUN_ADDON_TEMPORARY_FILE=${temporary_file}
 
