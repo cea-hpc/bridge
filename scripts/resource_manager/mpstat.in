@@ -241,7 +241,7 @@ if [[ ${cmd_mode} = stat ]]
     if  [[ ${u_flag} = yes ]]
 	then
         stat_cmd=${BRIDGE_RMASTAT_CMD}
-        stat_args="-c"
+        stat_args="${stat_args} -c"
 	dispmode=1
 	if [[ $# -eq 0 ]]
 	    then
