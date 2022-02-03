@@ -89,6 +89,7 @@ AC_CONFIG_FILES([Makefile
 		etc/bridgedapi.conf:etc/bridgedapi.conf.in
 		etc/init.d/bridged:etc/init.d/bridged.in
 		etc/init.d/Makefile
+		etc/logrotate.d/bridged.systemd
 		etc/logrotate.d/Makefile
 		etc/sysconfig/Makefile])
 

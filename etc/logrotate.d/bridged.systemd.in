@@ -1,0 +1,13 @@
+/var/log/bridged.log {
+	missingok
+	nomail
+	compress
+	rotate 7
+	size=10M
+	postrotate
+		patt="@program_transform_name@"
+		if [ -z "${patt}" ] ; then patt="s,^,," ; fi
+		prog="$(echo bridged | sed ${patt})"
+		systemctl reload ${prog}
+	endscript
+}
