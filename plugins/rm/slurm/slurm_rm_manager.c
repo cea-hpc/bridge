@@ -114,9 +114,9 @@ init_rm_manager(bridge_rm_manager_t* p_manager){
       p_manager->description=strdup("no desc");
       
       /* get cluster and master names */
-      if(pscc->control_machine!=NULL)
+      if(pscc->control_machine[0]!=NULL)
 	{
-	  p_manager->master=strdup(pscc->control_machine);
+	  p_manager->master=strdup(pscc->control_machine[0]);
 	  cluster=strdup(p_manager->master);
 	  if(cluster!=NULL)
 	    {
