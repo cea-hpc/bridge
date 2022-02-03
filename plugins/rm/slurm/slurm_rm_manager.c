@@ -124,7 +124,7 @@ init_rm_manager(bridge_rm_manager_t* p_manager){
 	      if(separator==NULL)
 		{
 		  p=cluster;
-		  while(!isdigit(*p) || *p=='\0')
+		  while(!isdigit(*p) && *p!='\0')
 		    p++;
 		  if(*p!='\0')
 		    {

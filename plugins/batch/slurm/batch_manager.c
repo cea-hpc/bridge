@@ -99,7 +99,7 @@ init_batch_manager(bridge_batch_manager_t* p_batch_manager)
 			separator=index(cluster,'-');
 			if (separator==NULL) {
 				p=cluster;
-				while (!isdigit(*p) || *p=='\0')
+				while (!isdigit(*p) && *p!='\0')
 					p++;
 				if (*p!='\0') {
 					*p='\0';
