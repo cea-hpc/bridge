@@ -661,9 +661,8 @@ eval $ARGEXP1
 # Post-traitement des parametres
 #------------------------------------------------------------------------------------------------------------------
 # on s'assure que les valeurs memoires sont exprimees en Mo
-if [[ ${OPTION_M} == "default" ]]
-then
-    OPTION_M=
+if [ "$OPTION_m" != "" ] ; then 
+    OPTION_m=$(bridge_get_memlimit $OPTION_m)   # MEMLIMIT en Mo
 fi
 if [ "$OPTION_M" != "" ] ; then 
     OPTION_M=$(bridge_get_memlimit $OPTION_M)   # MEMLIMIT en Mo
