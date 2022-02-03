@@ -37,6 +37,7 @@ dist_addonscripts_DATA		=	autoaccount.ad \
                                         qos.ad \
                                         relax_affinity.ad \
                                         reservation.ad \
+                                        filesystems.ad \
                                         spank-stats.ad \
                     					strace.ad \
                                         shell.ad \
