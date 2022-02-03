@@ -275,18 +275,10 @@ if [[ ${cmd_mode} = stat ]]
 	    shift
 	fi
     fi
-    if [ "$MSTAT_FORMAT" != "new" ] ;then
-        if [ "$longflag" != "yes" ] ;then
-          stat_args="$stat_args -c"
-        else
-          stat_args="$stat_args -C"
-        fi
+    if [ "$longflag" != "yes" ] ;then
+        stat_args="$stat_args -d"
     else
-        if [ "$longflag" != "yes" ] ;then
-          stat_args="$stat_args -d"
-        else
-          stat_args="$stat_args -D"
-        fi
+        stat_args="$stat_args -D"
     fi
     if [[ -n ${BRIDGE_MSTAT_EXCLUDED_QUEUES} ]] && [[ -z ${queue} ]]
     then
