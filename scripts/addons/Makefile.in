@@ -235,7 +235,7 @@ dist_addonscripts_DATA = autoaccount.ad \
                                         bullxmpi-slurm-pin.ad \
                                         compat-DAM.ad \
                                         ddt.ad \
-                                        dirige-DAM.ad \
+                                        dirige.ad \
                                         example.ad \
                                         intelmpi-slurm.ad \
                                         inter-para-limits.ad \
