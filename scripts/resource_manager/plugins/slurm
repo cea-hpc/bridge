@@ -88,7 +88,9 @@ function spmd_allocate_cmd {
     spmd_allocate_nnode=
     spmd_allocate_partition=
     spmd_allocate_pproject=
+    if [[ -z "$spmd_allocate_extra_parameters[@]" ]]; then
     typeset -a spmd_allocate_extra_parameters
+    fi
     spmd_allocate_maxmem=
     spmd_allocate_maxtime=
     spmd_allocate_requestname=
@@ -284,7 +286,9 @@ function spmd_run_cmd {
     spmd_run_nnode=
     spmd_run_partition=
     spmd_run_project=
+    if [[ -z "$spmd_run_extra_parameters[@]" ]]; then
     typeset -a spmd_run_extra_parameters
+    fi
     spmd_run_maxmem=
     spmd_run_maxtime=
     spmd_run_separator=${spmd_run_separator:---}
