@@ -44,8 +44,8 @@ AC_DEFUN([AX_SLURM],
 		if test "x$has_slurm_lib" != "xyes" ; then
                         AC_MSG_ERROR([unable to use SLURM without libslurm])
 		else
-                        SLURM_LDFLAGS="${SLURM_LDFLAGS} -lslurm"
-			LDFLAGS="$LDFLAGS -lslurm"
+                        SLURM_LDFLAGS="${SLURM_LDFLAGS} -lslurm -L../../../lib/bridge/.libs -lbridge"
+			LDFLAGS="$LDFLAGS -lslurm -L../../../lib/bridge/.libs -lbridge"
 
 			dnl set resource management system name and plugin
 			dnl (used during configuration files creation)
