@@ -62,7 +62,11 @@ function bridge_addon_msub_getopt {
 	    unset SBATCH_QOS
 	    ;;
     esac
-    export BRIDGE_MSUB_ADDON_QOS=
+
+    if [[ ${BRIDGE_MSUB_ADDON_QOS_INHERITANCE:-0} -ne 1 ]]
+    then
+	export BRIDGE_MSUB_ADDON_QOS=
+    fi
 
     ## on ajoute une entete a la log
     typeset LOGGER="${LOGGER} QOS Addon :"
