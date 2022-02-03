@@ -1,0 +1,14 @@
+[Unit]
+Description=Bridge Stats Daemon
+After=network.target
+
+[Service]
+Type=forking
+EnvironmentFile=-/etc/sysconfig/bridged
+ExecStart=/usr/sbin/bridged $BRIDGED_OPTIONS
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=on-failure
+LimitNOFILE=32768
+
+[Install]
+WantedBy=multi-user.target
