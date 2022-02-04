@@ -710,11 +710,8 @@ printf "\n";
 	  fi
       fi
 
-      SLURMSTART=${SLURMSTART/T/ }
-      SLURMLIM=${SLURMLIM/T/ }
-
-      UNIXSTART=`printf '%(%s)T' "$SLURMSTART"`
-      UNIXEND=`printf '%(%s)T' "$SLURMLIM"`
+      UNIXSTART=`date +'%s' --date="$SLURMSTART"`
+      UNIXEND=`date +'%s' --date="$SLURMLIM"`
 
       TIMELIM=`shrink_time $((UNIXEND - UNIXSTART))`
 
