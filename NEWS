@@ -1,5 +1,32 @@
+* Changes in bridge-1.5.7
+=========================
+
+    -- Usage of "date" instead of "printf" in ccc_mpp
+    -- Changes in ccc_mpinfo output format and sorting its output upon total number of CPU
+    -- Fix due to incoherent return value by scontrol listpids in slurm 19 (pid=-1)
     -- mstat supports only new format
-    -- addons/dirige-DAM: use CCCSPOOLDIR instead of CCC_SPOOLDIR
+    -- addons/dirige.ad: use CCCSPOOLDIR instead of CCC_SPOOLDIR
+    -- Fix mismatching test
+    -- Fix print format for ccc_msub -S option
+    -- Increase to 12 char username display of rmastat
+    -- Fix erased -m option filesystem extra parameter
+    -- Link plugins slurm with bridge for dlopen failure
+    -- Add war in ksh mpmd-cluster.ad for printf bug with new set LANG=en_US.utf8
+    -- add support of slurm-18 feature with multiple backup controller
+    -- fix segv in cluster name algorithm
+    -- add slurm level 18 requirement because of char **control_machine list in slurm_ctl_conf_t instead of two char* master and backup
+    -- Add / character to assure that pattern can use more than 2 definitions per partition
+    -- Add -F foreground launch option because of several pid problem leading to logrotate/bridge relaunch failure
+    -- Add DEBUG_MODE in bridge_addon_msub_alterscript function on preload.ad
+    -- Fix false IntelMPI  mpicc is the first in the PATH in IntelMPI addon
+    -- use clustack instead of padb
+    -- possibility to specify less processors in embedded ccc_mprun  than the number of processors specified in ccc_msub command
+    -- fixed -p option that was not working
+    -- add support of /etc/ccc_nodeinfo/* as an override for part/node info in mpinfo/slurm
+    -- allow inheritance of MSUB QOS from BRIDGE_MSUB_ADDON_QOS env variable when BRIDGE_MSUB_ADDON_QOS_INHERITANCE env var is set to 1
+    -- correct a regression in upgrade because of directories provided by both bridge and bridge-slurm
+    -- ensure that -a option of msub generates an error when -w is activated
+    -- make logrotate conf work with systemd bridged service
 
 * Changes in bridge-1.5.6
 =========================
