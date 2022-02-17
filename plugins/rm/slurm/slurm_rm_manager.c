@@ -93,7 +93,7 @@ init_rm_manager(bridge_rm_manager_t* p_manager){
 
   char* separator;
 
-  slurm_ctl_conf_t * pscc;
+  slurm_conf_t * pscc;
 
   p_manager->version=NULL;
   p_manager->cluster=NULL;
@@ -907,10 +907,10 @@ get_rm_allocations_base(bridge_rm_manager_t * p_rm_manager,
 		      
 		      /* an allocation is in use if at least one step is not */
 		      /* the batch one */
-		      if ( pjsi->step_id != SLURM_BATCH_SCRIPT )
+		      if ( pjsi->step_id.step_id != SLURM_BATCH_SCRIPT )
 			allocations[real_allocations_nb].state=BRIDGE_RM_ALLOCATION_STATE_INUSE;
 		      
-		      snprintf(stepid,128,"%d",pjsi->step_id);
+		      snprintf(stepid,128,"%d",pjsi->step_id.step_id);
 		      bridge_idlist_add_ids(&(allocations[real_allocations_nb].jobidlist),
 					      stepid);
 		    }
