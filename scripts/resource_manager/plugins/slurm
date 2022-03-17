@@ -531,8 +531,9 @@ do
     for TAG in $(echo $GRES | tr -s "," " ")
     do
        if [ "$(echo $TAG | grep gpu)" != "" ] ;then
-           GPUSTYPE=$(echo $TAG | cut -d":" -f2)
-           GPUSPERNODE=$(echo $TAG | cut -d":" -f3)
+           GPUDATA=$(echo $TAG | awk -F '(' '{print $1}')
+           GPUSTYPE=$(echo $GPUDATA | cut -d":" -f2)
+           GPUSPERNODE=$(echo $GPUDATA | cut -d":" -f3)
            break
        fi
     done
