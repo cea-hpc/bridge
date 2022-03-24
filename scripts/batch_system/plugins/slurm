@@ -472,7 +472,7 @@ function submit_cmd {
 	fi
 	if [[ ${put_licenses} -eq 1 ]]
 	    then
-	    local_submit_args+=( "--licenses=$(echo ${requested_licenses} | tr '=' '*')" )
+	    local_submit_args+=( "--licenses=$(echo ${requested_licenses} | tr '=' ':')" )
 	else
 	    ${LOGGER} "licenses management not supported, skipping"
 	fi
