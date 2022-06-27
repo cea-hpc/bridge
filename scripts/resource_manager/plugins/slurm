@@ -523,6 +523,7 @@ fi
 ${cmd} -eo  "%R %a %C %F %m %X %Y %Z %c %G %N" -h | sort -nr -k 4 -t'/' | while read PARTITION STATE CPUS_STATE NODES_STATE MEMPERNODE SOCKETSPERNODE CORESPERSOCKET THREADSPERCORE CPUSPERNODE GRES NODES
 do
     set $(echo $CPUS_STATE $NODES_STATE | tr -s "/" " ")
+    MEMPERCORE=
     if [ $CPUSPERNODE != 0 ]; then
         (( MEMPERCORE = MEMPERNODE / CPUSPERNODE ))
     fi
