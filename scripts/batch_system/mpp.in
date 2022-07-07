@@ -643,20 +643,22 @@ printf "\n";
       # Get the list of partitions which contain nodes from the reservation
       QUEUES=
       NCPUS=
-      sinfo -h -n "$NODES" -o '%N|%R|%C' | while IFS='|' read nodes part cpus; do
-	  if [[ "$cpus" != '0/0/0/0' ]]; then
-	      if [[ -n "$QUEUES" ]]; then
-		  QUEUES="$QUEUES,$part"
-		  #More than one queue: we'll have to ask slurm one more time compute the total number of cpus
-		  NCPUS=
-	      else
-		  QUEUES="$part"
-		  NCPUS="${cpus##*/}"
-	      fi
-	  fi	  
-      done
+      if [[ -n "${NODES}"  ]] && [[ ${NODES} != "(null)" ]]; then
+          sinfo -h -n "$NODES" -o '%N|%R|%C' | while IFS='|' read nodes part cpus; do
+              if [[ "$cpus" != '0/0/0/0' ]]; then
+                  if [[ -n "$QUEUES" ]]; then
+                      QUEUES="$QUEUES,$part"
+                      #More than one queue: we'll have to ask slurm one more time compute the total number of cpus
+                      NCPUS=
+                  else
+                      QUEUES="$part"
+                      NCPUS="${cpus##*/}"
+                  fi
+              fi
+          done
+      fi
 
-      if [[ -z "${NCPUS}" ]]; then
+      if [[ -z "${NCPUS}" ]] && [[ ${NODES} != "(null)" ]]; then
 	  NCPUS=$(sinfo -h -n "$NODES" -o '%C')
 	  NCPUS=${NCPUS##*/}
       fi
