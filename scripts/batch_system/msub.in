@@ -162,7 +162,7 @@ typeset USAGE="usage : ${PROGNAME} [-dvhV] \\
         [-N node_limit ] [ -n proc_limit ] [ -c core_limit ] \\
         [-T [timemin-]time] [-t [timemin-]time] [-M mem_limit] \\
         [-W] [-w] [-K] [-L \"appli1=nb1,appli2=nb2,...\"] \\
-        [-E \"extra_parameters...\"] [-S starttime] [-q queue] [script [params]]
+        [-E \"extra_parameters...\"] [-S starttime] [-q queue] [script]
 
  ${PROGNAME} is the CCC batch submission interface.
  Depending on the underlying batch system characteristics, some parameters can be disabled.

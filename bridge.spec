@@ -62,45 +62,13 @@
 
 Summary: Bridge CCC In-House Batch Environment
 Name: bridge
-Version: 1.5.6
-Release: 6.%{?target}.ocean7%{?dist}
+Version: 1.5.7
+Release: 1.%{?target}.ocean1%{?dist}
 License: GPL License
 Group: System Environment/Base
 URL: https://github.com/cea-hpc/bridge
 Source0: %{name}-%{version}.tar.gz
-Patch0: bridge-1.5.6-dirige-with-CCCSPOOLDIR.patch
-Patch1: bridge-1.5.6.option_m_suppress.patch
-Patch2: bridge-1.5.4.addon_ddt_params.patch
-Patch3: bridge-1.5.6.msub_option_M_default.patch
-Patch4: bridge-1.5.6-slurm-resource.patch
-Patch5: bridge-1.5.6.systemd.patch
-Patch6: bridge-1.5.6.slurm_reservation.patch
-Patch7: bridge-1.5.6.mpstat_args.patch
-Patch8: bridge-1.5.6.logrotate_bridged.systemd.patch
-Patch9: bridge-1.5.6.-a_vs_-w.patch
-Patch10: bridge-1.5.6-partition_info_t_priority.patch
-Patch11: bridge-1.5.6-qos_addon_inheritance.patch
-Patch12: bridge-1.5.6-ccc_nodeinfo.patch
-Patch13: bridge-1.5.6-mpstat-option-t.patch
-Patch14: bridge-1.5.6-addons-totalview.patch
-Patch15: bridge-1.5.6-mpstat-option-p.patch
-Patch16: bridge-1.5.6-intelmpi-addon.patch
-Patch17: bridge-1.5.6.addons-preload.patch
-Patch18: bridge-1.5.6-addon-autoswitch-and-env-slurm-variable-fix.patch
-Patch19: bridge-1.5.6.foreground-option.patch
-Patch20: bridge-1.5.6.filesystems_addon.patch
-Patch21: bridge-1.5.6-fix-cluster-name-segv.patch
-Patch22: bridge-1.5.6-multi-backup-controller.patch
-Patch23: bridge-1.5.6-war-mpmd-utf8.patch
-Patch24: bridge-1.5.6.rpc-headers-missing.patch
-Patch25: bridge-1.5.6-dlopen-failure.patch
-Patch26: bridge-1.5.6-m-option-extra-param-erased.patch
-Patch27: bridge-1.5.6-rename-dirige-addon.patch
-Patch28: bridge-1.5.6-change-dirige-addon-name-calls.patch
-Patch29: bridge-1.5.6-rmastat-increase-username-display-to-12-char.patch
-Patch30: bridge-1.5.6-mstat-supports-only-new-format.patch
-Patch31: bridge-1.5.6.msub-S.patch
-Patch32: bridge-1.5.6-modif-spooldir-dirige-addon.patch
+Patch0: bridge-1.5.6.rpc-headers-missing.patch
 
 BuildRequires: autoconf
 BuildRequires: automake
@@ -180,41 +148,9 @@ Plugin that provides Slurm access accross the CCC Batch systems Bridge
 
 %prep
 %setup -q
-%patch0 -p1
-%patch1 -p1
-%patch2 -p1
-%patch3 -p1
-%patch4 -p1
-%patch5 -p1
-%patch6 -p1
-%patch7 -p1
-%patch8 -p1
-%patch9 -p1
-%patch10 -p1
-%patch11 -p1
-%patch12 -p1
-%patch13 -p1
-%patch14 -p1
-%patch15 -p1
-%patch16 -p1
-%patch17 -p1
-%patch18 -p1
-%patch19 -p1
-%patch20 -p1
-%patch21 -p1
-%patch22 -p1
-%patch23 -p1
 %if 0%{?fedora} >= 28 || 0%{?rhel} >= 8
-%patch24 -p1
+%patch0 -p1
 %endif
-%patch25 -p1
-%patch26 -p1
-%patch27 -p1
-%patch28 -p1
-%patch29 -p1
-%patch30 -p1
-%patch31 -p1
-%patch32 -p1
 
 
 %build
@@ -342,6 +278,9 @@ Additional package providing %{compat_target}_* compatibility links to the
 %endif
 
 %changelog
+* Wed Feb 09 2022 Olivier Delhomme <olivier.delhomme@cea.fr> - 1.5.7-1.ocean1
+- Integrating patches and making 1.5.7 version
+
 * Wed Sep 02 2020 Regine Gaudin <regine.gaudin@cea.fr> - 1.5.6-6.ocean7
 - Change spooldir management in dirige.ad : bridge-1.5.6-modif-spooldir-dirige-addon.patch
 

@@ -49,7 +49,7 @@ init_batch_manager(bridge_batch_manager_t* p_batch_manager)
 {
 	int fstatus=-1;
 	
-	slurm_ctl_conf_t * pscc;
+	slurm_conf_t * pscc;
 	long api_version;
 	char version[128];
 

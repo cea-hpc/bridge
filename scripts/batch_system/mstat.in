@@ -109,7 +109,7 @@ typeset USAGE="Usage : ${PROGNAME} [-dvhVO] [-f] [-s] [-q queue] [-u [user]]
 "
 #------------------------------------------------------------------------------------------------------------------
 typeset stat_cmd=bsstat_cmd
-typeset stat_args="-c"
+typeset stat_args="-c -r"
 typeset info_cmd=bsinfo_cmd
 typeset info_args=
 typeset cmd_mode=stat

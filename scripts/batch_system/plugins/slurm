@@ -472,7 +472,7 @@ function submit_cmd {
 	fi
 	if [[ ${put_licenses} -eq 1 ]]
 	    then
-	    local_submit_args+=( "--licenses=$(echo ${requested_licenses} | tr '=' '*')" )
+	    local_submit_args+=( "--licenses=$(echo ${requested_licenses} | tr '=' ':')" )
 	else
 	    ${LOGGER} "licenses management not supported, skipping"
 	fi
@@ -638,7 +638,7 @@ EOF
        EXEC_SERVER=$(${BRIDGE_BSSTAT_CMD} -o exechost -b $batchid)
        if [  "$EXEC_SERVER" != "" -a "$EXEC_SERVER" != "-" ] 
             then
-            REMOTE_COMMAND="ps f -o pid,ppid,stat,wchan,rss,%cpu,start,cputime,command -p \`scontrol listpids $batchid | cut -d' ' -f1 | sed '1d'\`" 
+            REMOTE_COMMAND="ps f -o pid,ppid,stat,wchan,rss,%cpu,start,cputime,command -p \`scontrol listpids $batchid | cut -d' ' -f1 | sed '1,2d'\`"
             ssh $EXEC_SERVER  $REMOTE_COMMAND 2>/dev/null
        fi
     else

@@ -288,6 +288,7 @@ function submit_cmd {
 #         -V                      Print bridge and app versions and exit
 #         -S                      Show sum up
 #         -O                      Only show sessions that overcome their limits
+#         -r                      removes '@partition' including '@' itself in qos field
 #
 #
 # Available fields are :
@@ -396,7 +397,7 @@ typeset overscript='
  } 
 }'
 
-    while getopts VcCdDlu:b:q:H:n:N:f:o:s:vSO option
+    while getopts VcCdDlru:b:q:H:n:N:f:o:s:vSO option
       do
       case ${option} in
 	  V)

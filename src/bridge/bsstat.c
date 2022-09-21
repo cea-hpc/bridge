@@ -1,7 +1,7 @@
 /*****************************************************************************\
- *  src/bridge/bsstat.c - 
+ *  src/bridge/bsstat.c -
  *****************************************************************************
- *  Copyright  CEA/DAM/DIF (2012)
+ *  Copyright  CEA/DAM/DIF (2012 - 2022)
  *
  *  This file is part of Bridge, an abstraction layer to ease batch system and
  *  resource manager usage in heterogeneous HPC environments.
@@ -35,10 +35,11 @@
 /* local functions */
 int display_new_classic_bridge_batch_session_on_file_stream(FILE * stream,
 							    bridge_batch_session_t* bs,
-							    int long_flag);
+							    int long_flag,
+							    int remove_qos);
 
 /*!
- * \brief display batch session informations on file stream in an extended form 
+ * \brief display batch session informations on file stream in an extended form
  * \internal
  *
  * \param stream FILE* on which to write output
@@ -47,10 +48,10 @@ int display_new_classic_bridge_batch_session_on_file_stream(FILE * stream,
  * \retval 0 on success
  * \retval -1 on failure
  */
-int display_bridge_batch_session_on_file_stream(FILE * stream,bridge_batch_session_t* bs);
+int display_bridge_batch_session_on_file_stream(FILE * stream,bridge_batch_session_t* bs, int remove_qos);
 
 /*!
- * \brief display batch session informations on file stream in an classic short or long form 
+ * \brief display batch session informations on file stream in an classic short or long form
  * \internal
  *
  * \param stream FILE* on which to write output
@@ -62,7 +63,7 @@ int display_bridge_batch_session_on_file_stream(FILE * stream,bridge_batch_sessi
 int display_classic_bridge_batch_session_on_file_stream(FILE * stream,bridge_batch_session_t* bs,int long_flag);
 
 /*!
- * \brief display required informations about batch session on file stream 
+ * \brief display required informations about batch session on file stream
  * \internal
  *
  * \param stream FILE* on which to write output
@@ -73,20 +74,28 @@ int display_classic_bridge_batch_session_on_file_stream(FILE * stream,bridge_bat
  * \retval 0 on success
  * \retval -1 on failure
  */
-int display_by_fields_bridge_batch_session_on_file_stream(FILE * stream,bridge_batch_session_t* bs,char* output_fields,char* separator);
+int display_by_fields_bridge_batch_session_on_file_stream(FILE * stream,bridge_batch_session_t* bs,char* output_fields,char* separator, int remove_qos);
 
 /*!
  * \brief test if output fields required parallel informations
  * \internal
  *
- * \param parallel_fields comma or blank separated list of fields that requires parallel informations 
- * \param parallel_fields comma separated list of required fields 
+ * \param parallel_fields comma or blank separated list of fields that requires parallel informations
+ * \param parallel_fields comma separated list of required fields
  *
  * \retval 0 if they don't require parallel informations
  * \retval 1 if they do require
  */
 int output_fields_require_parallel_infos(char* parallel_fields,char* query_fields);
 
+/*!
+ * \brief Removes everything after '@' character replacing '@' with '\0' to terminate the string earlier.
+ * \internal
+ *
+ * \param bsqos char * NULL terminated string that may contain an '@' character.
+ * \param remove_qos int, removing will occur only if it's value is set to 1
+ */
+void remove_qos_if_needed(char *bsqos, int remove_qos);
 
 int main(int argc,char **argv){
 
@@ -109,6 +118,7 @@ int main(int argc,char **argv){
   int finished_jobs_flag=0;
   int classic_mode=0;
   int new_classic_mode=0;
+  int remove_qos=0;
   int long_flag=0;
   int verbosity=0;
 
@@ -153,6 +163,7 @@ int main(int argc,char **argv){
     "\t-N incNodes\t\tDisplay results concerning batch session which parallel nodes are included in this nodes list\n"
     "\t-f begin:end\t\tDisplay finished batch session which finished event was recorded between begin and end date (in seconds, 0 means no limit)\n"
     "\t-o fields\t\tDisplay informations using fields format (use -o list for available fields, -o all to get infos for all fields)\n"
+    "\t-r\t\t\tRemoves @queue from display in QOS field (does not affect classic format)\n"
     "\t-s separator\t\tWhen used with -o options, enables to change results fields separator\n\t\t\t\t(default is a single spaced string)\n"
     "\t-v\t\t\tWhen used with -o options, the first output line displays list of selected fields\n"
     "\t-V\t\t\tPrint bridge and app versions and exit\n";
@@ -166,13 +177,13 @@ int main(int argc,char **argv){
   int date_nb;
 
 #define NO_FILTERING                   0
-#define FILTERING_IN_INTERSECTION_MODE 1 
-#define FILTERING_IN_INCLUSION_MODE    2 
+#define FILTERING_IN_INTERSECTION_MODE 1
+#define FILTERING_IN_INCLUSION_MODE    2
   int filter_mode=NO_FILTERING;
   char* filter_nodes=NULL;
   bridge_nodelist_t list;
-  
-  char * optstring="hvcCdDu:b:q:H:o:s:f:ln:N:V";
+
+  char * optstring="hvcCdDru:b:q:H:o:s:f:ln:N:V";
   int option;
 
   progname=strrchr(argv[0],'/');
@@ -239,6 +250,9 @@ int main(int argc,char **argv){
 	output_fields=strdup(optarg);
       with_parallel_infos=output_fields_require_parallel_infos(PARALLEL_FIELDS,output_fields);
       break;
+    case 'r' :
+      remove_qos=1;
+      break;
     case 's' :
       separator=strdup(optarg);
       break;
@@ -250,7 +264,7 @@ int main(int argc,char **argv){
 	    begin_eventTime=strtol(date,(char**)NULL,10);
 	    free(date);
 	    date=NULL;
-	    if(begin_eventTime!=LONG_MIN && begin_eventTime!=LONG_MAX){	    
+	    if(begin_eventTime!=LONG_MIN && begin_eventTime!=LONG_MAX){
 	      if(bridge_common_string_get_token(optarg,":",2,&date)==0){
 		end_eventTime=strtol(date,(char**)NULL,10);
 		free(date);
@@ -352,10 +366,10 @@ int main(int argc,char **argv){
     if(status==0){
       /* If new classic display mode */
       if(new_classic_mode){
-        display_new_classic_bridge_batch_session_on_file_stream(output_stream,NULL,long_flag);
+        display_new_classic_bridge_batch_session_on_file_stream(output_stream,NULL,long_flag, remove_qos);
         for(i=0;i<batch_sessions_nb;i++){
           PARALLEL_NODES_FILTERING_MACRO
-          display_new_classic_bridge_batch_session_on_file_stream(output_stream,p_batch_session_array+i,long_flag);
+          display_new_classic_bridge_batch_session_on_file_stream(output_stream,p_batch_session_array+i,long_flag, remove_qos);
         }
       }
       /* If classic display mode */
@@ -370,16 +384,16 @@ int main(int argc,char **argv){
       else if(output_fields==NULL){
 	for(i=0;i<batch_sessions_nb;i++){
 	  PARALLEL_NODES_FILTERING_MACRO
-	  display_bridge_batch_session_on_file_stream(output_stream,p_batch_session_array+i);
+	  display_bridge_batch_session_on_file_stream(output_stream,p_batch_session_array+i, remove_qos);
 	}
       }
       /* composite mode */
       else{
 	if(verbosity)
-	  display_by_fields_bridge_batch_session_on_file_stream(output_stream,NULL,output_fields,separator);
+	  display_by_fields_bridge_batch_session_on_file_stream(output_stream, NULL, output_fields, separator, remove_qos);
 	for(i=0;i<batch_sessions_nb;i++){
 	  PARALLEL_NODES_FILTERING_MACRO
-	  display_by_fields_bridge_batch_session_on_file_stream(output_stream,p_batch_session_array+i,output_fields,separator);
+	  display_by_fields_bridge_batch_session_on_file_stream(output_stream, p_batch_session_array+i, output_fields, separator, remove_qos);
 	}
       }
 
@@ -427,9 +441,23 @@ int main(int argc,char **argv){
 }
 
 
+void remove_qos_if_needed(char *bsqos, int remove_qos) {
+    int i = 0;
+    int len = 0;
+
+    if (remove_qos == 1 && bsqos != NULL) {
+        len = strlen(bsqos);
+        i = 0;
+        while (i < len && bsqos[i] != '@' && bsqos[i] != '\0' )
+        {
+            i++;
+        }
+        bsqos[i]= '\0';
+   }
+}
 
 
-int display_bridge_batch_session_on_file_stream(FILE * stream,bridge_batch_session_t* bs){
+int display_bridge_batch_session_on_file_stream(FILE * stream,bridge_batch_session_t* bs, int remove_qos){
 
   char time_string[128];
   char* nodelist;
@@ -499,6 +527,7 @@ int display_bridge_batch_session_on_file_stream(FILE * stream,bridge_batch_sessi
     fprintf(stream,"Project name \t: -\n");
 
   /* QOS Name */
+  remove_qos_if_needed(bs->qos, remove_qos);
   if(bs->qos!=NULL)
     fprintf(stream,"QOS name   \t: %s\n",bs->qos);
   else
@@ -594,7 +623,8 @@ int display_bridge_batch_session_on_file_stream(FILE * stream,bridge_batch_sessi
     return 0;
 }
 
-int display_new_classic_bridge_batch_session_on_file_stream(FILE * stream,bridge_batch_session_t* bs,int long_flag){
+
+int display_new_classic_bridge_batch_session_on_file_stream(FILE * stream,bridge_batch_session_t* bs,int long_flag, int remove_qos){
   int fstatus=0;
   char* project;
 
@@ -638,7 +668,7 @@ int display_new_classic_bridge_batch_session_on_file_stream(FILE * stream,bridge
 
     if ( bs->projectname != NULL ) {
 /*	    project = index(bs->projectname,'@');
-	    if ( project != NULL ) 
+	    if ( project != NULL )
 		    project++;
 	    else */
 		    project = bs->projectname;
@@ -647,6 +677,7 @@ int display_new_classic_bridge_batch_session_on_file_stream(FILE * stream,bridge
 
     /* Long version 'classic' display */
     if (long_flag) {
+      remove_qos_if_needed(bs->qos, remove_qos);
       fprintf(stream,"%-7s  %-10.10s %-16.16s %-9s %-7s %6d %-12s %-12s %-.3s %8ld %8ld %7u %6d %s\n",
               batchid,
               bs->username != NULL ? bs->username : "unknown",
@@ -666,13 +697,14 @@ int display_new_classic_bridge_batch_session_on_file_stream(FILE * stream,bridge
     /* Short version 'classic' display */
    
      else {
+      remove_qos_if_needed(bs->qos, remove_qos);
       fprintf(stream,"%-7s  %-8.8s %-10.10s %-16.16s %-9s %-7s %6d %-12s %-12s %-.3s %8ld %8ld %7u %6d\n",
               batchid,
               bs->name != NULL ? bs->name : "unknown",
               bs->username != NULL ? bs->username : "unknown",
 	      project,
-              bs->queue != NULL ? bs->queue : "NA",
-              bs->qos ,
+              (bs->queue != NULL ? bs->queue : "NA"),
+              bs->qos,
               bs->priority,
               bs->submit_hostname != NULL ? bs->submit_hostname : "unkown",
               bs->executing_hostname != NULL ? bs->executing_hostname : bs->submit_hostname,
@@ -685,7 +717,6 @@ int display_new_classic_bridge_batch_session_on_file_stream(FILE * stream,bridge
   }
   return fstatus;
 }
-
 
 
 int display_classic_bridge_batch_session_on_file_stream(FILE * stream,bridge_batch_session_t* bs,int long_flag){
@@ -774,7 +805,7 @@ int display_classic_bridge_batch_session_on_file_stream(FILE * stream,bridge_bat
 }
 
 
-int display_by_fields_bridge_batch_session_on_file_stream(FILE * stream,bridge_batch_session_t* bs,char* output_fields,char* separator){
+int display_by_fields_bridge_batch_session_on_file_stream(FILE * stream,bridge_batch_session_t* bs,char* output_fields,char* separator, int remove_qos){
 
   int status=0;
 
@@ -877,6 +908,7 @@ int display_by_fields_bridge_batch_session_on_file_stream(FILE * stream,bridge_b
 	}
 	/* QOS NAME */
 	else if(strcmp(token,"qos")==0){
+	  remove_qos_if_needed(bs->qos, remove_qos);
 	  if(bs->qos!=NULL)
 	    fprintf(stream,"%s",bs->qos);
 	  else
