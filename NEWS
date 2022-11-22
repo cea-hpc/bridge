@@ -1,3 +1,17 @@
+* Changes in bridge-1.5.8
+=========================
+
+    -- Enables usage of programs that does not have -o option in ccc_trace.sh
+    -- Corrects program arguments of ccc_mstat to be able to avoid displaying @partition
+    -- Corrects errors displayed when using ccc_mpp when a NULL reservation exists
+    -- ccc_mpinfo: corrects an error in memory by core display
+    -- Update slurm: change character for SLURM 20
+    -- Removes @partition in qos field
+    -- Remove [params] in [script [params]] from ccc_msub command help because it doesn't work
+    -- fix ccc_mpinfo cpuspernode
+
+
+
 * Changes in bridge-1.5.7
 =========================
 
