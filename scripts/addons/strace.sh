@@ -119,7 +119,7 @@ if i_must_be_traced ; then
 	# introduce some asynchronism to create directory
 	usleep $(( $SLURM_PROCID * 2 ))
 	[[ -d $STRACE_DIR ]] || mkdir -p $STRACE_DIR 2>/dev/null
-	exec $tracer -o $STRACE_FILE $STRACE_OPTIONS $@
+	exec ${tracer} ${STRACE_OPTIONS} $@ 2>${STRACE_FILE}
 else
 	# execute directly application
 	exec $@
