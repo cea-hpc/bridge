@@ -1,0 +1,222 @@
+#!/bin/ksh
+#*****************************************************************************\
+#  scripts/addons/bulk-flux.ad -
+#******************************************************************************
+#  Copyright  CEA/DAM/DIF (2022)
+#
+#  This file is part of Bridge, an abstraction layer to ease batch system and
+#  resource manager usage in heterogeneous HPC environments.
+#
+#  Bridge is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  Bridge is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with Bridge.  If not, see <http://www.gnu.org/licenses/>
+#*****************************************************************************/
+
+#
+#/********************************************************************************************************************\
+#
+# Cet addon msub permet de se placer en mode BULK en environnement cluster
+#
+#\********************************************************************************************************************/
+
+function bridge_addon_mprun_setopt {
+
+    typeset MYGETOPTOPTION="B:"
+
+    echo "${BRIDGE_MPRUN_GETOPT_OPTIONS}" | grep -q ${MYGETOPTOPTION}
+
+    if [ $? -ne 0 ]
+        then
+        BRIDGE_MPRUN_GETOPT_OPTIONS="${BRIDGE_MPRUN_GETOPT_OPTIONS}${MYGETOPTOPTION}"
+    fi
+
+    return 0
+
+}
+
+function bridge_addon_mprun_getopt {
+
+    ## on se place en mode debug si souhaite
+    typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+        then
+        set -x
+    fi
+
+    ## on incremente le niveau de log
+    typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+
+    ## on ajoute une entete a la log
+    typeset LOGGER="${LOGGER} BULK Addon :"
+
+    ## par defaut, on desactive le mode BULK
+    if [[ -z "${BRIDGE_MPRUN_ADDON_BULK_SCRIPT}" ]]
+        then
+        BRIDGE_MPRUN_ADDON_BULK_SCRIPT=
+    fi
+
+    ## on fixe le message d'aide a afficher si demande
+    typeset USAGE="\
+\t*) Bulk
+\t\t -B descfile : activate BULK mode using tasks description file 'descfile'\n"
+
+    ## on fixe le status de sortie par defaut
+    typeset exit_status=0
+
+    ## on parse les arguments
+    while getopts ${BRIDGE_MPRUN_GETOPT_OPTIONS} option
+      do
+      case ${option} in
+
+          h)
+              echo -e "${USAGE}" >&2
+              return 0
+              ;;
+
+          B)
+              BRIDGE_MPRUN_ADDON_BULK_SCRIPT="${OPTARG}"
+              ;;
+
+          *)
+              ;;
+      esac
+    done
+    export BRIDGE_MPRUN_ADDON_BULK_SCRIPT
+
+    return ${exit_status}
+}
+
+
+function bridge_addon_mprun_alteropt {
+
+    ## on se place en mode debug si souhaite
+    typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+        then
+        set -x
+    fi
+
+    ## on incremente le niveau de log
+    typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+
+    ## on ajoute une entete a la log
+    typeset LOGGER="${LOGGER} BULK Addon :"
+
+    if [[ -z "${BRIDGE_MPRUN_ADDON_BULK_SCRIPT}"  ]]; then
+        return 0
+    fi
+
+    if [[ ! -r "${BRIDGE_MPRUN_ADDON_BULK_SCRIPT}" ]]; then
+       ${ERROR} "BULK Addon : invalid task file ${BRIDGE_MPRUN_ADDON_BULK_SCRIPT}"
+       exit 1
+    fi
+
+    ${LOGGER} "using task file ${BRIDGE_MPRUN_ADDON_BULK_SCRIPT}"
+    temporary_file="$(mktemp)"
+    chmod +x "${temporary_file}"
+
+    if [[ -n "${bridge_mprun_ncore}" ]]; then
+        default_ncore=${bridge_mprun_ncore}
+    elif [[ -n "${BRIDGE_MPRUN_NCORE}" ]]; then
+        default_ncore=${BRIDGE_MPRUN_NCORE}
+    elif [[ -n "${BRIDGE_MSUB_NCORE}" ]]; then
+        default_ncore=${BRIDGE_MSUB_NCORE}
+    else
+        default_ncore=1
+    fi
+
+    if [[ -n "${bridge_mprun_nproc}" ]]; then
+        default_nproc=${bridge_mprun_nproc}
+    elif [[ -n "${BRIDGE_MPRUN_NPROC}" ]]; then
+        default_nproc=${BRIDGE_MPRUN_NPROC}x
+    elif [[ -n "${BRIDGE_MSUB_NPROC}" ]]; then
+        default_nproc=${BRIDGE_MSUB_NPROC}
+    else
+        default_nproc=1
+    fi
+
+    typeset rawcmd
+    typeset task_idx=0
+    grep -v -E '(^[[:space:]]*$|^#.*)' "${BRIDGE_MPRUN_ADDON_BULK_SCRIPT}" |
+    while read -r rawcmd; do
+        eval cmd=\( "$rawcmd" \)
+        first_field=$(expr match "${cmd[0]}" '\(^[0-9]\+-\?[0-9]*$\)')
+        if [[ -n "$first_field" ]]; then
+           cmd_ntasks=${first_field%%-*}
+           cmd_cpus=${first_field#[0-9]*-}
+           if [[ -z "$cmd_cpus" || "$cmd_cpus" = "$first_field" ]]; then
+            cmd_cpus=$default_ncore
+           fi
+           launch_cmd=( "${cmd[@]:1}" )
+        else
+           cmd_ntasks=$default_nproc
+           cmd_cpus=$default_ncore
+           launch_cmd=( "${cmd[@]}" )
+        fi
+
+        cmd_cpus_list+=( "$cmd_cpus" )
+        cmd_ntasks_list+=( "$cmd_ntasks" )
+        cat >> "${temporary_file}" <<EOF
+$(printf "%q " "${launch_cmd[@]}")
+EOF
+        task_idx=$(( $task_idx + 1 ))
+    done
+
+    bridge_mprun_nproc='{0}'
+    bridge_mprun_ncore='{1}'
+    bridge_mprun_args=(bash -c '{2}' :::+ "${cmd_ntasks_list[@]}" :::+ "${cmd_cpus_list[@]}"  :::: "$temporary_file")
+    spmd_run_extra_parameters+=( '--output=bulk_{seq}_{{id}}.out' )
+    spmd_run_cmd="flux mini bulksubmit"
+    spmd_run_separator=" "
+    export BRIDGE_MPRUN_ADDON_BULK_TEMPORARY_FILE=$temporary_file
+
+    return 0
+}
+
+function bridge_addon_mprun_spmd_pre_allocate {
+    return 0
+}
+
+function bridge_addon_mprun_spmd_post_allocate {
+    return 0
+}
+
+function bridge_addon_mprun_spmd_pre_run {
+
+    return 0
+}
+
+function bridge_addon_mprun_spmd_post_run {
+    typeset LOGGER="${LOGGER} BULK Addon :"
+
+    ## on se place en mode debug si souhaite
+    typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+      then
+      set -x
+    fi
+
+    ## on incremente le niveau de log
+    typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+
+    if [[ -f "${BRIDGE_MPRUN_ADDON_BULK_TEMPORARY_FILE}" ]]
+    then
+      ${LOGGER} "Removing temporary BULK script ${BRIDGE_MPRUN_ADDON_BULK_TEMPORARY_FILE}"
+      rm -f "${BRIDGE_MPRUN_ADDON_BULK_TEMPORARY_FILE}"
+    fi
+
+    return 0
+}
+
+function bridge_addon_msub_alterscript {
+    return 0
+}

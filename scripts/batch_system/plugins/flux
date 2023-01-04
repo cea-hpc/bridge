@@ -1,0 +1,469 @@
+#!/bin/ksh
+#*****************************************************************************\
+#  scripts/batch_system/plugins/flux -
+#******************************************************************************
+#  Copyright  CEA/DAM/DIF (2022)
+#
+#  This file is part of Bridge, an abstraction layer to ease batch system and
+#  resource manager usage in heterogeneous HPC environments.
+#
+#  Bridge is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  Bridge is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with Bridge.  If not, see <http://www.gnu.org/licenses/>
+#*****************************************************************************/
+
+#
+###################################################################################################################
+# Fonction de soumission
+# version 1.0
+#------------------------------------------------------------------------------------------------------------------
+#
+# Arguments :
+#
+#  -r request_name              nom de la requete
+#  -s study                     nom de l'etude a laquelle se rapporte la soumission
+#  -A project                   nom du projet auquel se rapporte la soumission
+#
+#  -W                           flag indiquant que deux jobs portant le meme nom de requete peuvent s'executer en simultane
+#
+#  -S [[month:]day:]hour:minute date de demarrage de l'application
+#  -q queue                     queue d'execution batch a utiliser
+#
+#  -o output_file               fichier ou stocker le stdout
+#  -e error_file                fichier ou stocker le stderr
+#
+#  -N nnode                     nombre de noeud parallele souhaite en exclusif
+#  -n nproc                     nombre de processus parallele en exclusif
+#  -c ncoreperproc              nombre de core par processus parallele en exclusif (1 par defaut)
+#  -m tsmemlimit                quantite max de memoire utilisable en fonctionnement "time sharing"
+#  -t tstimelimit               quantite max de temps utilisable en fonctionnement "time sharing"
+#  -M tsmemlimit                quantite max de memoire utilisable en fonctionnement "exclusive"
+#  -T tstimelimit               quantite max de temps utilisable en fonctionnement "exclusive"
+#  -x                           demande une allocation exclusive des noeuds
+#
+#  -L "licenses..."             chaine contenant les parametres de licences
+#  -K                           allocation des processeurs en debut de job
+#
+#  -E "extra..."                parametres additionels non traites par le wrapper
+#
+#------------------------------------------------------------------------------------------------------------------
+
+function submit_cmd {
+    ## on se place en mode debug si souhaite
+    typeset -i BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+        then
+        set -x
+    fi
+
+    ## on incremente le niveau de log
+    typeset -i BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+
+    ## on fixe les variables de travail
+    typeset VERSION="Slurm-1.0"
+    typeset LOGGER="${LOGGER} submit:"
+    typeset exit_status=0
+    typeset local_submit_cmd=${bridge_msub_cmd:-flux mini batch}
+    typeset -a local_submit_args
+    if [[ -n "${bridge_msub_args[@]}" ]]
+    then
+        local_submit_args+=( "${bridge_msub_args[@]}" )
+    fi
+    typeset LOCAL_ARGEXP1=
+    typeset LOCAL_ARGEXP2=
+    typeset LOCAL_FILEARG=
+    typeset LOCAL_SCRIPTFILE=
+    typeset LOCAL_SCRIPTMODE=
+
+    ## on fixe les variables de parametrage
+    typeset request_name=
+    typeset study_name=
+    typeset project_name=
+    typeset same_request_at_same_time_flag=0
+    typeset requested_start_time=
+    typeset requested_queue=${BRIDGE_MSUB_DEFAULT_QUEUE}
+    typeset output=
+    typeset output_file=
+    typeset error_file=
+    typeset nnode=${BRIDGE_MSUB_DEFAULT_NNODE}
+    typeset nproc=${BRIDGE_MSUB_DEFAULT_NPROC}
+    typeset ncoreperproc=${BRIDGE_MSUB_DEFAULT_NCOREPERPROC}
+    typeset time_sharing_memlimit
+    typeset time_sharing_timelimit
+    typeset exclusive_memlimit
+    typeset exclusive_timelimit
+    typeset requested_licenses=""
+    typeset keep_allocation=""
+    typeset extra_parameters=
+    typeset mail_info=""
+    typeset mail_addr=""
+    typeset after_jobs=
+    typeset exclusive=no
+
+    ## on lit les parametres en entree et on les places dans une variable
+    ## de stockage, elle seront utilisees ulterieurement
+    while getopts r:o:e:s:A:N:n:c:m:t:M:T:L:q:S:KVWE:@:a:y:x option
+      do
+      case ${option} in
+          r)
+              LOCAL_ARGEXP1="$LOCAL_ARGEXP1""request_name=\"${OPTARG}\"; "
+              ;;
+          s)
+              LOCAL_ARGEXP1="$LOCAL_ARGEXP1""study_name=\"${OPTARG}\"; "
+              ;;
+          A)
+              LOCAL_ARGEXP1="$LOCAL_ARGEXP1""project_name=\"${OPTARG}\"; "
+              ;;
+          W)
+              same_request_at_same_time_flag=1
+              ;;
+          S)
+              LOCAL_ARGEXP1="$LOCAL_ARGEXP1""requested_start_time=\"${OPTARG}\"; "
+              ;;
+          q)
+              LOCAL_ARGEXP1="$LOCAL_ARGEXP1""requested_queue=\"${OPTARG}\"; "
+              ;;
+          ## on traduit un eventuel %I signifiant l'ID du job par l'equivalent LSF ({{id}})
+          o)
+              LOCAL_ARGEXP1="$LOCAL_ARGEXP1""output_file=\"$(echo ${OPTARG} | sed -e 's/%I/{{id}}/g')\"; "
+              ;;
+          ## on traduit un eventuel %I signifiant l'ID du job par l'equivalent LSF ({{id}})
+          e)
+              LOCAL_ARGEXP1="$LOCAL_ARGEXP1""error_file=\"$(echo ${OPTARG} | sed -e 's/%I/{{id}}/g')\"; "
+              ;;
+          N)
+              LOCAL_ARGEXP1="$LOCAL_ARGEXP1""nnode=\"${OPTARG}\"; "
+              ;;
+          n)
+              LOCAL_ARGEXP1="$LOCAL_ARGEXP1""nproc=\"${OPTARG}\"; "
+              ;;
+          c)
+              LOCAL_ARGEXP1="$LOCAL_ARGEXP1""ncoreperproc=\"${OPTARG}\"; "
+              ;;
+          m)
+              LOCAL_ARGEXP1="$LOCAL_ARGEXP1""time_sharing_memlimit=\"${OPTARG}\"; "
+              ;;
+          t)
+              LOCAL_ARGEXP1="$LOCAL_ARGEXP1""time_sharing_timelimit=\"${OPTARG}\"; "
+              ;;
+          M)
+              LOCAL_ARGEXP1="$LOCAL_ARGEXP1""exclusive_memlimit=\"${OPTARG}\"; "
+              ;;
+          T)
+              LOCAL_ARGEXP1="$LOCAL_ARGEXP1""exclusive_timelimit=\"${OPTARG}\"; "
+              ;;
+          L)
+              LOCAL_ARGEXP1="$LOCAL_ARGEXP1""requested_licenses=\"${OPTARG}\"; "
+              ;;
+          K)
+              keep_allocation=1
+              ;;
+          V)
+              echo ${VERSION}
+              return 0
+              ;;
+          E)
+              extra_parameters=${OPTARG}
+              ;;
+          @)
+              mail_addr=${OPTARG%%:*}
+              if [[ ${OPTARG} != ${mail_addr} ]]
+                  then
+                  mail_info=${OPTARG#*:}
+              fi
+              ;;
+          a)
+              after_jobs=$(echo ${OPTARG} | tr ',' ':')
+              LOCAL_ARGEXP1="$LOCAL_ARGEXP1""after_jobs=${after_jobs}; "
+              ;;
+          x)
+              exclusive=yes
+              ;;
+          y)
+              array_ids=${OPTARG}
+              PYTHONPATH= /usr/bin/nodeset -e -R $array_ids &>/dev/null || { echo "Invalid range" >&2; exit 1; }
+              ;;
+          *)
+              exit_status=255
+              break
+              ;;
+      esac
+    done
+    shift ${OPTIND}-1 2>/dev/null
+
+    ## on verifie qu'un argument script est fourni ( le caractere - pour une lecture sur stdin)
+    LOCAL_FILEARG=$1
+    if [ "$LOCAL_FILEARG" = "" ] ;then
+        echo "$0 : argument absent" >&2
+        exit 2
+    fi
+    shift
+
+
+    ## on fixe le nom de la requete a partir du nom du script a executer ou par STDIN si lecture sur STDIN
+    ## on le fixe tout d'abord a la valeur de scriptname pour commencer afin de charger la valeur devinee par msub
+    if [[ -z ${request_name} ]]
+        then
+        request_name=${scriptname}
+    fi
+    if [ "$LOCAL_FILEARG" = "-" ]; then
+        LOCAL_SCRIPTFILE=$(mktemp)
+        cat - >> $LOCAL_SCRIPTFILE
+        LOCAL_SCRIPTMODE=1
+
+        ## on fixe un nom de requete si on en a pas (il sera eventuellement surcharge si le script en contient un)
+        if [[ -z ${request_name} ]]
+            then
+            request_name=STDIN
+        fi
+    elif ! grep -q '^#!' "$LOCAL_FILEARG"; then
+        LOCAL_SCRIPTFILE=$(mktemp)
+        echo "#!/bin/sh" > $LOCAL_SCRIPTFILE
+        cat "$LOCAL_FILEARG" >> $LOCAL_SCRIPTFILE
+        LOCAL_SCRIPTMODE=1
+   else
+        LOCAL_SCRIPTMODE=0
+        LOCAL_SCRIPTFILE=$LOCAL_FILEARG
+        ## on fixe un nom de requete si on n'en a pas ( il sera eventuellement surcharge si le script en contient un)
+        if [[ -z ${request_name} ]]
+            then
+            request_name=$(basename $LOCAL_FILEARG)
+        fi
+    fi
+
+
+    ## on associe certaines options du script aux variables
+    ## locales
+    LOCAL_ARGEXP2=`awk "$AWKSCRIPT" < $LOCAL_SCRIPTFILE`
+    eval $LOCAL_ARGEXP2
+
+    ## on associe les options fournies en parametre aux variables
+    ## locales (surcharge des options du script)
+    eval $LOCAL_ARGEXP1
+
+    ## on fixe le nom de la requete
+    if [[ -n ${request_name} ]]
+        then
+        local_submit_args+=( "--job-name=${request_name[@]}" )
+    fi
+
+    ## on fixe le projet associe a la requete
+    if [[ -n ${project_name} ]]
+        then
+            ${LOGGER} "Project name not implemented"
+    fi
+
+    if [[ ${same_request_at_same_time_flag} -eq 0 ]] ; then
+        echo "Singleton not implemented">&2
+        exit 1
+    elif [[ -n ${after_jobs} ]]
+    then
+        echo "Dependency not implemented">&2
+        exit 1
+    fi
+
+    ## on fixe les informations concernant le mail
+    if [[ -n ${mail_addr} ]]
+        then
+        echo "Mail not implemented">&2
+        exit 1
+    fi
+
+    ## on fixe la date de depart de l'execution
+    if [[ -n ${requested_start_time} ]]
+    then
+        echo "Start time not implemented">&2
+        exit 1
+    fi
+
+    ## on fixe la queue d'execution souhaitee
+    if [[ -n ${requested_queue} ]]
+    then
+        ${LOGGER} "Queue not implemented"
+    fi
+
+    ## on fixe le fichier pour le stdout
+    ## si il n'est pas precise, on en construit un par defaut
+    if [[ -n ${output_file} ]]
+        then
+        local_submit_args+=( "--output=${output_file[@]}" )
+    else
+        if [[ -n "${array_ids}" ]]; then
+            local_submit_args+=( "--output=${request_name[@]}_%.{{jobid}}.o" )
+        else
+            local_submit_args+=( "--output=${request_name[@]}.{{jobid}}.o" )
+        fi
+    fi
+
+    ## on fixe le fichier pour le stderr
+    ## si il n'est pas precise, on en construit un par defaut
+    if [[ -n ${error_file} ]]
+        then
+        local_submit_args+=( "--error=${error_file[@]}" )
+    else
+        if [[ -n "${array_ids}" ]]; then
+            local_submit_args+=( "--error=${request_name[@]}_%.{{jobid}}.e" )
+        else
+            local_submit_args+=( "--error=${request_name[@]}.{{jobid}}.e" )
+        fi
+    fi
+
+    ## on fixe le nombre de noeud
+    if [[ -n ${nnode} ]]
+        then
+        local_submit_args+=( "-N" "${nnode}" )
+    fi
+
+    ## on fixe le nombre de processus
+    if [[ -n ${nproc} ]]
+        then
+        local_submit_args+=( "-n" "${nproc}" )
+        else
+        local_submit_args+=( "-n" "1" )
+    fi
+    ## on fixe le nombre de core par processus
+    if [[ -n ${ncoreperproc} ]]
+        then
+        local_submit_args+=( "-c" "${ncoreperproc}" )
+    fi
+
+    ## Slurm ne supporte pas les deux types de memoire, par default l'exclusive(parallele)
+    ## est prefere
+    if [[ -n ${exclusive_memlimit} ]]
+    then
+        ${LOGGER} "Memory limit not implemented"
+    elif [[ -n ${time_sharing_memlimit} ]]
+    then
+        ${LOGGER} "Memory limit not implemented"
+    fi
+
+    ## Slurm ne supporte pas les deux types de temps, par default l'exclusive(parallele)
+    ## est prefere
+    ## On calcule le temps min et le temps max lorsque possible
+    typeset -i mintime
+    typeset -i maxtime
+    if [[ -n ${exclusive_timelimit} ]]
+        then
+        mintime=${exclusive_timelimit%%-*}
+        maxtime=${exclusive_timelimit##*-}
+    elif [[ -n ${time_sharing_timelimit} ]]
+        then
+        mintime=${time_sharing_timelimit%%-*}
+        maxtime=${time_sharing_timelimit##*-}
+    fi
+    if [[ -n ${mintime} ]] && [[ -n ${maxtime} ]]
+    then
+        ${LOGGER} "Timelimit not implemented"
+    fi
+
+    ## gestion des allocations exclusives
+    if [[ ${exclusive} == "yes" ]]
+    then
+        ${LOGGER} "Exclusive not implemented"
+    fi
+
+    ## licenses supportees depuis la 1.3
+    if [[ -n ${requested_licenses} ]]
+    then
+        ${LOGGER} "Licenses not implemented"
+    fi
+
+    ## pas de probleme, on soumet
+    if [ ${exit_status} -eq 0 ]
+    then
+        export BRIDGE_MPRUN_ALLOCATION=yes
+        OLDPYTHONPATH=$PYTHONPATH
+        export PYTHONPATH=
+
+        if [[ -z "$array_ids" ]]; then
+           array_ids="0"
+        fi
+
+        ${LOGGER} xargs -P 100 -d ' ' -n 1 -I % ${local_submit_cmd} '--env=BRIDGE_MSUB_ARRAY_TASK_ID=%' "--env=PYTHONPATH=$OLDPYTHONPATH" --env=-KRB5CCNAME "${local_submit_args[@]}" ${extra_parameters} "$LOCAL_SCRIPTFILE" "$@" "$(printf "%q " "$@")"
+
+        output=$(/usr/bin/nodeset -e -S '\n' -R "$array_ids" | xargs -P 100 -n 1 -I % ${local_submit_cmd} '--env=BRIDGE_MSUB_ARRAY_TASK_ID=%' "--env=PYTHONPATH=$OLDPYTHONPATH" --env=-KRB5CCNAME "${local_submit_args[@]}" ${extra_parameters} "$LOCAL_SCRIPTFILE" "$@" 2>/tmp/errmsub$$)
+
+        exit_status=$?
+        output_err=`cat /tmp/errmsub$$`
+        if [ -f /tmp/errmsub$$ ]
+        then
+            \rm -f /tmp/errmsub$$
+        fi
+    fi
+
+    ## si la soumission a ete faite par lecture du script sur stdin
+    ## on supprime le fichier temporaire cree
+    if [ "${LOCAL_SCRIPTMODE}" = 1 ] ;then
+        \rm -f ${LOCAL_SCRIPTFILE}
+    fi
+
+    ## on affiche en sortie simplement l'ID du job soumis
+    if [[ ${exit_status} -eq 0 && -n ${output} ]]
+    then
+            # les lignes en sortie de slurm sont de la forme :
+            # sbatch: Submitted batch job 345
+            # on affiche que l'ID
+            output=${output##*job }
+            echo "${BRIDGE_MSUB_SUBMISSION_MESSAGE}${output}"
+    fi
+
+    if [[ ${exit_status} -ne 0 && -n ${output_err} ]]
+    then
+        ## si pb d'execution, on affiche l'output
+            echo ${output_err} | grep -E -o 'error:.*'
+    fi
+
+    ## on renvoie le code de retour
+    return ${exit_status}
+}
+
+
+###################################################################################################################
+# Fonction d'obtention d'informations detaillees sur une session batch
+# version 1.0
+#------------------------------------------------------------------------------------------------------------------
+# Usage : bsinfo_cmd [-V] [-H] batchid [batchid ...]
+#
+# Arguments :
+#
+#         -H                      Get information in history data
+#         -V                      Print function version
+#
+#------------------------------------------------------------------------------------------------------------------
+function bsinfo_cmd {
+
+    echo "Not implemented" >&2
+    return 1
+}
+
+
+###################################################################################################################
+# Fonction d'arret et/ou de transmission d'un signal a une session batch
+# version 1.0
+#------------------------------------------------------------------------------------------------------------------
+# Usage : bsdel_cmd [-V] [-k] [-K] [-s signal] [-r allocid] batchid [batchid ...]
+#
+# Arguments :
+#        -V          : print function version
+#
+#        -k          : kill mode
+#        -K          : kill mode with batch system database remove of the batch session
+#
+#        -s signal   : signal to send
+#        -r allocid  : resource allocation to signal/delete inside the batch session
+#        batchid     : ID of the targeted batch session
+#
+#------------------------------------------------------------------------------------------------------------------
+function bsdel_cmd {
+    echo "Not implemented" >&2
+    return 1
+}

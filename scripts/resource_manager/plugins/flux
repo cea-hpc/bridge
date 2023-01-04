@@ -1,0 +1,178 @@
+#*****************************************************************************\
+#  scripts/resource_manager/plugins/flux -
+#******************************************************************************
+#  Copyright  CEA/DAM/DIF (2022)
+#
+#  This file is part of Bridge, an abstraction layer to ease batch system and
+#  resource manager usage in heterogeneous HPC environments.
+#
+#  Bridge is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  Bridge is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with Bridge.  If not, see <http://www.gnu.org/licenses/>
+#*****************************************************************************/
+
+function spmd_allocate_cmd {
+    typeset VERSION="flux-1.0"
+    typeset exit_status=0
+    while getopts Vc:n:N:p:A:M:T:E:T:er: option
+      do
+      case ${option} in
+          V)
+              echo ${VERSION}
+              return 0
+              ;;
+      esac
+    done
+
+    ${LOGGER} "allocation is not yet supported with flux"
+    return 1
+}
+
+
+
+function spmd_run_cmd {
+    ## on se place en mode debug si souhaite
+    typeset -i BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+        then
+        set -x
+    fi
+
+    ## on incremente le niveau de log
+    typeset -i BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+
+    ## on ajoute une entete a la log
+    typeset LOGGER="${LOGGER} run: "
+
+    typeset VERSION="flux-1.0"
+    typeset exit_status=0
+
+    spmd_run_ncore=
+    spmd_run_nproc=
+    spmd_run_nnode=
+
+    spmd_run_cmd=${spmd_run_cmd:-flux mini run}
+    spmd_run_options=${spmd_run_options:- -o cpu-affinity=per-task}
+    spmd_run_args=
+
+    while getopts Vc:n:N:p:A:M:T:E: option
+      do
+      case ${option} in
+          V)
+              echo ${VERSION}
+              return 0
+              ;;
+
+          c)
+              spmd_run_ncore=${OPTARG}
+              ;;
+
+          n)
+              spmd_run_nproc=${OPTARG}
+              ;;
+
+          N)
+              spmd_run_nnode=${OPTARG}
+              ;;
+
+          p)
+              echo "warning - partition ignored by flux plugin"
+              ;;
+
+          A)
+              echo "warning project ignored flux plugin"
+              ;;
+
+          E)
+              echo "extra parameters ignored by flux plugin"
+              ;;
+
+          M)
+              spmd_run_maxmem=${OPTARG}
+              ;;
+
+          T)
+              spmd_run_maxtime=${OPTARG}
+              ;;
+
+          *)
+              exit_status=255
+              break
+              ;;
+      esac
+    done
+    shift ${OPTIND}-1 2>/dev/null
+    spmd_run_args=( "$@" )
+
+    # on log un message si on est au sein d'une allocation
+    if [[ ${BRIDGE_MPRUN_ALLOCATION} == yes ]]
+        then
+        ${LOGGER} "wrapping allocation detected"
+    fi
+
+    ## si le code de retour de la stack des addons est 0
+    ## alors le job n'a pas ete lance par un des addons
+    ## donc on le lance, sinon, un des addons s'en est charge
+    ## on passe au post run
+    if [ $? -eq 0 ]
+        then
+        if [[ -n ${spmd_run_ncore} ]]
+            then
+            spmd_run_options="${spmd_run_options} -c ${spmd_run_ncore}"
+        fi
+        if [[ -n ${spmd_run_nproc} ]]
+            then
+            spmd_run_options="${spmd_run_options} -n ${spmd_run_nproc}"
+        fi
+        if [[ -n ${spmd_run_nnode} ]]
+            then
+            spmd_run_options="${spmd_run_options} -N ${spmd_run_nnode}"
+        fi
+        if [[ -n ${spmd_run_maxtime} ]]
+            then
+            spmd_run_options="${spmd_run_options} -t ${spmd_run_maxtime}"
+        fi
+
+        OLDPYTHONPATH=$PYTHONPATH
+        export PYTHONPATH=
+
+        ${LOGGER} $(echo "${spmd_run_cmd} ${spmd_run_options} ${spmd_run_extra_parameters[@]} ${spmd_run_separator} ${spmd_run_args[@]}")
+        ${spmd_run_cmd} ${spmd_run_options} --env=PYTHONPATH=$OLDPYTHONPATH --env=-KRB5CCNAME "${spmd_run_extra_parameters[@]}" ${spmd_run_separator} "${spmd_run_args[@]}"
+
+    fi
+    exit_status=$?
+
+    ${LOGGER} "exiting with status ${exit_status}"
+    return ${exit_status}
+}
+
+function mpinfo_print_status {
+    echo "mpinfo not yet supported with flux"
+    return 1
+}
+
+
+function mpinfo_print_limits {
+    echo "mpinfo not yet supported with flux"
+    return 1
+}
+
+
+function mpinfo_cmd {
+    echo "mpinfo not yet supported with flux"
+    return 1
+}
+
+function mpstat_cmd {
+    echo "mpstat not yet supported with flux"
+    return 1
+}

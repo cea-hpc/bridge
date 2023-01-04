@@ -1,0 +1,182 @@
+#*****************************************************************************\
+#  scripts/addons/flux.ad -
+#******************************************************************************
+#  Copyright  CEA/DAM/DIF (2022)
+#
+#  This file is part of Bridge, an abstraction layer to ease batch system and
+#  resource manager usage in heterogeneous HPC environments.
+#
+#  Bridge is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  Bridge is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with Bridge.  If not, see <http://www.gnu.org/licenses/>
+#*****************************************************************************/
+
+#################################################################################
+#
+# Addon for Flux support in Bridge for both msub and mprun
+#
+#################################################################################
+
+#################################################################################
+# MSUB Flux support
+#--------------------------------------------------------------------------------
+function bridge_addon_msub_setopt {
+    typeset MYGETOPTOPTION="F"
+
+    echo "${BRIDGE_MSUB_GETOPT_OPTIONS}" | grep -q ${MYGETOPTOPTION}
+
+    if [ $? -ne 0 ]
+	then
+	BRIDGE_MSUB_GETOPT_OPTIONS="${BRIDGE_MSUB_GETOPT_OPTIONS}${MYGETOPTOPTION}"
+    fi
+
+    return 0
+}
+
+function bridge_addon_msub_getopt {
+
+    ## on se place en mode debug si souhaite
+    typeset -i BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+	then
+	set -x
+    fi
+
+    ## on incremente le niveau de log
+    typeset -i BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+
+    ## on ajoute une entete a la log
+    typeset LOGGER="${LOGGER} Flux Addon :"
+    typeset ERROR="${ERROR} Flux Addon :"
+
+    ## on fixe le message daide a afficher si demande
+    typeset USAGE="\
+\t*) Flux
+\t\t -F: run the batch script in a Flux scheduling environment (EXPERIMENTAL)\n"
+
+    ## on fixe le status de sortie par defaut
+    typeset exit_status=0
+
+    ## on parse les arguments
+    while getopts ${BRIDGE_MSUB_GETOPT_OPTIONS} option
+      do
+      case ${option} in
+
+	  h)
+	      echo -e "${USAGE}" >&2
+	      return 0
+	      ;;
+
+	  F)
+	      BRIDGE_MSUB_ADDON_FLUX_ENABLED=1
+	      ${LOGGER} "Flux selected by command line parameter"
+	      ;;
+
+	  *)
+	      ;;
+      esac
+    done
+
+    export BRIDGE_MSUB_ADDON_FLUX_ENABLED
+    return ${exit_status:-1}
+}
+
+function bridge_addon_msub_alteropt {
+
+    ## on se place en mode debug si souhaite
+    typeset -i BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+	then
+	set -x
+    fi
+
+    ## on incremente le niveau de log
+    typeset -i BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+
+    ## on ajoute une entete a la log
+    typeset LOGGER="${LOGGER} Flux Addon :"
+    typeset ERROR="${ERROR} Flux Addon :"
+
+    ## si on a deja activer Flux on ne cherche pas dans le fichier
+    if [[ ${BRIDGE_MSUB_ADDON_FLUX_ENABLED} -ne 1 ]]
+    then
+	## on parse le script msub
+	FLUX_AWKSCRIPT='
+/^#MSUB/ {
+        opt=0
+        for(i=2; i<=NF; i++)
+                if ($i=="-F") {
+                        printf("BRIDGE_MSUB_ADDON_FLUX_ENABLED=1")
+                }
+ }
+'
+	FLUX_ARGEXP=`${AWK:-awk} "$FLUX_AWKSCRIPT" < ${BRIDGE_MSUB_SCRIPTFILE}`
+	if [[ -n ${FLUX_ARGEXP} ]]
+	then
+	    ${LOGGER} "Flux selected by '#MSUB -F' pragma in input script"
+	fi
+	eval $FLUX_ARGEXP
+    fi
+
+    export BRIDGE_MSUB_ADDON_FLUX_ENABLED
+    return 0
+}
+
+function bridge_addon_msub_alterscript {
+    return 0
+}
+#################################################################################
+
+
+#################################################################################
+# MPRUN FLUX support
+#--------------------------------------------------------------------------------
+function bridge_addon_mprun_setopt {
+
+    return 0
+}
+
+function bridge_addon_mprun_getopt {
+
+    return 0
+}
+
+function bridge_addon_mprun_alteropt {
+
+    return 0
+
+}
+
+function bridge_addon_mprun_spmd_pre_allocate {
+
+    return 0
+
+}
+
+function bridge_addon_mprun_spmd_post_allocate {
+
+    return 0
+
+}
+
+function bridge_addon_mprun_spmd_pre_run {
+
+    return 0
+
+}
+
+function bridge_addon_mprun_spmd_post_run {
+
+    return 0
+
+}
+#################################################################################
