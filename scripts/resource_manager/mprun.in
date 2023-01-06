@@ -367,49 +367,53 @@ bridge_addons_call_function bridge_addon_mprun_alteropt
 ###################################################################################################################
 # On fixe eventuellement des valeurs par defaut si c'est le premier passage
 #------------------------------------------------------------------------------------------------------------------
+    ## si aucun parametre ne mentionne le nombre de core
+    ## sur la ligne de commande, on regarde si une variable
+    ## d'environnement ne nous renseigne pas de ca (heritee de msub)
+    ## dans le cas contraire on fixe une valeur par défaut.
+    if [[ -z ${bridge_mprun_ncore} ]]
+        then
+        if [[ -n ${BRIDGE_MPRUN_NCORE} ]]
+            then
+            bridge_mprun_ncore=${BRIDGE_MPRUN_NCORE}
+        else
+            export BRIDGE_MPRUN_NCORE
+            bridge_mprun_ncore=${BRIDGE_MPRUN_DEFAULT_NCORE}
+        fi
+    fi
+
+    ## si aucun parametre ne mentionne le nombre de proc
+    ## sur la ligne de commande, on regarde si une variable
+    ## d'environnement ne nous renseigne pas de ca (heritee de msub)
+    ## dans le cas contraire on fixe une valeur par défaut.
+    if [[ -z ${bridge_mprun_nproc} ]]
+        then
+        if [[ -n ${BRIDGE_MPRUN_NPROC} ]]
+            then
+            bridge_mprun_nproc=${BRIDGE_MPRUN_NPROC}
+        else
+            export BRIDGE_MPRUN_NPROC
+            bridge_mprun_nproc=${BRIDGE_MPRUN_DEFAULT_NPROC}
+        fi
+    fi
+
+    ## si aucun parametre ne mentionne le nombre de node
+    ## sur la ligne de commande, on regarde si une variable
+    ## d'environnement ne nous renseigne pas de ca (heritee de msub)
+    ## dans le cas contraire on fixe une valeur par défaut.
+    if [[ -z ${bridge_mprun_nnode} ]]
+        then
+        if [[ -n ${BRIDGE_MPRUN_NNODE} ]]
+            then
+            bridge_mprun_nnode=${BRIDGE_MPRUN_NNODE}
+        else
+            export BRIDGE_MPRUN_NNODE
+            bridge_mprun_nnode=${BRIDGE_MPRUN_DEFAULT_NNODE}
+        fi
+    fi
+
 if [[ ${BRIDGE_MPRUN_LOOP} -eq 1 ]]
     then
-
-    ## si aucun parametre ne mentione le nombre de core/proc/node
-    ## sur la ligne de commande, on regarde si des variables
-    ## d'environnement ne nous renseigne pas de ca (heritee de msub)
-    if [[ -z ${bridge_mprun_ncore} ]] &&
-	[[ -z ${bridge_mprun_nproc} ]] &&
-	[[ -z ${bridge_mprun_nnode} ]]
-	then
-	if [[ -n ${BRIDGE_MPRUN_NCORE} ]]
-	    then
-	    bridge_mprun_ncore=${BRIDGE_MPRUN_NCORE}
-	else
-	    export BRIDGE_MPRUN_NCORE
-	fi
-	if [[ -n ${BRIDGE_MPRUN_NPROC} ]]
-	    then
-	    bridge_mprun_nproc=${BRIDGE_MPRUN_NPROC}
-	else
-	    export BRIDGE_MPRUN_NPROC
-	fi
-	if [[ -n ${BRIDGE_MPRUN_NNODE} ]]
-	    then
-	    bridge_mprun_nnode=${BRIDGE_MPRUN_NNODE}
-	else
-	    export BRIDGE_MPRUN_NNODE
-	fi
-    fi
-
-    ## on fixe des valeurs par defaut si ncore/nproc/nnode pas defini
-    if [[ -z ${bridge_mprun_ncore} ]]
-	then
-	bridge_mprun_ncore=${BRIDGE_MPRUN_DEFAULT_NCORE}
-    fi
-    if [[ -z ${bridge_mprun_nproc} ]]
-	then
-	bridge_mprun_nproc=${BRIDGE_MPRUN_DEFAULT_NPROC}
-    fi
-    if [[ -z ${bridge_mprun_nnode} ]]
-	then
-	bridge_mprun_nnode=${BRIDGE_MPRUN_DEFAULT_NNODE}
-    fi
 
     ## on fixe en fonction de l'environnment
     if [[ -z ${bridge_mprun_project} ]]
