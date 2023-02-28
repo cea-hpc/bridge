@@ -228,18 +228,6 @@ function bridge_addon_mprun_alteropt {
     if  [[ -n ${bridge_mprun_nproc} ]] && \
 	[[ -z ${bridge_mprun_nnode} ]] && [[ -n ${low_t} ]]
     then
-        if [[ -z ${bridge_mprun_ncore} ]]
-	then
-	    if [[ -n ${BRIDGE_MPRUN_NCORE} ]]
-	    then
-		bridge_mprun_ncore=${BRIDGE_MPRUN_NCORE}
-	    elif [[ -n ${BRIDGE_MSUB_NCORE} ]]
-	    then
-		bridge_mprun_ncore=${BRIDGE_MSUB_NCORE}
-	    else
-		bridge_mprun_ncore=1
-	    fi
-	fi
 	typeset total_cores=$(( ${bridge_mprun_nproc} * ${bridge_mprun_ncore:-1} ))
 	if [[ ${total_cores} -ge ${low_t} ]]
 	then
