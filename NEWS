@@ -1,3 +1,11 @@
+* Changes in bridge-1.5.9
+=========================
+
+    -- Always check core, proc and node parameters coming from command line and sets bridge variable accordingly
+    -- Remove unneeded ncore computation in autopacking
+    -- Integrates flux scheduler smoothly
+
+
 * Changes in bridge-1.5.8
 =========================
 
@@ -9,7 +17,6 @@
     -- Removes @partition in qos field
     -- Remove [params] in [script [params]] from ccc_msub command help because it doesn't work
     -- fix ccc_mpinfo cpuspernode
-
 
 
 * Changes in bridge-1.5.7

@@ -62,7 +62,7 @@
 
 Summary: Bridge CCC In-House Batch Environment
 Name: bridge
-Version: 1.5.8
+Version: 1.5.9
 Release: 1.%{?target}.ocean1%{?dist}
 License: GPL License
 Group: System Environment/Base
