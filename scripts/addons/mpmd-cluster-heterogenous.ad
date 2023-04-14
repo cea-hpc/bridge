@@ -1,0 +1,372 @@
+#!/bin/ksh
+#*****************************************************************************\
+#  scripts/addons/mpmd-cluster.ad -
+#******************************************************************************
+#  Copyright  CEA/DAM/DIF (2012)
+#
+#  This file is part of Bridge, an abstraction layer to ease batch system and
+#  resource manager usage in heterogeneous HPC environments.
+#
+#  Bridge is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  Bridge is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with Bridge.  If not, see <http://www.gnu.org/licenses/>
+#*****************************************************************************/
+
+#
+#/********************************************************************************************************************\
+#
+# Cet addon msub permet de se placer en mode MPMD en environnement cluster
+#
+#\********************************************************************************************************************/
+
+function bridge_addon_mprun_setopt {
+
+    typeset MYGETOPTOPTION="f:"
+
+    echo "${BRIDGE_MPRUN_GETOPT_OPTIONS}" | grep -q ${MYGETOPTOPTION}
+
+    if [ $? -ne 0 ]
+    	then
+    	BRIDGE_MPRUN_GETOPT_OPTIONS="${BRIDGE_MPRUN_GETOPT_OPTIONS}${MYGETOPTOPTION}"
+    fi
+
+    return 0
+
+}
+
+function bridge_addon_mprun_getopt {
+
+    ## on se place en mode debug si souhaite
+    typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+	then
+	set -x
+    fi
+
+    ## on incremente le niveau de log
+    typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+
+    ## on ajoute une entete a la log
+    typeset LOGGER="${LOGGER} MPMD Addon :"
+
+    ## par defaut, on desactive le mode MPMD
+    if [[ -z "${BRIDGE_MPRUN_ADDON_MPMD_SCRIPT}" ]]
+	then
+	BRIDGE_MPRUN_ADDON_MPMD_SCRIPT=
+    fi
+
+    ## on fixe le message d'aide a afficher si demande
+    typeset USAGE="\
+\t*) MPMD (Multiple Programs Multiple Data)
+\t\t -f descfile : activate MPMD mode using tasks description file 'descfile'\n"
+
+    ## on fixe le status de sortie par defaut
+    typeset exit_status=0
+
+    ## on parse les arguments
+    while getopts ${BRIDGE_MPRUN_GETOPT_OPTIONS} option
+      do
+      case ${option} in
+
+	  h)
+	      echo -e "${USAGE}" >&2
+	      return 0
+	      ;;
+
+	  f)
+	      BRIDGE_MPRUN_ADDON_MPMD_SCRIPT="${OPTARG}"
+	      BRIDGE_MPRUN_ADDON_MPMD_STAGE=1
+	      ;;
+
+	  *)
+	      ;;
+      esac
+    done
+    export BRIDGE_MPRUN_ADDON_MPMD_SCRIPT
+    export BRIDGE_MPRUN_ADDON_MPMD_STAGE
+
+    return ${exit_status}
+}
+
+
+function bridge_addon_mprun_alteropt {
+    ## on se place en mode debug si souhaite
+    typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+    	then
+    	set -x
+    fi
+
+    ## on incremente le niveau de log
+    typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+
+    ## on ajoute une entete a la log
+    typeset LOGGER="${LOGGER} MPMD Addon :"
+
+    if [[ ${BRIDGE_MPRUN_ADDON_MPMD_STAGE} -eq 1 ]]
+    then
+    	if [[ ! -r "${BRIDGE_MPRUN_ADDON_MPMD_SCRIPT}" ]]
+    	then
+    	    ${ERROR} "MPMD Addon : invalid task file ${BRIDGE_MPRUN_ADDON_MPMD_SCRIPT}"
+    	else
+    	    ${LOGGER} "using task file ${BRIDGE_MPRUN_ADDON_MPMD_SCRIPT}"
+
+            if [[ -n ${bridge_mprun_partition} ]]; then
+    		typeset selected_partition=${bridge_mprun_partition}
+    	    elif [[ -n ${BRIDGE_MPRUN_PARTITION} ]]; then
+    		typeset selected_partition=${BRIDGE_MPRUN_PARTITION}
+    	    elif [[ -n ${BRIDGE_MSUB_QUEUE} ]]; then
+    		typeset selected_partition=${BRIDGE_MSUB_QUEUE}
+    	    else
+    		typeset selected_partition=${BRIDGE_MPRUN_DEFAULT_PARTITION}
+    	    fi
+
+    	    if [[ -z ${selected_partition} ]]; then
+    		${LOGGER} "MPMD Addon : please select a partition explicitely"
+    		return 1
+    	    fi
+
+    	    node_cpus=$(sinfo -p $selected_partition  -heo %c)
+
+    	    if [[ $? -ne 0 || -z "${node_cpus}" ]]; then
+    		${LOGGER} "MPMD Addon : unable to determine partition cpu count"
+    		return 1
+    	    fi
+
+	    if [[ -n "${bridge_mprun_ncore}" ]]; then
+		force_ncore=${bridge_mprun_ncore};
+	    elif [[ -n "${BRIDGE_MPRUN_NCORE}" ]]; then
+		force_ncore=${BRIDGE_MPRUN_NCORE};
+	    elif [[ -n "${BRIDGE_MSUB_NCORE}" ]]; then
+		force_ncore=${BRIDGE_MSUB_NCORE};
+            fi
+
+    	    temporary_file="$(bridge_tmpfile "${BRIDGE_MPRUN_ADDON_MPMD_SCRIPT}")"
+
+    	    if [[ -z "${temporary_file}" ]]
+    	    then
+    		${ERROR} "MPMD Addon : unable to build temporary file ${temporary_file}"
+    	    else
+    		if [[ $(basename "${temporary_file}") == "${temporary_file}" ]]
+    		then
+    		    temporary_file="${PWD}"/"${temporary_file}"
+    		fi
+    		chmod +x "${temporary_file}"
+    		#### on cree le fichier spmd temporaire qui permettra de lancer
+    		#### l'appli mpmd
+
+    		typeset rawcmd
+    		total_nodes=0
+    		total_tasks=0
+
+    		echo "#!/bin/ksh" > ${temporary_file}
+    		echo ". \${BRIDGE_MPRUN_PROFILE} 2>/dev/null" >> ${temporary_file}
+    		while read -r rawcmd; do
+    		    eval cmd=\( "$rawcmd" \)
+    		    if [[ ${cmd[0]:0:1} == 'x' ]]; then
+    			if [[ ${#cmd_repcount_list[@]} -gt 0 ]]; then
+    			    mpmd_build_script
+    			fi
+    		        motif_repcount="${cmd[0]#x}"
+    			unset cmd_cpus_list
+    			unset cmd_repcount_list
+    			unset allcmd_fields
+    			unset cmd_index_list
+    		    else
+    		    	typeset first_field=$(expr match "${cmd[0]}" '\(^[0-9]\+-\?[0-9]*$\)')
+    		    	if [[ -z "$first_field" ]]; then
+    		    	    ${ERROR} "MPMD Addon : unable to parse descfile declaration: $rawcmd"
+    		    	    return 1
+    		    	fi
+    		    	typeset cmd_repcount=${first_field%%-*}
+    		    	typeset cmd_cpus=${first_field#[0-9]*-}
+
+    		    	if [[ -z "$cmd_cpus" || "$cmd_cpus" = "$first_field" ]]; then
+    		    	    cmd_cpus=$force_ncore
+			    if [[ -z "$cmd_cpus" ]]; then
+				cmd_cpus=1
+			    fi
+    		    	elif [[ -n "$force_ncore" && "$force_ncore" -ne "$cmd_cpus" ]]; then
+			    ${LOGGER} "cpu_per_cores was set globally to $force_ncore: overriding with $cmd_cpus from mpmd file"
+			fi
+    		    	cmd_cpus_list+=("$cmd_cpus")
+    		    	cmd_repcount_list+=("$cmd_repcount")
+    		    	cmd_index_list+=("${#allcmd_fields[@]}")
+    		    	allcmd_fields=( "${allcmd_fields[@]}" "${cmd[@]:1}" )
+    		    fi
+    		done < "${BRIDGE_MPRUN_ADDON_MPMD_SCRIPT}"
+
+    		mpmd_build_script
+    		export BRIDGE_MPRUN_ADDON_MPMD_STAGE=2
+    		export BRIDGE_MPRUN_ADDON_TEMPORARY_FILE=${temporary_file}
+
+
+                ## on met a jour le nombre de tache
+                bridge_mprun_nproc=${total_tasks}
+                bridge_mprun_nnode=${total_nodes}
+                unset bridge_mprun_ncore
+
+    		exclusive=yes
+    	        if [[ ${BRIDGE_MPRUN_ALLOCATION} != yes ]]
+    	        then
+    		    bridge_mprun_force_allocation=yes
+    		fi
+
+    		#Remove front space
+    		BRIDGE_MPRUN_ADDON_MPMD_DISTIRBUTION="${BRIDGE_MPRUN_ADDON_MPMD_DISTRIBUTION:1}"
+    		export BRIDGE_MPRUN_ADDON_MPMD_DISTRIBUTION
+
+    		${LOGGER} "task count is now ${bridge_mprun_nproc}"
+    		${LOGGER} "node count is now ${bridge_mprun_nnode}"
+
+    		## et on demande d'executer notre script temporaire
+    		bridge_mprun_args=${temporary_file}
+    		${LOGGER} "progname is now previously generated file ${temporary_file}"
+
+    	    fi
+    	fi
+    fi
+
+    return 0
+}
+
+function mpmd_build_script {
+    cmd_index_list+=("${#allcmd_fields[@]}")
+
+    for i in $(seq 1 $motif_repcount); do
+	start_cpu=0
+	node_tasks=0
+	for j in $(seq 0 $(( ${#cmd_repcount_list[@]} - 1))); do
+	    cmd_repcount=${cmd_repcount_list[$j]}
+	    cmd_cpus=${cmd_cpus_list[$j]}
+	    start_index=${cmd_index_list[$j]}
+	    end_index=${cmd_index_list[$(( j + 1 ))]}
+	    len_index=$(( end_index - start_index ))
+	    thiscmd=( "${allcmd_fields[@]:${start_index}:${len_index}}" )
+	    for k in  $(seq 0 $(( ${cmd_repcount} - 1 ))); do
+		if [[ $(( start_cpu + cmd_cpus ))  -gt node_cpus ]]; then
+		    BRIDGE_MPRUN_ADDON_MPMD_DISTRIBUTION="${BRIDGE_MPRUN_ADDON_MPMD_DISTRIBUTION} ${node_tasks}"
+		    node_tasks=0
+		    (( total_nodes+=1 ))
+		    start_cpu=0
+		fi
+		(( total_tasks+=1 ))
+		(( node_tasks+=1 ))
+		(( cpus_on_node = start_cpu + cmd_cpus ))
+		cat >> "${temporary_file}" <<EOF
+if [[ \${BRIDGE_MPRUN_RANKID} -lt ${total_tasks} ]]
+then
+#BRIDGE-MPMDv2-TASK-MARKER
+BRIDGE_MPRUN_NCORE="${cmd_cpus}" BRIDGE_CPUSPIN_START_CPU="${start_cpu}" BRIDGE_CPUSPIN_CPUS_ON_NODE="${cpus_on_node}" "${BRIDGE_CPUS_BINDING_WRAPPER}" $(printf "%q " "${thiscmd[@]}")
+exit \$?
+fi
+EOF
+		(( start_cpu += ${cmd_cpus} ))
+	    done
+	done
+	(( total_nodes+=1 ))
+	BRIDGE_MPRUN_ADDON_MPMD_DISTRIBUTION="${BRIDGE_MPRUN_ADDON_MPMD_DISTRIBUTION} ${node_tasks}"
+    done
+
+    return 0
+}
+
+function bridge_addon_mprun_spmd_pre_allocate {
+    return 0
+}
+
+function bridge_addon_mprun_spmd_post_allocate {
+    return 0
+}
+
+function bridge_addon_mprun_spmd_pre_run {
+    ## on se place en mode debug si souhaite
+    typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+    	then
+    	set -x
+    fi
+
+    ## on incremente le niveau de log
+    typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+
+    ## on ajoute une entete a la log
+    typeset LOGGER="${LOGGER} MPMD Addon :"
+
+    if [[ "${BRIDGE_MPRUN_ADDON_MPMD_STAGE}" -ne 2 ]]; then
+    	return 0
+    fi
+
+
+    typeset temporary_file=
+    temporary_file="$(bridge_tmpfile "${BRIDGE_MPRUN_ADDON_MPMD_SCRIPT}_hostfile")"
+
+    if [[ -z "${temporary_file}" ]]
+    then
+    	${ERROR} "MPMD Addon : unable to build temporary file ${temporary_file}"
+    	return 1
+    fi
+
+    typeset node_id=0
+    typeset task_count=0
+
+    for task_count in $BRIDGE_MPRUN_ADDON_MPMD_DISTRIBUTION; do
+    	node_name=$(nodeset -I "$node_id" -f "$SLURM_NODELIST")
+    	if [[ -z "$node_name" ]]; then
+    	    ${ERROR} "MPMD Addon : could not find a hostname for node $node_id"
+    	    return 1
+    	fi
+
+    	for j in $( seq 1 "$task_count" ); do
+    	    echo "$node_name" >> ${temporary_file}
+    	done
+    	(( node_id += 1))
+    done
+
+    export SLURM_CPU_BIND=none
+    export SLURM_DISTRIBUTION=arbitrary
+    export SLURM_HOSTFILE="${temporary_file}"
+    export BRIDGE_MPRUN_ADDON_MPMD_TEMPORARY_HOSTFILE="${temporary_file}"
+    return 0
+}
+
+function bridge_addon_mprun_spmd_post_run {
+    typeset LOGGER="${LOGGER} MPMD Addon :"
+
+    ## on se place en mode debug si souhaite
+    typeset BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+      then
+      set -x
+    fi
+
+    ## on incremente le niveau de log
+    typeset BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+
+    if [[ ${BRIDGE_MPRUN_ADDON_MPMD_STAGE} -eq 2 ]] && [[ -f "${BRIDGE_MPRUN_ADDON_TEMPORARY_FILE}" ]]
+    then
+      ${LOGGER} "Removing temporary MPMD script ${BRIDGE_MPRUN_ADDON_TEMPORARY_FILE}"
+      rm -f "${BRIDGE_MPRUN_ADDON_TEMPORARY_FILE}"
+    fi
+
+    if [[ ${BRIDGE_MPRUN_ADDON_MPMD_STAGE} -eq 2 ]] && [[ -f "${BRIDGE_MPRUN_ADDON_MPMD_TEMPORARY_HOSTFILE}" ]]
+    then
+      ${LOGGER} "Removing temporary MPMD host file ${BRIDGE_MPRUN_ADDON_MPMD_TEMPORARY_HOSTFILE}"
+      rm -f "${BRIDGE_MPRUN_ADDON_MPMD_TEMPORARY_HOSTFILE}"
+    fi
+
+    return 0
+}
+
+function bridge_addon_msub_alterscript {
+    return 0
+}
