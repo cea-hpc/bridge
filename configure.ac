@@ -47,6 +47,22 @@ AX_TORQUE
 dnl look for slurm RM system support
 AX_SLURM
 
+dnl libraries requirements
+PKG_PROG_PKG_CONFIG([0.23])
+
+dnl checking for rpc/types.h headers and if
+dnl not found it checks for libtirpc
+AC_CHECK_HEADERS([rpc/types.h], [],
+ [
+  LIBTIRPC_VERSION=1.1.4
+  AC_SUBST(LIBTIRPC_VERSION)
+  PKG_CHECK_MODULES(LIBTIRPC, [libtirpc >= $LIBTIRPC_VERSION])
+  AC_SUBST(LIBTIRPC_CFLAGS)
+  AC_SUBST(LIBTIRPC_LIBS)
+ ]
+)
+
+
 dnl build these conf files
 AC_CONFIG_FILES([Makefile
 		lib/Makefile
@@ -95,3 +111,19 @@ AC_CONFIG_FILES([Makefile
 
 dnl output all declared files
 AC_OUTPUT
+
+AC_MSG_NOTICE([
+ *** Flags that will be used to compile ***
+ CFLAGS              : ${CFLAGS}
+ LDFLAGS             : ${LDFLAGS}
+ LIBTIRPC CFLAGS     : ${LIBTIRPC_CFLAGS}
+ LIBTIRPC LIBS       : ${LIBTIRPC_LIBS}
+ *** Dumping configuration ***
+     - Host          : $host
+     - Target        : $target
+     - Build For OS  : $build_os
+     - Compiler      : ${CC}
+     - Prefix        : $prefix
+     - Exec prefix   : ${exec_prefix}
+You can now run 'make' to compile bridge.
+])

@@ -155,11 +155,6 @@ Plugin that provides Slurm access accross the CCC Batch systems Bridge
 
 %build
 autoreconf -fvi
-%if 0%{?fedora} >= 28 || 0%{?rhel} >= 8
-%configure CFLAGS="${CFLAGS} $(pkg-config --cflags-only-I libtirpc)" \
-           LDFLAGS="${LDFLAGS} $(pkg-config --libs libtirpc)" \
-          %{?with_slurm:--with-slurm}
-%else
 %configure %{?with_slurm:--with-slurm}
 %endif
 
@@ -278,6 +273,9 @@ Additional package providing %{compat_target}_* compatibility links to the
 %endif
 
 %changelog
+* Wed Apr 19 2023 Olivier Delhomme <olivier.delhomme@cea.fr> - 1.5.9-1.ocean1
+- Removing libtirpc from spec file, now detection is done in configure script
+
 * Wed Feb 09 2022 Olivier Delhomme <olivier.delhomme@cea.fr> - 1.5.7-1.ocean1
 - Integrating patches and making 1.5.7 version
 

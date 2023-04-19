@@ -237,6 +237,9 @@ LEXLIB = @LEXLIB@
 LEX_OUTPUT_ROOT = @LEX_OUTPUT_ROOT@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
+LIBTIRPC_CFLAGS = @LIBTIRPC_CFLAGS@
+LIBTIRPC_LIBS = @LIBTIRPC_LIBS@
+LIBTIRPC_VERSION = @LIBTIRPC_VERSION@
 LIBTOOL = @LIBTOOL@
 LIPO = @LIPO@
 LN_S = @LN_S@
@@ -263,6 +266,9 @@ PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_URL = @PACKAGE_URL@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
+PKG_CONFIG = @PKG_CONFIG@
+PKG_CONFIG_LIBDIR = @PKG_CONFIG_LIBDIR@
+PKG_CONFIG_PATH = @PKG_CONFIG_PATH@
 RANLIB = @RANLIB@
 SED = @SED@
 SET_MAKE = @SET_MAKE@
@@ -327,19 +333,19 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-AM_CPPFLAGS = -I$(top_srcdir)
+AM_CPPFLAGS = -I$(top_srcdir) $(LIBTIRPC_CFLAGS)
 noinst_HEADERS = xerror.h xlogger.h \
 				xstream.h xqueue.h \
 				xmessage.h xfreelist.h \
 				xlibrary.h
 
 noinst_LTLIBRARIES = libxternal.la
-libxternal_la_CPPFLAGS = -D_THREAD_SAFE -pthread
+libxternal_la_CPPFLAGS = -D_THREAD_SAFE -pthread $(LIBTIRPC_CFLAGS)
 libxternal_la_SOURCES = xlogger.c xstream.c \
 				xmessage.c xqueue.c \
 				xfreelist.c xlibrary.c  
 
-libxternal_la_LDFLAGS = $(LIB_LDFLAGS) -pthread
+libxternal_la_LDFLAGS = $(LIB_LDFLAGS) -pthread $(LIBTIRPC_LIBS)
 all: all-am
 
 .SUFFIXES:

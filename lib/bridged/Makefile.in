@@ -134,9 +134,10 @@ am__uninstall_files_from_dir = { \
   }
 am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(includedir)"
 LTLIBRARIES = $(lib_LTLIBRARIES)
+am__DEPENDENCIES_1 =
 libbridgedapi_la_DEPENDENCIES =  \
 	$(top_srcdir)/lib/confparse/libconfig_parsing.la \
-	$(top_srcdir)/lib/xternal/libxternal.la
+	$(top_srcdir)/lib/xternal/libxternal.la $(am__DEPENDENCIES_1)
 am_libbridgedapi_la_OBJECTS = libbridgedapi_la-bridge_engine.lo \
 	libbridgedapi_la-bridge_request.lo \
 	libbridgedapi_la-bridge_rus.lo libbridgedapi_la-bridgedapi.lo
@@ -265,6 +266,9 @@ LEXLIB = @LEXLIB@
 LEX_OUTPUT_ROOT = @LEX_OUTPUT_ROOT@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
+LIBTIRPC_CFLAGS = @LIBTIRPC_CFLAGS@
+LIBTIRPC_LIBS = @LIBTIRPC_LIBS@
+LIBTIRPC_VERSION = @LIBTIRPC_VERSION@
 LIBTOOL = @LIBTOOL@
 LIPO = @LIPO@
 LN_S = @LN_S@
@@ -291,6 +295,9 @@ PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_URL = @PACKAGE_URL@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
+PKG_CONFIG = @PKG_CONFIG@
+PKG_CONFIG_LIBDIR = @PKG_CONFIG_LIBDIR@
+PKG_CONFIG_PATH = @PKG_CONFIG_PATH@
 RANLIB = @RANLIB@
 SED = @SED@
 SET_MAKE = @SET_MAKE@
@@ -366,10 +373,10 @@ libbridgedapi_la_SOURCES = bridge_engine.c \
 					bridge_rus.c \
 					bridgedapi.c
 
-libbridgedapi_la_CPPFLAGS = -D_THREAD_SAFE -I$(top_srcdir)/lib -pthread -DBRIDGEDAPI_CONF=\"$(sysconfdir)/bridgedapi.conf\"
+libbridgedapi_la_CPPFLAGS = -D_THREAD_SAFE -I$(top_srcdir)/lib -pthread -DBRIDGEDAPI_CONF=\"$(sysconfdir)/bridgedapi.conf\" $(LIBTIRPC_CFLAGS)
 libbridgedapi_la_LDFLAGS = $(LIB_LDFLAGS) -version-info 0:1:0 -pthread
 libbridgedapi_la_LIBADD = $(top_srcdir)/lib/confparse/libconfig_parsing.la \
-					$(top_srcdir)/lib/xternal/libxternal.la
+					$(top_srcdir)/lib/xternal/libxternal.la $(LIBTIRPC_LIBS) 
 
 all: all-am
 

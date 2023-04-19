@@ -27,6 +27,9 @@
 /* Define to 1 if you have the <pbs_ifl.h> header file. */
 #undef HAVE_PBS_IFL_H
 
+/* Define to 1 if you have the <rpc/types.h> header file. */
+#undef HAVE_RPC_TYPES_H
+
 /* Define to 1 if you have the <slurm/slurm.h> header file. */
 #undef HAVE_SLURM_SLURM_H
 
