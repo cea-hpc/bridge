@@ -15,60 +15,24 @@
 # Remove the space between % and trace to activate RPM debug traces
 # % trace
 
-#
-# ocean: compile in TGCC mode by default
-#
-%global ccc_tgcc 1
-
-#
-# Set Tera options if requested
-# > program prefix is cea_
-# > scripts and apps in /usr/local/bridge
-# > configuration files in /etc
-%if %{?ccc_tera}0
-%define _program_prefix cea_
-%define prefix /usr/local/bridge
-%define sysconfdir /etc
-%bcond_without slurm
-%define compat_target ccc
-%define target tera
-%endif
-
-#
-# Set Tgcc options if requested
+# By default :
 # > program prefix is ccc_
 # > scripts and apps in /usr
 # > configuration files in /etc
-%if %{?ccc_tgcc}0
 %define _program_prefix ccc_
 %define prefix /usr
 %define sysconfdir /etc
 %bcond_without slurm
 %define compat_target cea
-%define target tgcc
-%endif
-
-#
-# If no target specified (neither tera nor tgcc),
-# compile without SLURM but in TGCC style
-# with cea_compat links
-%if %{!?target:1}0
-%define _program_prefix ccc_
-%define prefix /usr
-%define sysconfdir /etc
-%define compat_target cea
-%define target ws
-%endif
 
 Summary: Bridge CCC In-House Batch Environment
 Name: bridge
 Version: 1.5.9
-Release: 1.%{?target}.ocean1%{?dist}
+Release: 5%{?dist}
 License: GPL License
 Group: System Environment/Base
 URL: https://github.com/cea-hpc/bridge
 Source0: %{name}-%{version}.tar.gz
-Patch0: bridge-1.5.6.rpc-headers-missing.patch
 
 BuildRequires: autoconf
 BuildRequires: automake
@@ -123,7 +87,7 @@ Batch scheduling systems.
 It currently provides plugins for slurm.
 
 %package devel
-Summary: Development package for Bridge.
+Summary: Development package for Bridge
 Group: Development/System
 Requires: bridge
 %description devel
@@ -134,41 +98,38 @@ for the bridge API as well as the material to link against the dynamic library.
 %package slurm
 Summary: Slurm plugins for Bridge CCC In-House Batch Environment
 Group: System Environment/Base
-Requires: slurm >= 19.05.0
+Requires: slurm >= 22.05.3
 Requires: bridge >= %{version}
-BuildRequires: slurm-devel >= 18.08.0
-
-%if 0%{?fedora} >= 28 || 0%{?rhel} >= 8
-BuildRequires:  libtirpc-devel
-%endif
+BuildRequires: slurm-devel >= 22.05.3
 
 %description slurm
 Plugin that provides Slurm access accross the CCC Batch systems Bridge
 %endif
 
+%if 0%{?fedora} >= 28 || 0%{?rhel} >= 8
+BuildRequires:  libtirpc-devel
+%endif
+
+
 %prep
 %setup -q
-%if 0%{?fedora} >= 28 || 0%{?rhel} >= 8
-%patch0 -p1
-%endif
 
 
 %build
 autoreconf -fvi
 %configure %{?with_slurm:--with-slurm}
-%endif
 
-make %{?_smp_mflags}
+%{__make} %{?_smp_mflags}
 
 %install
-make install DESTDIR="$RPM_BUILD_ROOT"
+%{make_install} DESTDIR=%{buildroot}
 %if %{with slurm}
-chmod 755 ${RPM_BUILD_ROOT}/%{_prefix}/share/scripts/resource_manager/addons/get_task_info
+chmod 755 %{buildroot}/%{_prefix}/share/scripts/resource_manager/addons/get_task_info
 %endif
 
 %if 0%{?_with_systemd}
 # Systemd for fedora >= 17 or el 7
-%{__install} -d -m0755  %{buildroot}%{_unitdir}
+install -d -m0755  %{buildroot}%{_unitdir}
 install -Dp -m0644 etc/init.d/bridged.service %{buildroot}%{_unitdir}/%{_program_prefix}bridged.service
 rm %{buildroot}%{_sysconfdir}/init.d/%{_program_prefix}bridged
 rm %{buildroot}%{_sysconfdir}/logrotate.d/%{_program_prefix}bridged
@@ -180,8 +141,7 @@ chmod 0644 %{buildroot}%{_sysconfdir}/logrotate.d/%{_program_prefix}bridged
 
 %if %{?compat_target}0
 # create cea_ compatibility links
-for dr in %{buildroot}/%{_bindir} %{buildroot}/%{_sbindir} %{buildroot}%{_sysconfdir}/init.d %{buildroot}/%{_sysconfdir}/sysconfig
-do
+for dr in %{buildroot}%{_bindir} %{buildroot}%{_sbindir} %{buildroot}%{_sysconfdir}/init.d %{buildroot}%{_sysconfdir}/sysconfig ; do
     pushd $dr
     for fl in %{_program_prefix}* ; do
         ln -s $fl %{?compat_target}_${fl##%{_program_prefix}}
@@ -189,7 +149,7 @@ do
     popd
 done
 # ensure bridged existence as it is used by systemd
-pushd %{buildroot}/%{_sbindir}
+pushd %{buildroot}%{_sbindir}
 ln -s %{_program_prefix}bridged bridged
 popd
 %endif
@@ -237,6 +197,7 @@ fi
 %{_libdir}/libbridgedapi.*
 
 %files devel
+%defattr(-,root,root,-)
 %{_includedir}/bridge.h
 %{_includedir}/bridge_common.h
 %{_libdir}/libbridge.so
@@ -280,7 +241,8 @@ Additional package providing %{compat_target}_* compatibility links to the
 - Integrating patches and making 1.5.7 version
 
 * Wed Sep 02 2020 Regine Gaudin <regine.gaudin@cea.fr> - 1.5.6-6.ocean7
-- Change spooldir management in dirige.ad : bridge-1.5.6-modif-spooldir-dirige-addon.patch
+- Change spooldir management in dirige.ad:
+  bridge-1.5.6-modif-spooldir-dirige-addon.patch
 
 * Fri Jul 24 2020 Regine Gaudin <regine.gaudin@cea.fr> - 1.5.6-6.ocean6
 - Fix mismatching test in bridge-1.5.6-m-option-extra-param-erased.patch
@@ -289,59 +251,76 @@ Additional package providing %{compat_target}_* compatibility links to the
 - Fix print format for ccc_msub -S option : bridge-1.5.6.msub-S.patch
 
 * Wed Jul 01 2020 Regine Gaudin <regine.gaudin@cea.fr> - 1.5.6-6.ocean4
-- Increase to 12 char username display of rmastat :  bridge-1.5.6-rmastat-increase-username-display-to-12-char.patch
-- Clean old format use in mstat, keeping only new format : bridge-1.5.6-mstat-supports-only-new-format.patch
-- Rename dirige.ad and adapt the corresponding calls :  bridge-1.5.6-rename-dirige-addon.patch, bridge-1.5.6-change-dirige-addon-name-calls.patch
+- Increase to 12 char username display of rmastat:
+  bridge-1.5.6-rmastat-increase-username-display-to-12-char.patch
+- Clean old format use in mstat, keeping only new format:
+  bridge-1.5.6-mstat-supports-only-new-format.patch
+- Rename dirige.ad and adapt the corresponding calls:
+  bridge-1.5.6-rename-dirige-addon.patch,
+  bridge-1.5.6-change-dirige-addon-name-calls.patch
 
 * Wed Jun 24 2020 Regine Gaudin <regine.gaudin@cea.fr> - 1.5.6-6.ocean3
-- Fix erased -m option filesystem extra parameter : bridge-1.5.6-m-option-extra-param-erased.patch
+- Fix erased -m option filesystem extra parameter:
+  bridge-1.5.6-m-option-extra-param-erased.patch
 
 * Tue Jun 23 2020 Regine Gaudin <regine.gaudin@cea.fr> - 1.5.6-6.ocean2
-- Link plugins slurm with bridge for dlopen failure : bridge-1.5.6-dlopen-failure.patch
+- Link plugins slurm with bridge for dlopen failure:
+  bridge-1.5.6-dlopen-failure.patch
 
 * Mon Nov 25 2019  Regine Gaudin <regine.gaudin@cea.fr> - 1.5.6-6.ocean1
-- Rebuild with slurm19 on rhel8, missing rpc/types.h header found in libtirpc-devel : bridge-1.5.6.rpc-headers-missing.patch
+- Rebuild with slurm19 on rhel8, missing rpc/types.h header found in
+  libtirpc-devel: bridge-1.5.6.rpc-headers-missing.patch
 
 * Tue Jun 25 2019  Regine Gaudin <regine.gaudin@cea.fr> - 1.5.6-5.ocean4
 - Add war in ksh mpmd-cluster.ad for printf bug with new set LANG=en_US.utf8
 
 * Thu Jun 13 2019 Regine Gaudin <regine.gaudin@cea.fr> - 1.5.6-5.ocean3
-- Suppress incompatibility -m option between -m affinity and -m unshare mounted filesystems :
+- Suppress incompatibility -m option between -m affinity and -m unshare
+  mounted filesystems:
   supress bridge-1.5.6-slurm-affinity-addon.patch
   add bridge-1.5.6.option_m_suppress.patch for suppressing -m in the help
-  option  used for unshare mounted filesystems bridge-1.5.6.filesystems_addon.patch
-  adapt without -m keeping -M bridge-1.5.4.msub_option_m_default.patch : bridge-1.5.6.msub_option_M_default.patch
-  add compilation of filesystems.ad in Makefile : bridge-1.5.6.filesystems_addon.patch
+  option used for unshare mounted filesystems
+  bridge-1.5.6.filesystems_addon.patch
+  adapt without -m keeping -M bridge-1.5.4.msub_option_m_default.patch:
+  bridge-1.5.6.msub_option_M_default.patch
+  add compilation of filesystems.ad in Makefile:
+  bridge-1.5.6.filesystems_addon.patch
 
 * Fri May 24 2019 Regine Gaudin <regine.gaudin@cea.fr> - 1.5.6-5.ocean2
 - Rebuild with fixed Slurm 18.08.6.ocean2
 
 * Thu Apr 11 2019 Regine Gaudin <regine.gaudin@cea.fr>  - 1.5.6-5.ocean1
 - Rebuild with slurm-18.08.06 / ocean v2.7
-  add support of slurm-18 feature with multiple backup controller bridge-1.5.6-multi-backup-controller.patch
-  rename bridge-1.5.6-partition_info_t_priority.patch for change of partition_info_t priority
+  add support of slurm-18 feature with multiple backup controller:
+  bridge-1.5.6-multi-backup-controller.patch
+  rename bridge-1.5.6-partition_info_t_priority.patch for change of
+  partition_info_t priority
   fix segv in cluster name algorithm bridge-1.5.6-fix-cluster-name-segv.patch
-  add slurm level 18 requirement because of char **control_machine list in slurm_ctl_conf_t instead of two char* master and backup
+  add slurm level 18 requirement because of char **control_machine list in
+  slurm_ctl_conf_t instead of two char* master and backup
 
-* Fri Sep 07 2018 Regine Gaudin <regine.gaudin@cea.fr>  - 1.5.6-4.ocean1
+* Fri Sep 07 2018 Regine Gaudin <regine.gaudin@cea.fr> - 1.5.6-4.ocean1
 -- Rebuild with slurm.17.11.6 for ocean
--- merge: bridge-1.5.6-env-variables-autoswitch.patch fix slurm environment variables
-   with bridge-1.5.6.addon-autoswitch.patch : bridge-1.5.6-addon-autoswitch-and-env-slurm-variable-fix.patch
+-- merge: bridge-1.5.6-env-variables-autoswitch.patch fix slurm environment
+   variables with bridge-1.5.6.addon-autoswitch.patch:
+   bridge-1.5.6-addon-autoswitch-and-env-slurm-variable-fix.patch
 -- patch: bridge-1.5.6.filesystems_addon.patch
    add -m option for filesystem use description
 
-* Fri Jun 15 2018 Regine Gaudin <regine.gaudin@cea.fr>  - 1.5.6-3.ocean18
-- Add / character to assure that pattern can use more than 2 definitions per partition
+* Fri Jun 15 2018 Regine Gaudin <regine.gaudin@cea.fr> - 1.5.6-3.ocean18
+- Add / character to assure that pattern can use more than 2 definitions
+   per partition
    patch: bridge-1.5.6.addon-autoswitch.patch
 - Add -F foreground launch option because of several pid problem
    leading to logrotate/bridge relaunch failure
    patch: bridged-foreground-option.patch
 
-* Fri May 18 2018 Regine Gaudin <regine.gaudin@cea.fr>  - 1.5.6-3.ocean17
+* Fri May 18 2018 Regine Gaudin <regine.gaudin@cea.fr> - 1.5.6-3.ocean17
 - Rebuild with slurm.17.11.6
 
-* Tue Apr 17 2018 Regine Gaudin <regine.gaudin@cea.fr>  and Roger Brel - 1.5.6-3.ocean16.1
-- Add DEBUG_MODE in bridge_addon_msub_alterscript function on preload.ad bridge-1.5.6.addons-preload.patch
+* Tue Apr 17 2018 Regine Gaudin <regine.gaudin@cea.fr> and Roger Brel - 1.5.6-3.ocean16.1
+- Add DEBUG_MODE in bridge_addon_msub_alterscript function on preload.ad
+  bridge-1.5.6.addons-preload.patch
 
 * Wed Jan 03 2018 Regine Gaudin <regine.gaudin@cea.fr> - 1.5.6-3.ocean16
 - Rebuild  with slurm 17.11.1-1.xcea5 + cve slurmdbd
@@ -359,7 +338,8 @@ Additional package providing %{compat_target}_* compatibility links to the
  -Patch13: bridge-1.5.6-mpstat-option-t.patch
      use clustack instead of padb
   Patch14: bridge-1.5.6-addons-totalview.patch
-      possibility to specify less processors in embedded ccc_mprun  than the number of processors specified in ccc_msub command
+      possibility to specify less processors in embedded ccc_mprun than the
+      number of processors specified in ccc_msub command
   Patch15: bridge-1.5.6-mpstat-option-p.patch
      -p option was not working
 
@@ -391,10 +371,10 @@ Additional package providing %{compat_target}_* compatibility links to the
 
 * Mon Jun 13 2016 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.5.6-3.ocean6
 - make logrotate conf work with systemd bridged service
-  note that /etc/logrotate.d/%%{_program_prefix}bridged is no longer considered as
-  a config file and overwritten by RPM during installation.
-  Older /etc/logrotate.d/%%{_program_prefix}bridged.rpmsave file is removed in %%post
-  to avoid issue with logrotate.
+  note that /etc/logrotate.d/%%{_program_prefix}bridged is no longer considered
+  as a config file and overwritten by RPM during installation.
+  Older /etc/logrotate.d/%%{_program_prefix}bridged.rpmsave file is removed in
+  %%post to avoid issue with logrotate.
 
 * Wed Jun 01 2016 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.5.6-3.ocean5
 - add systemd support in SPEC file and in the code
@@ -408,7 +388,8 @@ Additional package providing %{compat_target}_* compatibility links to the
 - local build with slurm resource patch (bug if empty partition in ccc_mpinfo).
 
 * Thu Mar 17 2016 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.5.6-1.ocean4
-- local rebuild to confirm to SCS5 bullxbm-slurm-15.08 flavor (not API compatible)
+- local rebuild to confirm to SCS5 bullxbm-slurm-15.08 flavor (not API
+  compatible)
 
 * Fri Feb 12 2016 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.5.6-1.ocean3
 - allow to use a 'default' pragma in -M/-m of msub to override '#MSUB -M/-m'
@@ -480,18 +461,20 @@ Additional package providing %{compat_target}_* compatibility links to the
 * Mon Jan 13 2014 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.5.4-5
 -- addons/totalview: ensure that a debug step not using the job resources
    (i.e. lower -n ... value) works properly
--- addons/mpmd-cluster-wrapper : ensure correct behavior of the plugin when args are
-   passed using shell arrays
+-- addons/mpmd-cluster-wrapper : ensure correct behavior of the plugin when
+   args are passed using shell arrays
 
 * Thu Dec 19 2013 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.5.4-4
--- rm/plugins/ws|openmpi: correct separator management in mprun for openmpi and ws plugin
+-- rm/plugins/ws|openmpi: correct separator management in mprun for openmpi
+   and ws plugin
 
 * Thu Dec 19 2013 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.5.4-3
--- addons/ddt: correct a bug introduced when switching to arrays when passing args
+-- addons/ddt: correct a bug introduced when switching to arrays when passing
+   args
 
 * Tue Dec 17 2013 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.5.4-2
 - tag release 1.5.4-2
--- modify spec file to automate the generation of different styles of packaging :
+-- modify spec file to automate the generation of different styles of packaging:
    -- define "ccc_tera 1" : generate with cea_ prog prefix in /usr/local/bridge
       compile with slurm support by default, add a bridge-ccc_compat for ccc_
       links
@@ -517,7 +500,8 @@ Additional package providing %{compat_target}_* compatibility links to the
 
 * Wed Nov 13 2013 Francois Diakhate <francois.diakhate@cea.fr>  - 1.5.3-11
 - tag release 1.5.3-11
--- mprun: re-fix special character handling in arguments which was broken since 1.5.3-8
+-- mprun: re-fix special character handling in arguments which was broken
+   since 1.5.3-8
 -- slurm: fix special character handling in extra-parameters for allocations
 
 * Wed Nov 13 2013 Francois Diakhate <francois.diakhate@cea.fr>  - 1.5.3-10
@@ -525,7 +509,8 @@ Additional package providing %{compat_target}_* compatibility links to the
 -- vtune: fix for invalid cpuset argument with slurm cgroups
 -- addons: fix autodefmem which would choose the wrong value
 -- mpp: optimizations for loaded machines
--- intelmpi-slurm.ad: add a new BRIDGE_SLURM_INTELMPI_CMD_DEFAULT_OPTIONS env var
+-- intelmpi-slurm.ad: add a new BRIDGE_SLURM_INTELMPI_CMD_DEFAULT_OPTIONS env
+   var
 -- addons: fix mpmd bcast if the same name is used for different binaries
 -- addons: add shell addon for interactive usage of a node
 
@@ -539,12 +524,16 @@ Additional package providing %{compat_target}_* compatibility links to the
 
 * Fri Apr 19 2013 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.5.3-8
 - tag release 1.5.3-8
--- autopacking: remove useless export which caused a bug in recursive submissions
+-- autopacking: remove useless export which caused a bug in recursive
+                submissions
 -- rm/ws: add spmd_run_separator support in ws resource manager plugin
 -- rm/ws: fixes for whitespaces and special characters handling
--- mprun: fixes for whitespaces and special characters handling in extra parameters management
--- rm/slurm: fixes for whitespaces and special characters handling when using -E "extra_params"
--- rm/*: fixes for whitespaces and special characters handling when using -E "extra_params"
+-- mprun: fixes for whitespaces and special characters handling in extra
+          parameters management
+-- rm/slurm: fixes for whitespaces and special characters handling when using
+             -E "extra_params"
+-- rm/*: fixes for whitespaces and special characters handling when using
+         -E "extra_params"
 * Tue Apr 16 2013 Francois Diakhate <francois.diakhate@cea.fr> - 1.5.3-7
 - tag release 1.5.3-7
 * Thu Mar 28 2013 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.5.3-6
@@ -636,5 +625,5 @@ Additional package providing %{compat_target}_* compatibility links to the
 * Thu Dec 18 2008 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.3.11-3
 - Move conf load in mprun to set addon in conf file
 - Add a patch to use /etc as a default config directory
-* Mon Dec 15 2008 Matthieu Hautreux <matthieu.hautreux@cea.fr> -
+* Mon Dec 15 2008 Matthieu Hautreux <matthieu.hautreux@cea.fr> - 1.3.11-2
 - Initial build.
