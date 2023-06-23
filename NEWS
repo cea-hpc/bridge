@@ -1,3 +1,11 @@
+* Changes in bridge-1.5.10
+==========================
+
+    -- Improves spec file by removing or updating old parameters.
+    -- Adds libtirpc autodetection in configure scripts.
+    -- Adds autogen.sh file to regenerate configure script from configure.ac file
+    -- Adds mpmd cluster heterogeneous addon.
+
 * Changes in bridge-1.5.9
 =========================
 

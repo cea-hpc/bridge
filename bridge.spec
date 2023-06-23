@@ -27,8 +27,8 @@
 
 Summary: Bridge CCC In-House Batch Environment
 Name: bridge
-Version: 1.5.9
-Release: 5%{?dist}
+Version: 1.5.10
+Release: 1%{?dist}
 License: GPL License
 Group: System Environment/Base
 URL: https://github.com/cea-hpc/bridge
@@ -234,6 +234,12 @@ Additional package providing %{compat_target}_* compatibility links to the
 %endif
 
 %changelog
+* Fri Jun 23 2023 Olivier Delhomme <olivier.delhomme@cea.fr> - 1.5.10-1
+- Improves spec file by removing or updating old parameters.
+- Adds libtirpc autodetection in configure scripts.
+- Adds autogen.sh file to regenerate configure script from configure.ac file
+- Adds mpmd cluster heterogeneous addon.
+
 * Wed Apr 19 2023 Olivier Delhomme <olivier.delhomme@cea.fr> - 1.5.9-1.ocean1
 - Removing libtirpc from spec file, now detection is done in configure script
 

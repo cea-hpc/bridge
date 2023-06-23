@@ -1,5 +1,5 @@
 dnl Package initialisation 
-AC_INIT([bridge], [1.5.9], [])
+AC_INIT([bridge], [1.5.10], [])
 
 dnl set auxiliary scripts directory (install-sh,...)
 AC_CONFIG_AUX_DIR([build-aux])
