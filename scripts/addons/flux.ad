@@ -35,8 +35,8 @@ function bridge_addon_msub_setopt {
     echo "${BRIDGE_MSUB_GETOPT_OPTIONS}" | grep -q ${MYGETOPTOPTION}
 
     if [ $? -ne 0 ]
-	then
-	BRIDGE_MSUB_GETOPT_OPTIONS="${BRIDGE_MSUB_GETOPT_OPTIONS}${MYGETOPTOPTION}"
+        then
+        BRIDGE_MSUB_GETOPT_OPTIONS="${BRIDGE_MSUB_GETOPT_OPTIONS}${MYGETOPTOPTION}"
     fi
 
     return 0
@@ -47,8 +47,8 @@ function bridge_addon_msub_getopt {
     ## on se place en mode debug si souhaite
     typeset -i BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
     if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
-	then
-	set -x
+        then
+        set -x
     fi
 
     ## on incremente le niveau de log
@@ -71,18 +71,18 @@ function bridge_addon_msub_getopt {
       do
       case ${option} in
 
-	  h)
-	      echo -e "${USAGE}" >&2
-	      return 0
-	      ;;
+          h)
+              echo -e "${USAGE}" >&2
+              return 0
+              ;;
 
-	  F)
-	      BRIDGE_MSUB_ADDON_FLUX_ENABLED=1
-	      ${LOGGER} "Flux selected by command line parameter"
-	      ;;
+          F)
+              BRIDGE_MSUB_ADDON_FLUX_ENABLED=1
+              ${LOGGER} "Flux selected by command line parameter"
+              ;;
 
-	  *)
-	      ;;
+          *)
+              ;;
       esac
     done
 
@@ -95,8 +95,8 @@ function bridge_addon_msub_alteropt {
     ## on se place en mode debug si souhaite
     typeset -i BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
     if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
-	then
-	set -x
+        then
+        set -x
     fi
 
     ## on incremente le niveau de log
@@ -109,8 +109,8 @@ function bridge_addon_msub_alteropt {
     ## si on a deja activer Flux on ne cherche pas dans le fichier
     if [[ ${BRIDGE_MSUB_ADDON_FLUX_ENABLED} -ne 1 ]]
     then
-	## on parse le script msub
-	FLUX_AWKSCRIPT='
+        ## on parse le script msub
+        FLUX_AWKSCRIPT='
 /^#MSUB/ {
         opt=0
         for(i=2; i<=NF; i++)
@@ -119,12 +119,12 @@ function bridge_addon_msub_alteropt {
                 }
  }
 '
-	FLUX_ARGEXP=`${AWK:-awk} "$FLUX_AWKSCRIPT" < ${BRIDGE_MSUB_SCRIPTFILE}`
-	if [[ -n ${FLUX_ARGEXP} ]]
-	then
-	    ${LOGGER} "Flux selected by '#MSUB -F' pragma in input script"
-	fi
-	eval $FLUX_ARGEXP
+        FLUX_ARGEXP=`${AWK:-awk} "$FLUX_AWKSCRIPT" < ${BRIDGE_MSUB_SCRIPTFILE}`
+        if [[ -n ${FLUX_ARGEXP} ]]
+        then
+            ${LOGGER} "Flux selected by '#MSUB -F' pragma in input script"
+        fi
+        eval $FLUX_ARGEXP
     fi
 
     export BRIDGE_MSUB_ADDON_FLUX_ENABLED
@@ -142,41 +142,114 @@ function bridge_addon_msub_alterscript {
 #--------------------------------------------------------------------------------
 function bridge_addon_mprun_setopt {
 
+    typeset MYGETOPTOPTION="F"
+
+    echo "${BRIDGE_MPRUN_GETOPT_OPTIONS}" | grep -q ${MYGETOPTOPTION}
+
+    if [ $? -ne 0 ]
+        then
+        BRIDGE_MPRUN_GETOPT_OPTIONS="${BRIDGE_MPRUN_GETOPT_OPTIONS}${MYGETOPTOPTION}"
+    fi
+
     return 0
 }
 
 function bridge_addon_mprun_getopt {
+
+    ## on se place en mode debug si souhaite
+    typeset -i BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+        then
+        set -x
+    fi
+
+    ## on incremente le niveau de log
+    typeset -i BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+
+    ## on ajoute une entete a la log
+    typeset LOGGER="${LOGGER} Flux Addon :"
+
+    ## par defaut, on desactive le mode flux
+    if [[ -z ${BRIDGE_MPRUN_ADDON_FLUX} ]]
+        then
+        BRIDGE_MPRUN_ADDON_FLUX=0
+    fi
+
+    ## on fixe le message d'aide a afficher si demande
+    typeset USAGE="\
+\t*) Flux
+\t\t -F : start an interactive flux session
+"
+
+    ## on parse les arguments
+    while getopts ${BRIDGE_MPRUN_GETOPT_OPTIONS} option
+        do
+        case ${option} in
+
+            h)
+                echo -e "${USAGE}" >&2
+                return 0
+                ;;
+
+            F)
+                export BRIDGE_MPRUN_ADDON_FLUX=1
+                ${LOGGER} "Flux mode enabled"
+                ;;
+
+            *)
+                ;;
+        esac
+    done
 
     return 0
 }
 
 function bridge_addon_mprun_alteropt {
 
-    return 0
+    if [[ "$BRIDGE_MPRUN_ADDON_FLUX" -eq 1 ]]; then
+        if [[ ${BRIDGE_MPRUN_ALLOCATION} == "yes" ]]; then
+            typeset -a spmd_run_args_new
+            spmd_run_extra_parameters+=("--cpu_bind=none" "--export=ALL,RESOURCE_MANAGER=flux,BATCH_SYSTEM=flux")
+            spmd_run_args_new=(flux start -- "${spmd_run_args[@]}")
+            spmd_run_args=("${spmd_run_args_new[@]}")
+            bridge_mprun_addon_flux_orig_ncore=$BRIDGE_MPRUN_NCORE
+            bridge_mprun_addon_flux_orig_nproc=$BRIDGE_MPRUN_NPROC
+            unset bridge_mprun_ncore
+            unset BRIDGE_MPRUN_NCORE
+            bridge_mprun_nproc=$BRIDGE_MPRUN_NNODE
+        else
+            bridge_mprun_force_allocation=yes
+        fi
+    fi
 
+    return 0
 }
 
 function bridge_addon_mprun_spmd_pre_allocate {
 
     return 0
-
 }
 
 function bridge_addon_mprun_spmd_post_allocate {
 
     return 0
-
 }
 
 function bridge_addon_mprun_spmd_pre_run {
 
-    return 0
+    if [[ "$BRIDGE_MPRUN_ADDON_FLUX" -eq 1 ]]; then
+        if [[ ${BRIDGE_MPRUN_ALLOCATION} == "yes" ]]; then
+            typeset -a spmd_run_args_new
+            spmd_run_args_new=(/usr/bin/env --unset=BRIDGE_MPRUN_ALLOCATION --unset=BRIDGE_MPRUN_LOOP --unset=BRIDGE_MPRUN_PARTITION --unset=BRIDGE_MPRUN_MAXTIME --unset=BRIDGE_MPRUN_MAXMEM --unset=BRIDGE_MPRUN_EXTRA_PARAMETERS --unset=BRIDGE_MPRUN_PROJECT --unset=spmd_run_options BRIDGE_MPRUN_NPROC=$bridge_mprun_addon_flux_orig_nproc BRIDGE_MPRUN_NCORE=$bridge_mprun_addon_flux_orig_ncore flux start -- "${spmd_run_args[@]}")
+            spmd_run_args=("${spmd_run_args_new[@]}")
+        fi
+    fi
 
+    return 0
 }
 
 function bridge_addon_mprun_spmd_post_run {
 
     return 0
-
 }
 #################################################################################
