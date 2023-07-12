@@ -55,8 +55,8 @@ function submit_cmd {
     ## on se place en mode debug si souhaite
     typeset -i BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
     if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
-	then
-	set -x
+        then
+        set -x
     fi
 
     ## on incremente le niveau de log
@@ -95,167 +95,167 @@ function submit_cmd {
     while getopts r:o:e:s:A:N:n:c:m:t:M:T:L:q:S:KVWE:@:a: option
       do
       case ${option} in
-	  
-	  r)
-	      request_name=${OPTARG}
-	      ;;
-	  s)
-	      study_name=${OPTARG}
-	      ;;
-	  A)
-	      project_name=${OPTARG}
-	      ;;
-	  W)
-	      same_request_at_same_time_flag=1
-	      ;;
-	  S)
-	      requested_start_time=${OPTARG}
-	      ;;
-	  q)
-	      requested_queue=${OPTARG}
-	      ;;
-	  o)
-	      output_file=${OPTARG}
-	      ;;
-	  e)
-	      error_file=${OPTARG}
-	      ;;
-	  N)
-	      nnode=${OPTARG}
-	      ;;
-	  n)
-	      nproc=${OPTARG}
-	      ;;
-	  c)
-	      ncoreperproc=${OPTARG}
-	      ;;
-	  m)
-	      time_sharing_memlimit=${OPTARG}
-	      ;;
-	  t)
-	      time_sharing_timelimit=${OPTARG}
-	      ;;
-	  M)
-	      exclusive_memlimit=${OPTARG}
-	      ;;
-	  T)
-	      exclusive_timelimit=${OPTARG}
-	      ;;
-	  L)
-	      requested_licenses=${OPTARG}
-	      ;;
-	  K)
-	      keep_allocation=1
-	      ;;
-	  V)
-	      echo ${VERSION}
-	      return 0
-	      ;;
-	  E)
-	      extra_parameters="${OPTARG}"
-	      ;;
-	  @)
-	      mail_addr=${OPTARG%%:*}
-	      if [[ ${OPTARG} != ${mail_addr} ]]
-		  then
-		  mail_info=${OPTARG#*:}
-	      fi
-	      ;;
-	  a)
+
+          r)
+              request_name=${OPTARG}
+              ;;
+          s)
+              study_name=${OPTARG}
+              ;;
+          A)
+              project_name=${OPTARG}
+              ;;
+          W)
+              same_request_at_same_time_flag=1
+              ;;
+          S)
+              requested_start_time=${OPTARG}
+              ;;
+          q)
+              requested_queue=${OPTARG}
+              ;;
+          o)
+              output_file=${OPTARG}
+              ;;
+          e)
+              error_file=${OPTARG}
+              ;;
+          N)
+              nnode=${OPTARG}
+              ;;
+          n)
+              nproc=${OPTARG}
+              ;;
+          c)
+              ncoreperproc=${OPTARG}
+              ;;
+          m)
+              time_sharing_memlimit=${OPTARG}
+              ;;
+          t)
+              time_sharing_timelimit=${OPTARG}
+              ;;
+          M)
+              exclusive_memlimit=${OPTARG}
+              ;;
+          T)
+              exclusive_timelimit=${OPTARG}
+              ;;
+          L)
+              requested_licenses=${OPTARG}
+              ;;
+          K)
+              keep_allocation=1
+              ;;
+          V)
+              echo ${VERSION}
+              return 0
+              ;;
+          E)
+              extra_parameters="${OPTARG}"
+              ;;
+          @)
+              mail_addr=${OPTARG%%:*}
+              if [[ ${OPTARG} != ${mail_addr} ]]
+                  then
+                  mail_info=${OPTARG#*:}
+              fi
+              ;;
+          a)
               LOCAL_ARGEXP1="$LOCAL_ARGEXP1""after_jobs=${OPTARG}; "
               ;;
-	  *)
-	      exit_status=255
-	      break
-	      ;;
+          *)
+              exit_status=255
+              break
+              ;;
       esac
     done
     shift ${OPTIND}-1 2>/dev/null
 
     if [[ -n ${request_name} ]]
-	then
-	local_submit_args="${local_submit_args} -r ${request_name}"
+        then
+        local_submit_args="${local_submit_args} -r ${request_name}"
     fi
     if [[ -n ${study_name} ]]
     then
-	local_submit_args="${local_submit_args} -s ${stydy_name}"
+        local_submit_args="${local_submit_args} -s ${stydy_name}"
     fi
     if [[ -n ${project_name} ]]
-	then
-	local_submit_args="${local_submit_args} -p ${project_name}"
+        then
+        local_submit_args="${local_submit_args} -p ${project_name}"
     fi
     if [[ ${same_request_at_same_time_flag} -ne 0 ]]
-	then
-	local_submit_args="${local_submit_args} -W"
+        then
+        local_submit_args="${local_submit_args} -W"
     fi
     ## on fixe les informations concernant le mail
     if [[ -n ${mail_addr} ]]
     then
-	${LOGGER} "skipping unsupported option -@ ..."
+        ${LOGGER} "skipping unsupported option -@ ..."
     fi
     ## on fixe les dependances de jobs
     if [[ -n ${after_jobs} ]]
     then
-	${LOGGER} "skipping unsupported option -a ${after_jobs}"
+        ${LOGGER} "skipping unsupported option -a ${after_jobs}"
     fi
     if [[ -n ${requested_start_time} ]]
-	then
-	local_submit_args="${local_submit_args} -S ${requested_start_time}"
+        then
+        local_submit_args="${local_submit_args} -S ${requested_start_time}"
     fi
     if [[ -n ${requested_queue} ]]
-	then
-	local_submit_args="${local_submit_args} -q ${requested_queue}"
+        then
+        local_submit_args="${local_submit_args} -q ${requested_queue}"
     fi
     if [[ -n ${output_file} ]]
-	then
-	local_submit_args="${local_submit_args} -o ${output_file}"
+        then
+        local_submit_args="${local_submit_args} -o ${output_file}"
     fi
     if [[ -n ${error_file} ]]
-	then
-	local_submit_args="${local_submit_args} -e ${error_file}"
+        then
+        local_submit_args="${local_submit_args} -e ${error_file}"
     fi
     if [[ -n ${nnode} ]]
-	then
-	local_submit_args="${local_submit_args} -N ${nnode}"
+        then
+        local_submit_args="${local_submit_args} -N ${nnode}"
     fi
     if [[ -n ${nproc} ]]
-	then
-	local_submit_args="${local_submit_args} -n ${nproc}"
+        then
+        local_submit_args="${local_submit_args} -n ${nproc}"
     fi
     if [[ -n ${ncoreperproc} ]]
-	then
-	local_submit_args="${local_submit_args} -c ${ncoreperproc}"
+        then
+        local_submit_args="${local_submit_args} -c ${ncoreperproc}"
     fi
     if [[ -n ${time_sharing_memlimit} ]]
-	then
-	local_submit_args="${local_submit_args} -m ${time_sharing_memlimit}"
+        then
+        local_submit_args="${local_submit_args} -m ${time_sharing_memlimit}"
     fi
     if [[ -n ${time_sharing_timelimit} ]]
-	then
-	local_submit_args="${local_submit_args} -t ${time_sharing_timelimit}"
+        then
+        local_submit_args="${local_submit_args} -t ${time_sharing_timelimit}"
     fi
     if [[ -n ${exclusive_memlimit} ]]
-	then
-	local_submit_args="${local_submit_args} -M ${exclusive_memlimit}"
+        then
+        local_submit_args="${local_submit_args} -M ${exclusive_memlimit}"
     fi
     if [[ -n ${exclusive_timelimit} ]]
-	then
-	local_submit_args="${local_submit_args} -T ${exclusive_timelimit}"
+        then
+        local_submit_args="${local_submit_args} -T ${exclusive_timelimit}"
     fi
     if [[ -n ${requested_licenses} ]]
-	then
-	local_submit_args="${local_submit_args} -L \"${requested_licenses}\""
+        then
+        local_submit_args="${local_submit_args} -L \"${requested_licenses}\""
     fi
     if [[ -n ${keep_allocation} ]]
-	then
-	local_submit_args="${local_submit_args} -K"
+        then
+        local_submit_args="${local_submit_args} -K"
     fi
 
     # pas de probleme, on soumet
     if [ ${exit_status} -eq 0 ]
-	then
-	${LOGGER} -- ${local_submit_cmd} ${local_submit_args} $(printf "%q " "$@")
-	${local_submit_cmd} ${local_submit_args} "$@"
+        then
+        ${LOGGER} -- ${local_submit_cmd} ${local_submit_args} $(printf "%q " "$@")
+        ${local_submit_cmd} ${local_submit_args} "$@"
     fi
     
     return ${exit_status}
@@ -315,8 +315,8 @@ function bsstat_cmd {
     ## on se place en mode debug si souhaite
     typeset -i BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
     if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
-	then
-	set -x
+        then
+        set -x
     fi
 
     ## on incremente le niveau de log
@@ -333,7 +333,7 @@ function bsstat_cmd {
     typeset overflag=no
 
     typeset exit_status=0
-    
+
     typeset sumscript='
 BEGIN {l=0;used=0;total=0;} 
 { if(NR<4) print $0; else {if (NF>=lim_row) print $0;l=l+1;used=(used+$(NF-1));total=$NF+total;}}
@@ -400,95 +400,98 @@ typeset overscript='
     while getopts VcCdDlru:b:q:H:n:N:f:o:s:vSO option
       do
       case ${option} in
-	  V)
-	      echo ${VERSION}
-	      return 0
-	      ;;
-	  c)
-	      output_mode=classic
-	      ;;
-	  C)
-	      output_mode=long
-	      ;;
-	  d)
-	      output_mode=new
-	      ;;
-	  D)
-	      output_mode=newlong
-	      ;;
-	  l)
-	      local_bsstat_args="${local_bsstat_args} -l"
-	      ;;
-	  u)
-	      local_bsstat_args="${local_bsstat_args} -u ${OPTARG}"
-	      ;;
-	  b)
-	      local_bsstat_args="${local_bsstat_args} -b ${OPTARG}"
-	      ;;
-	  q)
-	      local_bsstat_args="${local_bsstat_args} -q ${OPTARG}"
-	      ;;
-	  H)
-	      local_bsstat_args="${local_bsstat_args} -H ${OPTARG}"
-	      ;;
-	  n)
-	      local_bsstat_args="${local_bsstat_args} -n ${OPTARG}"
-	      ;;
-	  N)
-	      local_bsstat_args="${local_bsstat_args} -N ${OPTARG}"
-	      ;;
-	  f)
-	      local_bsstat_args="${local_bsstat_args} -f ${OPTARG}"
-	      ;;
-	  o)
-	      local_bsstat_args="${local_bsstat_args} -o ${OPTARG}"
-	      output_mode=
-	      ;;
-	  s)
-	      local_bsstat_args="${local_bsstat_args} -s ${OPTARG}"
-	      ;;
-	  v)
-	      local_bsstat_args="${local_bsstat_args} -v"
-	      ;;
-	  S)
-	      sumflag=yes
-	      ;;
-	  O)
-	      overflag=yes
-	      ;;
-	  *)
-	      ;;
+          V)
+              echo ${VERSION}
+              return 0
+              ;;
+          c)
+              output_mode=classic
+              ;;
+          C)
+              output_mode=long
+              ;;
+          d)
+              output_mode=new
+              ;;
+          D)
+              output_mode=newlong
+              ;;
+          l)
+              local_bsstat_args="${local_bsstat_args} -l"
+              ;;
+          u)
+              local_bsstat_args="${local_bsstat_args} -u ${OPTARG}"
+              ;;
+          b)
+              local_bsstat_args="${local_bsstat_args} -b ${OPTARG}"
+              ;;
+          q)
+              local_bsstat_args="${local_bsstat_args} -q ${OPTARG}"
+              ;;
+          H)
+              local_bsstat_args="${local_bsstat_args} -H ${OPTARG}"
+              ;;
+          n)
+              local_bsstat_args="${local_bsstat_args} -n ${OPTARG}"
+              ;;
+          N)
+              local_bsstat_args="${local_bsstat_args} -N ${OPTARG}"
+              ;;
+          f)
+              local_bsstat_args="${local_bsstat_args} -f ${OPTARG}"
+              ;;
+          o)
+              local_bsstat_args="${local_bsstat_args} -o ${OPTARG}"
+              output_mode=
+              ;;
+          r)
+              local_bsstat_args="${local_bsstat_args} -r"
+              ;;
+          s)
+              local_bsstat_args="${local_bsstat_args} -s ${OPTARG}"
+              ;;
+          v)
+              local_bsstat_args="${local_bsstat_args} -v"
+              ;;
+          S)
+              sumflag=yes
+              ;;
+          O)
+              overflag=yes
+              ;;
+          *)
+              ;;
       esac
     done
     shift ${OPTIND}-1 2>/dev/null
 
     if [[ $# -gt 1 ]]
-	then
-	${LOGGER} "Bad usage : more than 1 batchid specified"
-	return 255
+        then
+        ${LOGGER} "Bad usage : more than 1 batchid specified"
+        return 255
     elif [[ $# -eq 1 ]]
-	then
-	local_bsstat_args="${local_bsstat_args} -b $1"
+        then
+        local_bsstat_args="${local_bsstat_args} -b $1"
     fi
 
     typeset lim_row
 
     if [[ ${output_mode} = "classic" ]]
-	then
-	local_bsstat_args="${local_bsstat_args} -c"
-	lim_row=14
+        then
+        local_bsstat_args="${local_bsstat_args} -c"
+        lim_row=14
     elif [[ ${output_mode} = "long" ]]
-	then
-	local_bsstat_args="${local_bsstat_args} -C"
-	lim_row=13
+        then
+        local_bsstat_args="${local_bsstat_args} -C"
+        lim_row=13
     elif [[ ${output_mode} = "new" ]]
-	then
-	local_bsstat_args="${local_bsstat_args} -d"
-	lim_row=14
+        then
+        local_bsstat_args="${local_bsstat_args} -d"
+        lim_row=14
     elif [[ ${output_mode} = "newlong" ]]
-	then
-	local_bsstat_args="${local_bsstat_args} -D"
-	lim_row=13
+        then
+        local_bsstat_args="${local_bsstat_args} -D"
+        lim_row=13
     fi
 
     typeset local_cmd
@@ -501,25 +504,25 @@ typeset overscript='
 
     if [[ ${sumflag} = yes ]]
     then
-	    if [[ ${output_mode} = "classic" ]]
-	    then
-		${local_bsstat_cmd} ${local_bsstat_args} | $FILTRE1 | awk --assign lim_row=${lim_row} "${sumscript}"
-	    elif [[ ${output_mode} = "long" ]]
-	    then
-		${local_bsstat_cmd} ${local_bsstat_args} | $FILTRE1 | awk --assign lim_row=${lim_row} "${sumscript_long}"
-	    elif [[ ${output_mode} = "new" ]]
-	    then
-		${local_bsstat_cmd} ${local_bsstat_args} | $FILTRE1 | awk --assign lim_row=${lim_row} "${sumscript_new}"
-	    elif [[ ${output_mode} = "newlong" ]]
-	    then
-		${local_bsstat_cmd} ${local_bsstat_args} | $FILTRE1 | awk --assign lim_row=${lim_row} "${sumscript_newlong}" 
-	    fi
+            if [[ ${output_mode} = "classic" ]]
+            then
+                ${local_bsstat_cmd} ${local_bsstat_args} | $FILTRE1 | awk --assign lim_row=${lim_row} "${sumscript}"
+            elif [[ ${output_mode} = "long" ]]
+            then
+                ${local_bsstat_cmd} ${local_bsstat_args} | $FILTRE1 | awk --assign lim_row=${lim_row} "${sumscript_long}"
+            elif [[ ${output_mode} = "new" ]]
+            then
+                ${local_bsstat_cmd} ${local_bsstat_args} | $FILTRE1 | awk --assign lim_row=${lim_row} "${sumscript_new}"
+            elif [[ ${output_mode} = "newlong" ]]
+            then
+                ${local_bsstat_cmd} ${local_bsstat_args} | $FILTRE1 | awk --assign lim_row=${lim_row} "${sumscript_newlong}"
+            fi
     else
            if [[ ${overflag} = yes ]] ; then
-	      local_bsstat_args="${local_bsstat_args} -D"
-	      ${local_bsstat_cmd} ${local_bsstat_args} | $FILTRE1 |  awk --assign lim_row=${lim_row} "${overscript}" 
+              local_bsstat_args="${local_bsstat_args} -D"
+              ${local_bsstat_cmd} ${local_bsstat_args} | $FILTRE1 |  awk --assign lim_row=${lim_row} "${overscript}"
            else
-	      ${local_bsstat_cmd} ${local_bsstat_args} | $FILTRE1     # cas general
+              ${local_bsstat_cmd} ${local_bsstat_args} | $FILTRE1     # cas general
            fi
     fi
     return $?
@@ -542,8 +545,8 @@ function bsinfo_cmd {
     ## on se place en mode debug si souhaite
     typeset -i BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
     if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
-	then
-	set -x
+        then
+        set -x
     fi
 
     ## on incremente le niveau de log
@@ -557,38 +560,38 @@ function bsinfo_cmd {
     while getopts VH option
       do
       case ${option} in
-	  V)
-	      echo ${VERSION}
-	      return 0
-	      ;;
-	  H)
-	      history_mode=yes
-	      ;;
-	  *)
-	      ;;
+          V)
+              echo ${VERSION}
+              return 0
+              ;;
+          H)
+              history_mode=yes
+              ;;
+          *)
+              ;;
       esac
     done
     shift ${OPTIND}-1 2>/dev/null
-    
+
     if [[ $# -eq 0 ]]
-	then
-	${LOGGER} "Bad usage : no batchid specified"
-	return 255
+        then
+        ${LOGGER} "Bad usage : no batchid specified"
+        return 255
     fi
-    
+
     typeset batchid=
     if [[ ${history_mode} = yes ]]
-	then
-	for batchid in $@
-	  do
-	  ${local_bsstat_cmd} -f 0:0 -b ${batchid}
-	done
+        then
+        for batchid in $@
+          do
+          ${local_bsstat_cmd} -f 0:0 -b ${batchid}
+        done
     else
-	for batchid in $@
-	  do
-	  ${local_bsstat_cmd} -b ${batchid}
-	done
+        for batchid in $@
+          do
+          ${local_bsstat_cmd} -b ${batchid}
+        done
     fi
-        
+
     return 0
 }
