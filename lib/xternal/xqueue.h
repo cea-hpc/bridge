@@ -71,7 +71,7 @@ typedef struct xqueue {
  *
  * \retval XSUCCESS init succeed
  * \retval XERROR_MUTEX_INIT_FAILED unable to initialize queue mutex
- * \retval XERROR_CONDITION_INIT_FAILED unable to initiailize queue condition
+ * \retval XERROR_CONDITION_INIT_FAILED unable to initialize queue condition
  */
 int
 xqueue_init(xqueue_t* queue,unsigned int default_length,size_t item_size);
