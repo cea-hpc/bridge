@@ -163,7 +163,7 @@ xlibrary_init(xlibrary_t* library,
       }
       /*_*/ /* reference freelist init */
 
-      /* an error occured - destroy condition */
+      /* an error occurred - destroy condition */
       if(fstatus){
 	pthread_cond_destroy(&(library->condition));
       }
@@ -171,7 +171,7 @@ xlibrary_init(xlibrary_t* library,
     }
     /*_*/ /* condition init */
 	
-    /* an error occured - destroy mutex */
+    /* an error occurred - destroy mutex */
     if(fstatus){
       pthread_mutex_destroy(&(library->mutex));
     }

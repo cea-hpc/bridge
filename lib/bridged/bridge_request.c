@@ -182,7 +182,7 @@ bridge_get_req_init_from_message(bridge_get_req_t* bgr,xmessage_t* msg){
 
       xdr_destroy(&xdr);
 
-      /* clean structure if a problem occured */
+      /* clean structure if a problem occurred */
       if(fstatus!=0){
 	bridge_get_req_free_contents(bgr);
       }

@@ -562,7 +562,7 @@ bridge_nodelist_add_nodelist(bridge_nodelist_t* nodelist,bridge_nodelist_t* seco
 	}
       }
 
-      /* fstatus != 0 means that an error occured, break */
+      /* fstatus != 0 means that an error occurred, break */
       if(fstatus!=0){
 	break;
       }

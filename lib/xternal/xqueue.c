@@ -94,13 +94,13 @@ xqueue_init(xqueue_t* queue,unsigned int default_length,size_t item_size){
       fstatus=xfreelist_init(&(queue->freelist),default_length,item_size);
       if(fstatus){
 	fstatus=XERROR;
-	/* an error occured - destroy condition */
+	/* an error occurred - destroy condition */
 	pthread_cond_destroy(&(queue->condition));
       }
     }
     /*_*/ /* condition init */
 
-    /* an error occured - destroy mutex */
+    /* an error occurred - destroy mutex */
     if(fstatus){
       pthread_mutex_destroy(&(queue->mutex));
     }

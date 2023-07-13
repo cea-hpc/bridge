@@ -265,7 +265,7 @@ bridgedapi_ping(char* conf_file){
     VERBOSE("ping request message successfully initialized");
     fstatus=bridge_api_process_request(conf_file,&req,&rep);
     if(fstatus!=BRIDGE_SUCCESS){
-      ERROR("an error occured while doing ping");
+      ERROR("an error occurred while doing ping");
     }
     else{
       fstatus=BRIDGE_ERROR;
@@ -320,7 +320,7 @@ bridgedapi_get(char* conf_file,char* batchid,char* rmid,
 
       fstatus=bridge_api_process_request(conf_file,&req,&rep);
       if(fstatus){
-	ERROR("an error occured while processing request");
+	ERROR("an error occurred while processing request");
       }
       else{
 	fstatus=BRIDGE_ERROR;
