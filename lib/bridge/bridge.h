@@ -176,7 +176,7 @@ typedef struct bridge_batch_session {
 			  * max memory usage in sequential mode (in Mo)
 			  */
   time_t   par_time_limit;/*!<
-			   * max ellapsed time in parallel mode of this batch session (in seconds)
+			   * max elapsed time in parallel mode of this batch session (in seconds)
 			   */
   time_t   par_time_used;/*!<
 			  * elapsed time in parallel mode by this batch session
