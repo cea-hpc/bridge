@@ -706,7 +706,7 @@ int display_new_classic_bridge_batch_session_on_file_stream(FILE * stream,bridge
               (bs->queue != NULL ? bs->queue : "NA"),
               bs->qos,
               bs->priority,
-              bs->submit_hostname != NULL ? bs->submit_hostname : "unkown",
+              bs->submit_hostname != NULL ? bs->submit_hostname : "unknown",
               bs->executing_hostname != NULL ? bs->executing_hostname : bs->submit_hostname,
               status,
               bs->par_time_used,
@@ -738,7 +738,7 @@ int display_classic_bridge_batch_session_on_file_stream(FILE * stream,bridge_bat
   else{
     char batchid[32] ;
     sprintf(batchid,"%s.%s",bs->batch_id != NULL ? bs->batch_id : "unknown",
-			    bs->submit_hostname != NULL ? bs->submit_hostname : "unkown");
+			    bs->submit_hostname != NULL ? bs->submit_hostname : "unknown");
 
     char status[4];
     switch(bs->state){
