@@ -135,7 +135,7 @@ int main(int argc,char **argv){
     "\tstate         : Status of batch session                     reason        : More information about status\n"
     "\tuser          : Name of batch session owner                 group         : Name of batch session owner group\n"
     "\tproject       : Name of batch session owner project         qos           : Name of batch session qos\n"
-    "\tsubhost       : Submission host                             subtime       : submition time\n"
+    "\tsubhost       : Submission host                             subtime       : submission time\n"
     "\tqueue         : Batch queue of batch session                priority      : Batch session priority\n"
     "\texechost      : Execution host                              sid           : Execution session id\n"
     "\tstarttime     : Execution start time                        endtime       : Execution end time\n"
