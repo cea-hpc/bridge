@@ -94,7 +94,7 @@ dispatcher_main_function(bridged_engine_t* engine,xqueue_t* socket_queue)
   char* hostname;
   char* port;
 
-  unsigned long successfull_dispatch=0;
+  unsigned long successful_dispatch=0;
   int queued_item_nb;
 
   hostname=engine->address;
@@ -124,7 +124,7 @@ dispatcher_main_function(bridged_engine_t* engine,xqueue_t* socket_queue)
 	  VERBOSE("dispatcher: asked to no longer accept requests");
 	}
 	else if(incoming_socket<0 && print_stats_flag){
-	  VERBOSE("dispatcher: %u connections dispatched",successfull_dispatch);
+	  VERBOSE("dispatcher: %u connections dispatched",successful_dispatch);
 	  xqueue_get_length(socket_queue,&queued_item_nb);
 	  VERBOSE("dispatcher: %d connections pending",queued_item_nb);
 	}
@@ -137,7 +137,7 @@ dispatcher_main_function(bridged_engine_t* engine,xqueue_t* socket_queue)
 	  }
 	  else{
 	    VERBOSE3("dispatcher: incoming connection (%d) successfully added to pending queue",incoming_socket);
-	    successfull_dispatch++;
+	    successful_dispatch++;
 	  }
 	  
 	}
@@ -147,7 +147,7 @@ dispatcher_main_function(bridged_engine_t* engine,xqueue_t* socket_queue)
       /*_*/ /* accept loop */
 
       /* print stats on exit */
-      VERBOSE("dispatcher: %u connections dispatched",successfull_dispatch);
+      VERBOSE("dispatcher: %u connections dispatched",successful_dispatch);
       fstatus=0;
 
     }
