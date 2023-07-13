@@ -307,7 +307,7 @@ typedef struct bridge_idlist {
  *
  * \param idlist pointer on a bridge ids list structure to initialize
  * \param lists array of strings containing ids to add to this list
- * \param lists_nb quanity of string in the array
+ * \param lists_nb quantity of string in the array
  *
  * \retval  0 operation successfully done
  * \retval -1 operation failed
@@ -521,7 +521,7 @@ typedef struct bridge_nodelist
  *
  * \param nodelist pointer on a bridge nodes list structure to initialize
  * \param lists array of strings containing nodes to add to this list
- * \param lists_nb quanity of string in the array
+ * \param lists_nb quantity of string in the array
  *
  * \retval  0 operation successfully done
  * \retval -1 operation failed
