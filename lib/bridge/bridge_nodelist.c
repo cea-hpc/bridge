@@ -533,7 +533,7 @@ bridge_nodelist_add_nodelist(bridge_nodelist_t* nodelist,bridge_nodelist_t* seco
     pwlsrc=&second_list;
     while(*pwlsrc!=NULL){
       
-      /* try to add src sublist to an existant dest list sublist */
+      /* try to add src sublist to an existent dest list sublist */
       pwldest=&nodelist;
       while(*pwldest!=NULL){
 
