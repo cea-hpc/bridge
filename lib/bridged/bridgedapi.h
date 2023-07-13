@@ -65,7 +65,7 @@
  * \param conf_file configuration file to use or NULL if default
  *
  * \retval BRIDGE_SUCCESS                     success
- * \retval BRIDGE_ERROR_STREAM_CONNECT_FAILED conenction to servers failed
+ * \retval BRIDGE_ERROR_STREAM_CONNECT_FAILED connection to servers failed
  * \retval BRIDGE_ERROR_STREAM_TRANS_FAILED transmission with server failed
  * \retval BRIDGE_ERROR                       generic error
  */
@@ -85,7 +85,7 @@ bridgedapi_ping(char* conf_file);
  * \retval BRIDGE_SUCCESS success
  * \retval BRIDGE_ERROR_REQUEST_FAILED server says it can not give a valid response ( bad batchid or rmid )
  * \retval BRIDGE_ERROR_REQUEST_MALFORMED_REPLY reply is invalid
- * \retval BRIDGE_ERROR_STREAM_CONNECT_FAILED conenction to servers failed
+ * \retval BRIDGE_ERROR_STREAM_CONNECT_FAILED connection to servers failed
  * \retval BRIDGE_ERROR_STREAM_TRANS_FAILED transmission with server failed
  * \retval BRIDGE_ERROR generic error
  *
