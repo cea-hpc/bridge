@@ -318,7 +318,7 @@ int _bridge_common_string_get_token_common(char* string,char* separators_list,in
 	  }
 	}
 	/*
-	  If no more occurences, break the loop
+	  If no more occurrences, break the loop
 	*/
 	if(best_pointer==NULL){
 	  end_of_loop=1;
