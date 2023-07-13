@@ -514,7 +514,7 @@ bridge_rangelist_add_list(bridge_rangelist_t* array,char* list)
     
     }
 
-  /* at this point fstatus=0 if process was done succesfully, we may update it to padding value */
+  /* at this point fstatus=0 if process was done successfully, we may update it to padding value */
   if(fstatus!=0)
     fstatus=-1;
   else
