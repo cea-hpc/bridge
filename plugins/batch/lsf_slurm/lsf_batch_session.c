@@ -54,7 +54,7 @@
   0 on success
   -1 on error
 
-  On succes, you 'll have to free bridge_batch_session_t structure with bridge_rmi_free_node(...)
+  On success, you 'll have to free bridge_batch_session_t structure with bridge_rmi_free_node(...)
 */
 int init_batch_session(bridge_batch_manager_t* p_batch_manager,
 		       bridge_batch_session_t* p_batch_session){
@@ -537,10 +537,10 @@ int get_batch_sessions(bridge_batch_manager_t* p_batch_manager,
 
   Returns :
   0 on success
-  1 on succes, but p_nodes_nb contains a new valid value for nodes_nb
+  1 on success, but p_nodes_nb contains a new valid value for nodes_nb
   -1 on error
 
-  On succes, you 'll have to clean all nodes with bridge_rmi_clean_node(...) before
+  On success, you 'll have to clean all nodes with bridge_rmi_clean_node(...) before
   freeing *p_nodes
 
 */

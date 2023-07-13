@@ -121,10 +121,10 @@ int clean_batch_node(bridge_batch_manager_t* p_batch_manager,
 
   Returns :
   0 on success
-  1 on succes, but p_nodes_nb contains a new valid value for nodes_nb
+  1 on success, but p_nodes_nb contains a new valid value for nodes_nb
   -1 on error
 
-  On succes, you 'll have to clean all nodes with bridge_rmi_clean_node(...) before
+  On success, you 'll have to clean all nodes with bridge_rmi_clean_node(...) before
   freeing *p_nodes
 
 */
