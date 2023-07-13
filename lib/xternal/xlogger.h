@@ -70,7 +70,7 @@ xerror_setstream(FILE* stream);
  * \fn xerror(char* format,...)
  * \brief print error message of level 1
  *
- * \param format format to print optionnaly followed by args
+ * \param format format to print optionally followed by args
 */
 void
 xerror(char* format,...);
@@ -98,7 +98,7 @@ xverbose_setstream(FILE* stream);
  * \fn xverbose(char* format,...)
  * \brief print verbose message of level 1
  *
- * \param format format to print optionnaly followed by args
+ * \param format format to print optionally followed by args
 */
 void
 xverbose(char* format,...);
@@ -107,7 +107,7 @@ xverbose(char* format,...);
  * \fn xverbose2(char* format,...)
  * \brief print verbose message of level 2
  *
- * \param format format to print optionnaly followed by args
+ * \param format format to print optionally followed by args
 */
 void
 xverbose2(char* format,...);
@@ -116,7 +116,7 @@ xverbose2(char* format,...);
  * \fn xverbose3(char* format,...)
  * \brief print verbose message of level 3
  *
- * \param format format to print optionnaly followed by args
+ * \param format format to print optionally followed by args
 */
 void
 xverbose3(char* format,...);
@@ -126,7 +126,7 @@ xverbose3(char* format,...);
  * \brief print verbose message of given level
  *
  * \param level level of the message (1<=N<=9)
- * \param format format to print optionnaly followed by args
+ * \param format format to print optionally followed by args
 */
 void
 xverboseN(int level,char* format,...);
@@ -154,7 +154,7 @@ xdebug_setstream(FILE* stream);
  * \fn xdebug(char* format,...)
  * \brief print debug message of level 1
  *
- * \param format format to print optionnaly followed by args
+ * \param format format to print optionally followed by args
 */
 void
 xdebug(char* format,...);
@@ -163,7 +163,7 @@ xdebug(char* format,...);
  * \fn xdebug2(char* format,...)
  * \brief print debug message of level 2
  *
- * \param format format to print optionnaly followed by args
+ * \param format format to print optionally followed by args
 */
 void
 xdebug2(char* format,...);
@@ -172,7 +172,7 @@ xdebug2(char* format,...);
  * \fn xdebug3(char* format,...)
  * \brief print debug message of level 3
  *
- * \param format format to print optionnaly followed by args
+ * \param format format to print optionally followed by args
 */
 void
 xdebug3(char* format,...);
@@ -182,7 +182,7 @@ xdebug3(char* format,...);
  * \brief print debug message of given level
  *
  * \param level level of the message (1<=N<=9)
- * \param format format to print optionnaly followed by args
+ * \param format format to print optionally followed by args
 */
 void
 xdebugN(int level,char* format,...);
