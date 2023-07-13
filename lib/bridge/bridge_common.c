@@ -288,7 +288,7 @@ int _bridge_common_string_get_token_common(char* string,char* separators_list,in
       while(!end_of_loop){
 	best_pointer=NULL;
 	/*
-	  Search the first occurence of a separator
+	  Search the first occurrence of a separator
 	*/
 	for(i=0;i<separators_list_length;i++){
 	  current_pointer=strchr(working_string,*(separators_list+i));
