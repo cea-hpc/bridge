@@ -182,7 +182,7 @@ xqueue_enqueue(xqueue_t* queue,void* data,size_t length){
     fstatus=xfreelist_extract_item(freelist,&item);
 
     if(fstatus==XERROR_FREELIST_IS_EMPTY){
-      VERBOSE("enqueuing: queue's freelist is empty, waiting for dequeing");
+      VERBOSE("enqueuing: queue's freelist is empty, waiting for dequeuing");
       pthread_cond_wait(&(queue->condition),&(queue->mutex));
     }
 
