@@ -796,7 +796,7 @@ int bridge_get_batch_id(bridge_manager_t * p_manager,char** p_id);
  * \ingroup BRIDGE_BATCH_SYSTEM
  * \brief Get active batch sessions information
  *
- * \par Informations
+ * \par Information
  * \par
  * You don't have to create all bridge_batch_session_t structures, you just have to set parameters
  * according to the following rules :
@@ -839,7 +839,7 @@ int bridge_get_batch_sessions(bridge_manager_t* p_manager,
  * \ingroup BRIDGE_BATCH_SYSTEM
  * \brief Get terminated batch sessions information
  *
- * \par Informations
+ * \par Information
  * \par
  * You don't have to create all bridge_batch_session_t structures, you just have to set parameters
  * according to the following rules :
