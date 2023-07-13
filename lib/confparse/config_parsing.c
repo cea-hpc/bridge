@@ -49,7 +49,7 @@
  * Correcting Bug.
  *
  * Revision 1.2  2005/04/18 10:42:02  leibovic
- * Developping config file reading.
+ * Developing config file reading.
  *
  * Revision 1.1  2005/04/15 15:01:49  leibovic
  * Initial version for config file parsing.
