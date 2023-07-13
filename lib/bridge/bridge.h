@@ -478,7 +478,7 @@ typedef struct bridge_rm_allocation {
   char* name; /* resource name */
   char* description; /* More info about resource */
 
-  char* partition; /* Parition on which resource is executed */
+  char* partition; /* Partition on which resource is executed */
 
   uint32_t state; /*!<
 		   * state of this allocation
