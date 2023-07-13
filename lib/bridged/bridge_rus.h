@@ -206,7 +206,7 @@ bridge_rus_mgr_synchronise(bridge_rus_mgr_t* rus,unsigned long * pnb);
  * \param record pointer on the bridge rus record structure that contains the ID and that must be filled with usage data
  *
  * \retval BRIDGE_RUS_SUCCESS on success
- * \retval BRIDGE_RUS_ERROR_ITEM_NOT_FOUND on failure due to error while geting item from library
+ * \retval BRIDGE_RUS_ERROR_ITEM_NOT_FOUND on failure due to error while getting item from library
  * \retval BRIDGE_RUS_ERROR on any other failure
  *  
  */
