@@ -679,7 +679,7 @@ int bridge_common_string_get_token(char* string,char* separators_list,int token_
 
 /*!
  * \ingroup BRIDGE_COMMON
- * \brief Appends a char* giving a char* to append and an optionnal separator
+ * \brief Appends a char* giving a char* to append and an optional separator
  *
  * \param p_io_string pointer on the input char* that have to be appended
  * \param p_current_length pointer on the size_t that contains the current char* associated buffer (should be larger that string length)

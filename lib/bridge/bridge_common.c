@@ -86,7 +86,7 @@ int bridge_common_string_get_tokens_quantity(char* string,char* separators_list,
   appends_and_extends_string
   --------------------------
 
-  Appends a char* giving a char* to append and an optionnal separator (NULL if no separator)
+  Appends a char* giving a char* to append and an optional separator (NULL if no separator)
 
   char** p_io_string : pointer on a char* that will be appended and maybe extended if no enough memory allocated
   size_t* p_current_length : pointer on a size_t structure that contains the current size of the char* that will be write
