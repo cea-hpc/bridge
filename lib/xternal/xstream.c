@@ -130,7 +130,7 @@ xstream_create(const char* hostname,
   hints.ai_family=AF_INET;
   
   /*
-   * get 'hostname' network informations
+   * get 'hostname' network information
    */
   status=getaddrinfo(strnlen(hostname,1)?hostname:NULL,servicename,&hints,&aitop);
   if(status){
@@ -222,7 +222,7 @@ xstream_connect(const char* hostname,
   hints.ai_socktype=SOCK_STREAM;
 
   /*
-   * get 'hostname' network informations
+   * get 'hostname' network information
    */
   status=getaddrinfo(hostname,servicename,&hints,&aitop);
   if(status){

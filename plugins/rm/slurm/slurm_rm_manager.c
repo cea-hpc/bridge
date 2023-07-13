@@ -289,19 +289,19 @@ get_rm_partitions(bridge_rm_manager_t * p_rm_manager,
   /* get nodes status */
   if(slurm_load_node(0,&pnim,SHOW_ALL))
     {
-      DEBUG3_LOGGER("unable to get nodes informations");
+      DEBUG3_LOGGER("unable to get nodes information");
       pnim=NULL;
     }
   /* get jobs status */
   if(slurm_load_jobs(0,&pjim,SHOW_ALL))
     {
-      DEBUG3_LOGGER("unable to get jobs informations");
+      DEBUG3_LOGGER("unable to get jobs information");
       pjim=NULL;
     }
   /* get partitions infos */
   if(slurm_load_partitions(0,&ppim,SHOW_ALL)!=0)
     {
-      DEBUG3_LOGGER("unable to get partitions informations");
+      DEBUG3_LOGGER("unable to get partitions information");
     }
   else
     {
@@ -367,7 +367,7 @@ get_rm_partitions(bridge_rm_manager_t * p_rm_manager,
 		  partitions[real_partitions_nb].reason=strdup("inactive");
 	      }
 	      
-	      /* resources informations */
+	      /* resources information */
 	      partitions[real_partitions_nb].total_cores_nb=ppi->total_cpus;
 	      partitions[real_partitions_nb].total_nodes_nb=ppi->total_nodes;
 	      if(ppi->max_time!=-1)
@@ -379,7 +379,7 @@ get_rm_partitions(bridge_rm_manager_t * p_rm_manager,
 	      bridge_nodelist_add_nodes(&(partitions[real_partitions_nb].total_nodelist),
 					ppi->nodes);
 	      
-	      /* usage & active informations */ 
+	      /* usage & active information */ 
 	      if(pnim!=NULL)
 		{
 		  partitions[real_partitions_nb].used_nodes_nb=0;
@@ -479,7 +479,7 @@ get_rm_partitions(bridge_rm_manager_t * p_rm_manager,
       if(real_partitions_nb>0 && *p_rm_partitions!=NULL)
 	fstatus=0;
      
-      /* free slurm partition informations */
+      /* free slurm partition information */
       slurm_free_partition_info_msg(ppim);
     }
   
@@ -671,7 +671,7 @@ get_rm_allocations_base(bridge_rm_manager_t * p_rm_manager,
 
   if(slurm_load_jobs(0,&pjim,SHOW_ALL)!=0)
     {
-      DEBUG3_LOGGER("unable to get allocations informations");
+      DEBUG3_LOGGER("unable to get allocations information");
     }
   else
     {
@@ -693,7 +693,7 @@ get_rm_allocations_base(bridge_rm_manager_t * p_rm_manager,
 	for(j=0;j<nb_allocations;j++)
 	  {
 	    pji=pjim->job_array+j;
-	    /* initialize and set first stage allocation informations */
+	    /* initialize and set first stage allocation information */
 	    /* init allocation */
 	    init_rm_allocation(p_rm_manager,&allocations[real_allocations_nb]);
 		
@@ -896,7 +896,7 @@ get_rm_allocations_base(bridge_rm_manager_t * p_rm_manager,
 		bridge_nodelist_free_contents(&list);
 	      }
 		
-	    /* get jobs informations if allocation has to be kept */
+	    /* get jobs information if allocation has to be kept */
 	    if(out_flag==0){
 	      if(slurm_get_job_steps(0,pji->job_id,0,&pjsirm,0)==0)
 		{

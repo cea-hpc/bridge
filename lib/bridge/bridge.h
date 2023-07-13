@@ -44,7 +44,7 @@
  */
 /*!
  * \ingroup BRIDGE_BATCH_MANAGER
- * \brief structure used to store informations about batch manager
+ * \brief structure used to store information about batch manager
  */
 typedef struct bridge_batch_manager {
 
@@ -95,7 +95,7 @@ typedef struct bridge_batch_manager {
 #define BRIDGE_BATCH_SESSION_STATE_FAILED 5
 /*!
  * \ingroup BRIDGE_BATCH_SESSION
- * \brief structure used to store informations about batch sessions ( current or finished )
+ * \brief structure used to store information about batch sessions ( current or finished )
  */
 typedef struct bridge_batch_session {
   char* batch_id;/*!<
@@ -108,7 +108,7 @@ typedef struct bridge_batch_session {
 	       * name of the job launched by this batch session 
 	       */
   char* description; /*!<
-		      * some additional informations about this batch session
+		      * some additional information about this batch session
 		      */
   uint32_t state; /*!<
 		   * state of this batch session
@@ -218,7 +218,7 @@ typedef struct bridge_batch_session {
 #define BRIDGE_BATCH_QUEUE_ACTIVITY_INACTIVE 2
 /*!
  * \ingroup BRIDGE_BATCH_QUEUE
- * \brief structure used to store informations about available batch queues
+ * \brief structure used to store information about available batch queues
  */
 typedef struct bridge_batch_queue {
 
@@ -226,7 +226,7 @@ typedef struct bridge_batch_queue {
 	       * batch queue name
 	       */
   char* description; /*!< 
-		      * some additional informations about this batch queue
+		      * some additional information about this batch queue
 		      */
   int default_queue; /*!<
 		      * default flag (o|no 1|yes)
@@ -301,12 +301,12 @@ typedef struct bridge_batch_queue {
 #define BRIDGE_BATCH_NODE_STATE_UNLICENSED 5
 #define BRIDGE_BATCH_NODE_STATE_BUSY 6
 /*!
- * \brief structure used to store informations about available batch nodes
+ * \brief structure used to store information about available batch nodes
  */
 typedef struct bridge_batch_node {
 
   char* name; /*!< batch node name */
-  char* description; /*!< some additional informations about this batch node */
+  char* description; /*!< some additional information about this batch node */
 
   char* grouplist; /*!< List of groups name that include this node */
 
@@ -353,7 +353,7 @@ typedef struct bridge_batch_node {
  */
 /*!
  * \ingroup BRIDGE_BATCH_SYSTEM
- * \brief structure used to store informations about batch system
+ * \brief structure used to store information about batch system
  */
 typedef struct bridge_batch_system {
 
@@ -426,7 +426,7 @@ typedef struct bridge_batch_system {
 
 
 /*! \addtogroup BRIDGE_RM_SYSTEM
- * \brief structure used to store informations about batch manager
+ * \brief structure used to store information about batch manager
  *  @{
  */
 typedef struct bridge_rm_manager {
@@ -624,7 +624,7 @@ typedef struct bridge_rm_partition {
  */
 /*!
  * \ingroup BATCH_SYSTEM
- * \brief structure used to store informations about resource management system
+ * \brief structure used to store information about resource management system
  */
 typedef struct bridge_rm_system {
 
@@ -709,7 +709,7 @@ typedef struct bridge_rm_system {
 
 /*!
  * \ingroup BRIDGE_MANAGER
- * \brief structure used to store informations about batch system
+ * \brief structure used to store information about batch system
  */
 typedef struct bridge_manager {
 
@@ -794,7 +794,7 @@ int bridge_get_batch_id(bridge_manager_t * p_manager,char** p_id);
 
 /*!
  * \ingroup BRIDGE_BATCH_SYSTEM
- * \brief Get active batch sessions informations
+ * \brief Get active batch sessions information
  *
  * \par Informations
  * \par
@@ -819,7 +819,7 @@ int bridge_get_batch_id(bridge_manager_t * p_manager,char** p_id);
  * \param username user owning the required sessions
  * \param batch_queue name of the queue that dispatch the required sessions
  * \param execHost name of the host that run the required sessions
- * \param rm_infos_flag indicates that rm system informations must be linked using configured binding
+ * \param rm_infos_flag indicates that rm system information must be linked using configured binding
  *
  * \retval  0 operation successfully done
  * \retval -1 no batch system loaded in bridge manager (or rm system)
@@ -837,7 +837,7 @@ int bridge_get_batch_sessions(bridge_manager_t* p_manager,
 
 /*!
  * \ingroup BRIDGE_BATCH_SYSTEM
- * \brief Get terminated batch sessions informations
+ * \brief Get terminated batch sessions information
  *
  * \par Informations
  * \par
@@ -862,7 +862,7 @@ int bridge_get_batch_sessions(bridge_manager_t* p_manager,
  * \param username user owning the required sessions
  * \param batch_queue name of the queue that dispatched the required sessions
  * \param execHost name of the host that ran the required sessions
- * \param rm_infos_flag indicates that rm system informations must be linked using configured binding
+ * \param rm_infos_flag indicates that rm system information must be linked using configured binding
  * \param begin_eventTime required sessions have an end time greater than  or equal to date (seconds since epoch)
  * \param end_eventTime required sessions have an end time lower than date (seconds since epoch)
  *

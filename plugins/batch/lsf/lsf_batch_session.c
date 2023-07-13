@@ -41,7 +41,7 @@
 
 #define DEFAULT_PAR_CPUS_NB_LIMIT 0
 
-/* In order to get terminated batch session informations */
+/* In order to get terminated batch session information */
 #ifndef LSF_WORKDIR
 #define LSF_WORKDIR "/usr/share/lsf/work"
 #endif
@@ -209,11 +209,11 @@ int get_batch_sessions(bridge_batch_manager_t* p_batch_manager,
   if(!ls_getclustername())
     return 1;
   
-  /* get queues informations because it's the only way to get
+  /* get queues information because it's the only way to get
    * time limit if user didn't supply it */
   p_queueInfo=lsb_queueinfo(queue_array,&queue_nb,NULL,NULL,ALL_QUEUE);
   if(p_queueInfo==NULL)
-    DEBUG3_LOGGER("unable to get queues informations\n");
+    DEBUG3_LOGGER("unable to get queues information\n");
 
   jobs_number=lsb_openjobinfo((batch_sessions_batch_ids==NULL) ? 0 : atoi(batch_sessions_batch_ids), /* Jobid or 0 */
 			      jobname, /* Job name or NULL */
@@ -228,7 +228,7 @@ int get_batch_sessions(bridge_batch_manager_t* p_batch_manager,
        * no good way to handle this problem... */
       *p_batch_sessions_nb=0;
       fstatus=0;
-      DEBUG3_LOGGER("unable to get sessions informations\n");
+      DEBUG3_LOGGER("unable to get sessions information\n");
     }
   else
     {
@@ -514,7 +514,7 @@ int get_batch_sessions(bridge_batch_manager_t* p_batch_manager,
 //--------------------------------------------------------------------------------------------------------------------------
 
 /*
-  Get batch sessions informations
+  Get batch sessions information
   -------------------------------
   You don't have to create all bridge_batch_session_t structure, you just have to set parameters
   according to the following rules :
@@ -650,13 +650,13 @@ int get_terminated_batch_sessions(bridge_batch_manager_t* p_batch_manager,
 
   /*
    * ---------------------------------------------------------
-   * Get queues informations because it's the only way to get
+   * Get queues information because it's the only way to get
    * time limit if user didn't supply it
    * ---------------------------------------------------------
    */
   p_queueInfo=lsb_queueinfo(queue_array,&queue_nb,NULL,NULL,ALL_QUEUE);
   if(p_queueInfo==NULL)
-    DEBUG3_LOGGER("unable to get queues informations\n");
+    DEBUG3_LOGGER("unable to get queues information\n");
 
   /*
     Open accts file in a FILE* array

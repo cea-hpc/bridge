@@ -272,7 +272,7 @@ get_batch_nodes(bridge_batch_manager_t* p_batch_manager,
 			*p_batch_nodes_nb=stored_node_nb;
 	}
 
-	/* free slurm partition informations */
+	/* free slurm partition information */
 	slurm_free_node_info_msg(pnim);
 	slurm_free_job_info_msg(pjim);
 

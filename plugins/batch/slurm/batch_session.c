@@ -190,7 +190,7 @@ get_batch_sessions(bridge_batch_manager_t* p_batch_manager,
 
 	/* get session stats */
 	if (slurm_load_jobs(0,&pjim,SHOW_ALL) != 0) {
-		DEBUG3_LOGGER("unable to get allocations informations");
+		DEBUG3_LOGGER("unable to get allocations information");
 		goto exit;
 	}
 	session_nb = pjim->record_count;
@@ -433,7 +433,7 @@ get_batch_sessions(bridge_batch_manager_t* p_batch_manager,
 
 	fstatus=0;
 
-	/* free slurm partition informations */
+	/* free slurm partition information */
 	slurm_free_job_info_msg(pjim);
 
 	if(stored_session_nb<session_nb){

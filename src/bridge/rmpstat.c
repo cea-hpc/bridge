@@ -224,7 +224,7 @@ int main(int argc,char** argv){
     "\t-p partition\t\tGet partitions that use given partition\n"
     "\t-n intNodes\t\tGet partitions that owns at least one active node of this nodes list\n"
     "\t-N incNodes\t\tGet partitions which active nodes are all in this nodes list\n"
-    "\t-o fields\t\tDisplay informations using fields format (use -o list for available fields, -o all to get infos for all fields)\n"
+    "\t-o fields\t\tDisplay information using fields format (use -o list for available fields, -o all to get infos for all fields)\n"
     "\t-s separator\t\tWhen used with -o options, enables to change results fields separator\n\t\t\t\t(default is a single spaced string)\n"
     "\t-v\t\t\tWhen used with -o options, the first output line displays list of selected fields\n"
     "\t-V\t\t\tPrint bridge and app versions and exit\n";

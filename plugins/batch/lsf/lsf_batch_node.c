@@ -101,7 +101,7 @@ int clean_batch_node(bridge_batch_manager_t* p_batch_manager,
 
 
 /*
-  Get batch nodes informations
+  Get batch nodes information
   -------------------------------
   You don't have to create all bridge_batch_node_t structure, you just have to set parameters
   according to the following rules :
@@ -159,7 +159,7 @@ int get_batch_nodes(bridge_batch_manager_t* p_batch_manager,
    * Check that batch system is running or exit with error 1
    */
   if(!ls_getclustername()){
-    DEBUG3_LOGGER("unable to get cluster informations\n");
+    DEBUG3_LOGGER("unable to get cluster information\n");
     return 1;
   }
 
@@ -167,7 +167,7 @@ int get_batch_nodes(bridge_batch_manager_t* p_batch_manager,
   p_grpInfo=lsb_hostgrpinfo(NULL,&grp_nb,GRP_ALL);
   
   if(p_nodeInfo==NULL)
-    DEBUG3_LOGGER("unable to get nodes informations\n");
+    DEBUG3_LOGGER("unable to get nodes information\n");
   else{
     if(*p_p_batch_nodes!=NULL){
       if(*p_batch_nodes_nb<node_nb)
@@ -252,7 +252,7 @@ int get_batch_nodes(bridge_batch_manager_t* p_batch_manager,
 	(*p_p_batch_nodes)[stored_node_nb].state=BRIDGE_BATCH_NODE_STATE_UNKNOWN;
       }
 
-      /* Get informations only if host is open or closed or busy */
+      /* Get information only if host is open or closed or busy */
       if((*p_p_batch_nodes)[stored_node_nb].state == BRIDGE_BATCH_NODE_STATE_OPENED ||
 	 (*p_p_batch_nodes)[stored_node_nb].state == BRIDGE_BATCH_NODE_STATE_CLOSED ||
 	 (*p_p_batch_nodes)[stored_node_nb].state == BRIDGE_BATCH_NODE_STATE_BUSY){

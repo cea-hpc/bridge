@@ -111,7 +111,7 @@ int clean_batch_queue(bridge_batch_manager_t* p_batch_manager,
 
 
 /*
-  Get batch queues informations
+  Get batch queues information
   -------------------------------
   You don't have to create all bridge_batch_queue_t structure, you just have to set parameters
   according to the following rules :
@@ -163,14 +163,14 @@ int get_batch_queues(bridge_batch_manager_t* p_batch_manager,
    * Check that batch system is running or exit with error 1
    */
   if(!ls_getclustername()){
-    DEBUG3_LOGGER("unable to get cluster informations\n");
+    DEBUG3_LOGGER("unable to get cluster information\n");
     return 1;
   }
 
   p_queueInfo=lsb_queueinfo(queue_array,&queue_nb,NULL,NULL,ALL_QUEUE);
 
   if(p_queueInfo==NULL)
-    DEBUG3_LOGGER("unable to get queues informations\n");
+    DEBUG3_LOGGER("unable to get queues information\n");
   else{
     
     if(*p_p_batch_queues!=NULL){

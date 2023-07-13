@@ -30,7 +30,7 @@
 #define PROG_VERSION  "1.0.1"
 
 /*!
- * \brief display batch queue informations on file stream in an extended form 
+ * \brief display batch queue information on file stream in an extended form 
  * \internal
  *
  * \param stream FILE* on which to write output
@@ -42,7 +42,7 @@
 int display_bridge_batch_queue_on_file_stream(FILE* stream,bridge_batch_queue_t* bq);
 
 /*!
- * \brief display batch queue informations on file stream in an classic form 
+ * \brief display batch queue information on file stream in an classic form 
  * \internal
  *
  * \param stream FILE* on which to write output
@@ -54,12 +54,12 @@ int display_bridge_batch_queue_on_file_stream(FILE* stream,bridge_batch_queue_t*
 int display_classic_bridge_batch_queue_on_file_stream(FILE * stream,bridge_batch_queue_t* bq);
 
 /*!
- * \brief display required informations about batch queue on file stream 
+ * \brief display required information about batch queue on file stream 
  * \internal
  *
  * \param stream FILE* on which to write output
  * \param bq pointer on a batch queue structure to display
- * \param output_fields comma separated list of informations to display
+ * \param output_fields comma separated list of information to display
  * \param separator string to write on stream between each required information
  *
  * \retval 0 on success
@@ -88,7 +88,7 @@ int main(int argc,char **argv){
     "\t-h\t\t\tPrint this message\n"
     "\t-c\t\t\tDisplay results in classic format\n"
     "\t-q queue\t\tDisplay results concerning this batch queue\n"
-    "\t-o fields\t\tDisplay informations using fields format (use -o list for available fields, -o all to get infos for all fields)\n"
+    "\t-o fields\t\tDisplay information using fields format (use -o list for available fields, -o all to get infos for all fields)\n"
     "\t-s separator\t\tWhen used with -o options, enables to change results fields separator\n\t\t\t\t(default is a single spaced string)\n"
     "\t-v\t\t\tWhen used with -o options, the first output line displays list of selected fields\n"
     "\t-V\t\t\tPrint bridge and app versions and exit\n";
@@ -234,7 +234,7 @@ int main(int argc,char **argv){
     fstatus=1;
   }
 
-  /* Get sequential jobs informations */
+  /* Get sequential jobs information */
 
   exit :
     

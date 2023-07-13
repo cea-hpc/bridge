@@ -134,7 +134,7 @@ bridge_rus_record_free_contents(bridge_rus_record_t* record);
  * using bridge resource usage record into a library
  * for further access.
  *
- * It periodically refresh its internal informations.
+ * It periodically refresh its internal information.
  *
  */
 typedef struct bridge_rus_mgr {

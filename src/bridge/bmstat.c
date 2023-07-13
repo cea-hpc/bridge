@@ -32,7 +32,7 @@
 #define PROG_VERSION  "1.0.1"
 
 /*!
- * \brief display batch manager informations on file stream in an extended form 
+ * \brief display batch manager information on file stream in an extended form 
  * \internal
  *
  * \param stream FILE* on which to write output
@@ -44,7 +44,7 @@
 int display_bridge_batch_manager_on_file_stream(FILE* stream,bridge_batch_manager_t* bm);
 
 /*!
- * \brief display batch manager informations on file stream in an classic form 
+ * \brief display batch manager information on file stream in an classic form 
  * \internal
  *
  * \param stream FILE* on which to write output
@@ -56,12 +56,12 @@ int display_bridge_batch_manager_on_file_stream(FILE* stream,bridge_batch_manage
 int display_classic_bridge_batch_manager_on_file_stream(FILE * stream,bridge_batch_manager_t* bm);
 
 /*!
- * \brief display required informations about batch manager on file stream 
+ * \brief display required information about batch manager on file stream 
  * \internal
  *
  * \param stream FILE* on which to write output
  * \param bm pointer on a batch manager structure to display
- * \param output_fields comma separated list of informations to display
+ * \param output_fields comma separated list of information to display
  * \param separator string to write on stream between each required information
  *
  * \retval 0 on success
@@ -83,7 +83,7 @@ int main(int argc,char **argv){
   char* options_desc=
     "\t-h\t\t\tPrint this message\n"
     "\t-c\t\t\tDisplay results in classic format\n"
-    "\t-o fields\t\tDisplay informations using fields format (use -o list for available fields, -o all to get infos for all fields)\n"
+    "\t-o fields\t\tDisplay information using fields format (use -o list for available fields, -o all to get infos for all fields)\n"
     "\t-s separator\t\tWhen used with -o options, enables to change results fields separator\n\t\t\t\t(default is a single spaced string)\n"
     "\t-v\t\t\tWhen used with -o options, the first output line displays list of selected fields\n"
     "\t-V\t\t\tPrint bridge and app versions and exit\n";

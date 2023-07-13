@@ -39,7 +39,7 @@ int display_new_classic_bridge_batch_session_on_file_stream(FILE * stream,
 							    int remove_qos);
 
 /*!
- * \brief display batch session informations on file stream in an extended form
+ * \brief display batch session information on file stream in an extended form
  * \internal
  *
  * \param stream FILE* on which to write output
@@ -51,7 +51,7 @@ int display_new_classic_bridge_batch_session_on_file_stream(FILE * stream,
 int display_bridge_batch_session_on_file_stream(FILE * stream,bridge_batch_session_t* bs, int remove_qos);
 
 /*!
- * \brief display batch session informations on file stream in an classic short or long form
+ * \brief display batch session information on file stream in an classic short or long form
  * \internal
  *
  * \param stream FILE* on which to write output
@@ -63,12 +63,12 @@ int display_bridge_batch_session_on_file_stream(FILE * stream,bridge_batch_sessi
 int display_classic_bridge_batch_session_on_file_stream(FILE * stream,bridge_batch_session_t* bs,int long_flag);
 
 /*!
- * \brief display required informations about batch session on file stream
+ * \brief display required information about batch session on file stream
  * \internal
  *
  * \param stream FILE* on which to write output
  * \param bs pointer on a batch session structure to display
- * \param output_fields comma separated list of informations to display
+ * \param output_fields comma separated list of information to display
  * \param separator string to write on stream between each required information
  *
  * \retval 0 on success
@@ -77,13 +77,13 @@ int display_classic_bridge_batch_session_on_file_stream(FILE * stream,bridge_bat
 int display_by_fields_bridge_batch_session_on_file_stream(FILE * stream,bridge_batch_session_t* bs,char* output_fields,char* separator, int remove_qos);
 
 /*!
- * \brief test if output fields required parallel informations
+ * \brief test if output fields required parallel information
  * \internal
  *
- * \param parallel_fields comma or blank separated list of fields that requires parallel informations
+ * \param parallel_fields comma or blank separated list of fields that requires parallel information
  * \param parallel_fields comma separated list of required fields
  *
- * \retval 0 if they don't require parallel informations
+ * \retval 0 if they don't require parallel information
  * \retval 1 if they do require
  */
 int output_fields_require_parallel_infos(char* parallel_fields,char* query_fields);
@@ -132,7 +132,7 @@ int main(int argc,char **argv){
 
   char* fields_list="\n"
     "\tbatchid       : ID of batch session                         name          : Name of batch session\n"
-    "\tstate         : Status of batch session                     reason        : More informations about status\n"
+    "\tstate         : Status of batch session                     reason        : More information about status\n"
     "\tuser          : Name of batch session owner                 group         : Name of batch session owner group\n"
     "\tproject       : Name of batch session owner project         qos           : Name of batch session qos\n"
     "\tsubhost       : Submission host                             subtime       : submition time\n"
@@ -152,7 +152,7 @@ int main(int argc,char **argv){
     "\t-h\t\t\tPrint this message\n"
     "\t-c\t\t\tDisplay results in classic format\n"
     "\t-C\t\t\tDisplay results in classic long format\n"
-    "\t-l\t\t\tLight mode, parallel informations are not fetched\n"
+    "\t-l\t\t\tLight mode, parallel information are not fetched\n"
     "\t-d\t\t\tDisplay results in new CEA/DAM format\n"
     "\t-D\t\t\tDisplay results in new CEA/DAM long format\n"
     "\t-u user\t\t\tDisplay results concerning this user\n"
@@ -162,7 +162,7 @@ int main(int argc,char **argv){
     "\t-n intNodes\t\tDisplay results concerning batch session that use at least one parallel node of this nodes list\n"
     "\t-N incNodes\t\tDisplay results concerning batch session which parallel nodes are included in this nodes list\n"
     "\t-f begin:end\t\tDisplay finished batch session which finished event was recorded between begin and end date (in seconds, 0 means no limit)\n"
-    "\t-o fields\t\tDisplay informations using fields format (use -o list for available fields, -o all to get infos for all fields)\n"
+    "\t-o fields\t\tDisplay information using fields format (use -o list for available fields, -o all to get infos for all fields)\n"
     "\t-r\t\t\tRemoves @queue from display in QOS field (does not affect classic format)\n"
     "\t-s separator\t\tWhen used with -o options, enables to change results fields separator\n\t\t\t\t(default is a single spaced string)\n"
     "\t-v\t\t\tWhen used with -o options, the first output line displays list of selected fields\n"

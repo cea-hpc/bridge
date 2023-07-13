@@ -141,7 +141,7 @@ get_batch_queues(bridge_batch_manager_t* p_batch_manager,
 
 	/* get nodes status */
 	if(slurm_load_node(0,&pnim,SHOW_ALL)) {
-	        DEBUG3_LOGGER("unable to get nodes informations");
+	        DEBUG3_LOGGER("unable to get nodes information");
 		slurm_free_partition_info_msg(ppim);
 		pnim=NULL;
 		goto exit;
@@ -149,7 +149,7 @@ get_batch_queues(bridge_batch_manager_t* p_batch_manager,
 
 	/* get slurm job infos */
 	if (slurm_load_jobs(0,&pjim,SHOW_ALL) != 0) {
-		DEBUG3_LOGGER("unable to get allocations informations");
+		DEBUG3_LOGGER("unable to get allocations information");
 		slurm_free_partition_info_msg(ppim);
 		slurm_free_node_info_msg(pnim);
 		goto exit;
@@ -254,7 +254,7 @@ get_batch_queues(bridge_batch_manager_t* p_batch_manager,
 		 *
 		 * if partition->name ~= /.*_seq/ min=max=1
 		 * otherwise, calculate it using MinNodes, MaxNodes and nodes
-		 * informations
+		 * information
 		 */
 
 		int done = 0 ;
@@ -304,7 +304,7 @@ get_batch_queues(bridge_batch_manager_t* p_batch_manager,
 
 	fstatus=0;
 
-	/* free slurm informations */
+	/* free slurm information */
 	slurm_free_job_info_msg(pjim);
 	slurm_free_node_info_msg(pnim);
 	slurm_free_partition_info_msg(ppim);
