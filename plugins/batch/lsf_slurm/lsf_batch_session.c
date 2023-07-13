@@ -232,7 +232,7 @@ int get_batch_sessions(bridge_batch_manager_t* p_batch_manager,
     }
   else
     {
-      /* if no jobs curently active, set 0 to fstatus and stored_jobs_number */
+      /* if no jobs currently active, set 0 to fstatus and stored_jobs_number */
       if(jobs_number==0)
 	{
 	  fstatus=0;

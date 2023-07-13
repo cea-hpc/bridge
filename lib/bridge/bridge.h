@@ -752,7 +752,7 @@ typedef struct bridge_manager {
  * \ingroup BRIDGE_MANAGER
  * \brief Give bridge version
  *
- * \retval version of bridge curently in use
+ * \retval version of bridge currently in use
  * \retval NULL if operation failed
 */
 char* bridge_version();
