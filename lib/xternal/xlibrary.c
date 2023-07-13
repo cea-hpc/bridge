@@ -239,7 +239,7 @@ xlibrary_get_item(xlibrary_t* library,
     fstatus=XERROR_MUTEX_LOCK_FAILED;
   }
   else{
-    /* push unlock method ( used if externaly canceled )*/
+    /* push unlock method ( used if externally canceled )*/
     pthread_cleanup_push(pthread_mutex_unlock,(void*)(&(library->mutex)));
 
     /* call no lock method */
@@ -338,7 +338,7 @@ xlibrary_remove_item(xlibrary_t* library,
     fstatus=XERROR_MUTEX_LOCK_FAILED;
   }
   else{
-    /* push unlock method ( used if externaly canceled )*/
+    /* push unlock method ( used if externally canceled )*/
     pthread_cleanup_push(pthread_mutex_unlock,(void*)(&(library->mutex)));
 
     /* call nolock method */
@@ -433,7 +433,7 @@ xlibrary_add_item(xlibrary_t* library,
     fstatus=XERROR_MUTEX_LOCK_FAILED;
   }
   else{
-    /* push unlock method ( used if externaly canceled )*/
+    /* push unlock method ( used if externally canceled )*/
     pthread_cleanup_push(pthread_mutex_unlock,(void*)(&(library->mutex)));
     
     /* call no lock method */
