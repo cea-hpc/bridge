@@ -982,7 +982,7 @@ int display_by_fields_bridge_batch_session_on_file_stream(FILE * stream,bridge_b
 	else if(strcmp(token,"seqtimeused")==0){
 	  fprintf(stream,"%ld",bs->user_time+bs->system_time);
 	}
-	/* SEQ TIME LIMITE */
+	/* SEQ TIME LIMIT */
 	else if(strcmp(token,"seqtimelim")==0){
 	  fprintf(stream,"%ld",bs->seq_time_limit);
 	}
@@ -990,7 +990,7 @@ int display_by_fields_bridge_batch_session_on_file_stream(FILE * stream,bridge_b
 	else if(strcmp(token,"seqmemused")==0){
 	  fprintf(stream,"%u",bs->seq_mem_used);
 	}
-	/* SEQ MEM LIMITE */
+	/* SEQ MEM LIMIT */
 	else if(strcmp(token,"seqmemlim")==0){
 	  fprintf(stream,"%u",bs->seq_mem_limit);
 	}
@@ -998,7 +998,7 @@ int display_by_fields_bridge_batch_session_on_file_stream(FILE * stream,bridge_b
 	else if(strcmp(token,"partimeused")==0){
 	  fprintf(stream,"%ld",bs->par_time_used);
 	}
-	/* PAR TIME LIMITE */
+	/* PAR TIME LIMIT */
 	else if(strcmp(token,"partimelim")==0){
 	  fprintf(stream,"%ld",bs->par_time_limit);
 	}
@@ -1006,7 +1006,7 @@ int display_by_fields_bridge_batch_session_on_file_stream(FILE * stream,bridge_b
 	else if(strcmp(token,"parmemused")==0){
 	  fprintf(stream,"%u",bs->par_mem_used);
 	}
-	/* PAR MEM LIMITE */
+	/* PAR MEM LIMIT */
 	else if(strcmp(token,"parmemlim")==0){
 	  fprintf(stream,"%u",bs->par_mem_limit);
 	}
@@ -1014,7 +1014,7 @@ int display_by_fields_bridge_batch_session_on_file_stream(FILE * stream,bridge_b
 	else if(strcmp(token,"parcpunb")==0){
 	  fprintf(stream,"%u",bs->par_cores_nb);
 	}
-	/* PAR CPU NUMBER LIMITE */
+	/* PAR CPU NUMBER LIMIT */
 	else if(strcmp(token,"parcpunblim")==0){
 	  fprintf(stream,"%u",bs->par_cores_nb_limit);
 	}
