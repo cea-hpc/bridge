@@ -253,7 +253,7 @@ do
   addonoption=""
   case $option
       in
-      d)
+      d|D)
 	  BRIDGE_DEBUG_MODE=yes;
 	  ((BRIDGE_DEBUG_MAXLEVEL = BRIDGE_DEBUG_MAXLEVEL + 1 ))
 	  ;;
