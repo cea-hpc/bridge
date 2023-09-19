@@ -590,7 +590,12 @@ function bsinfo_cmd {
     ## on agit en fonction du mode
     if [[ ${history_mode} = yes ]]
     then
-      OPTS="-o JobID%7,JobName%10,Partition%8,reqcpus%6,account%18,start,timelimit,elapsed,State,ExitCode"
+      if [[ ${longflag} = "yes" ]]
+      then
+        OPTS="-o JobID%7,Partition%8,reqcpus%6,account%18,start,timelimit,elapsed,State,ExitCode,JobName%-128"
+      else
+        OPTS="-o JobID%7,JobName%10,Partition%8,reqcpus%6,account%18,start,timelimit,elapsed,State,ExitCode"
+      fi
       if [ "$batchid" = "all" ] ; then
         # selection des jobs des 8 derniers jours
           OPTS="$OPTS --allocations -S $(date -d '8 days ago' +'%Y-%m-%dT%H:%M')"
