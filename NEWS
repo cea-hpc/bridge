@@ -1,3 +1,17 @@
+* Changes in bridge-1.5.11
+==========================
+
+    -- Allow overlapping (option --overlap) when using shell.ad addon
+    -- Adds env-cleaner.ad to allow one  to clean it's environment
+    -- Adds the ability to use -f flag along with -H all in mstat
+    -- Adds flux mprun plugin and use wait in mprun -B
+    -- Adds stdio-flux.ad addon to allow usage of --output (-o), --error (-e)
+       and -l (-l) options of flux (bridge equivalent)
+    -- Allows usage of -D for debugging in msub as stated in documentation
+    -- Restore inheritance in mprun when no option is set
+    -- Adds -r usage when calling bsstat
+    -- typo corrections
+
 * Changes in bridge-1.5.10
 ==========================
 
@@ -173,7 +187,7 @@
 	   cartofile in the MPI configuration file
 	-- add autocarto addon (from bridge-1.4.15)
 	-- now use %R instead of %P in wrapped SLURM sinfo -o "" command
-	-- relax_affintiy.ad: add a new addon to use slurm-relax-affinity
+	-- relax_affinity.ad: add a new addon to use slurm-relax-affinity
 	   logic in bridge. Require slurm-relax-affinity RPM.
 	-- spank-stats.ad: improve the addon logic
 	-- bcast.ad: add broadcast mode using parallel local cp to speed
@@ -249,14 +263,14 @@
 	-- mpp: differentiate completing job
 	-- bull(x)mpi-pin addons: use content of BRIDGE_CPUS_BINDING_WRAPPER
        	   env var to indicate the name of the cpuspin.sh tool. Default to using
-       	   a tool name cpuspin.sh in the PATH. (it was previsouly statically defined
+       	   a tool name cpuspin.sh in the PATH. (it was previously statically defined
        	   as /usr/local/bridge/dam/cpuspin.sh)
 
 * Changes in bridge-1.4.12
 ==========================
 	-- IntelMPI addon : now use direct srun execution when I_MPI_PMI_LIBRARY
 	   is defined
-	-- AutoExclusive addon : prevent from denying acces to special QoS
+	-- AutoExclusive addon : prevent from denying access to special QoS
 	-- QoS addon: add special qos to the list of allowed QoS
 
 * Changes in bridge-1.4.11
@@ -280,12 +294,12 @@
 
 * Changes in bridge-1.4.10
 ==========================
-	-- mpstat: add new options to get aditional informations concerning 
+	-- mpstat: add new options to get additional information concerning 
 	   allocations (characteristics, steps) and the associated helper 
 	   script get_task_info for slurm (F.Belot)
 	-- addon: add a new addon to print statistics using spank-stats add the
 	   end of a mprun job (spank-stats.ad)
-	-- plugins/rm/slurm: corerct a bug preventing to get an rm_allocation
+	-- plugins/rm/slurm: correct a bug preventing to get an rm_allocation
 	   given its id (rmastat -r ...)
 	-- tagoutput.ad: use SLURM_LABELIO env var instead of adding a command
 	   line parameter (-l)
@@ -368,9 +382,9 @@
 	   of the mechanism
 	-- fix openmpi related addons to support multiple -e '' options on the 
 	   cmd line
-	-- fix bullmpi-slurm-pin.ad to correcly handle
-	   BRIDGE_SLURM_OMPI_CMD_OPTIONS variables (default value was 
-	   overrided before)
+	-- fix bullmpi-slurm-pin.ad to correctly handle
+	   BRIDGE_SLURM_OMPI_CMD_OPTIONS variables (default value was
+	   overrode before)
 	-- remove loadbalance of tasks in bullmpi-slurm-pin.ad to cope with 
 	   bullmpi-0.18.1 limitations and rmaps_base_loadbalance 0 mandatory
 	   option (mantis 434)
@@ -491,12 +505,12 @@
 	Note: LSF doesn't support -c nor -N options. -c support will
 	require to use bridge mprun. 
 	BRIDGE_MSUB_MAX_NCORE should be set in bridge_bs.conf to help
-	spreading applications accross allocated nodes with incomplete
+	spreading applications across allocated nodes with incomplete
 	cores and nodes specification
 	ex : -n16 -c3 is incomplete we have to know the max number of
 	cores per node to guess how many tasks must be launched per node
 	when BRIDGE_MSUB_MAX_NCORE is set to auto, it tries to guess max
-	core per node using cpuinfo file of submiting node
+	core per node using cpuinfo file of submitting node
 	-- Fix a bug in mpp preventing bad display of nodes list when
 	current directory contains matching nodename pattern files/dirs
 	-- Remove RMID from mpp display when it is not meaningful and 

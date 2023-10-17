@@ -27,7 +27,7 @@
 
 Summary: Bridge CCC In-House Batch Environment
 Name: bridge
-Version: 1.5.10
+Version: 1.5.11
 Release: 1%{?dist}
 License: GPL License
 Group: System Environment/Base
@@ -234,6 +234,18 @@ Additional package providing %{compat_target}_* compatibility links to the
 %endif
 
 %changelog
+* Mon Nov 27 2023 Olivier Delhomme <olivier.delhomme@cea.fr> - 1.5.11-1
+- Allow overlapping (option --overlap) when using shell.ad addon
+- Adds env-cleaner.ad to allow one  to clean it's environment
+- Adds the ability to use -f flag along with -H all in mstat
+- Adds flux mprun plugin and use wait in mprun -B
+- Adds stdio-flux.ad addon to allow usage of --output (-o), --error (-e)
+  and -l (-l) options of flux (bridge equivalent)
+- Allows usage of -D for debugging in msub as stated in documentation
+- Restore inheritance in mprun when no option is set
+- Adds -r usage when calling bsstat
+- typo corrections
+
 * Fri Jun 23 2023 Olivier Delhomme <olivier.delhomme@cea.fr> - 1.5.10-1
 - Improves spec file by removing or updating old parameters.
 - Adds libtirpc autodetection in configure scripts.
