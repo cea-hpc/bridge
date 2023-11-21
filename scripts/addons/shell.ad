@@ -1,5 +1,5 @@
 #*****************************************************************************\
-#  scripts/addons/shell.ad - 
+#  scripts/addons/shell.ad -
 #******************************************************************************
 #  Copyright  CEA/DAM/DIF (2013)
 #
@@ -35,17 +35,17 @@ function bridge_addon_mprun_setopt {
 }
 
 function bridge_addon_mprun_getopt {
-    
+
     ## on se place en mode debug si souhaite
     typeset -i BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
     if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
 	then
 	set -x
     fi
-    
+
     ## on incremente le niveau de log
     typeset -i BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
-    
+
     ## on ajoute une entete a la log
     typeset LOGGER="${LOGGER} Shell Addon :"
 
@@ -59,15 +59,15 @@ function bridge_addon_mprun_getopt {
     typeset USAGE="\
 \t*) Shell
 \t\t -s : Launch a shell on a compute node with dedicated resources \n"
-    
+
     ## on fixe le status de sortie par defaut
     typeset exit_status=0
-    
+
     ## on parse les arguments
     while getopts ${BRIDGE_MPRUN_GETOPT_OPTIONS} option
       do
       case ${option} in
-	  
+
 	  h)
 	      echo -e "${USAGE}" >&2
 	      return 0
@@ -81,8 +81,8 @@ function bridge_addon_mprun_getopt {
 	      ;;
       esac
     done
+
     export BRIDGE_MPRUN_ADDON_SHELL
-    
     return ${exit_status}
 }
 
@@ -93,10 +93,10 @@ function bridge_addon_mprun_alteropt {
 	then
 	set -x
     fi
-    
+
     ## on incremente le niveau de log
     typeset -i BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
-    
+
     ## on ajoute une entete a la log
     typeset LOGGER="${LOGGER} Shell Addon :"
 
@@ -119,16 +119,16 @@ function bridge_addon_mprun_alteropt {
 	    exit 1
 	fi
 
-	bridge_mprun_args="$SHELL"
+	bridge_mprun_args=( /usr/bin/env --unset=BRIDGE_MPRUN_ADDON_SHELL --unset=SLURM_CPU_BIND --unset=SLURM_CPU_BIND_LIST --unset=SLURM_CPU_BIND_TYPE --unset=SLURM_CPU_BIND_VERBOSE  "$SHELL" )
 
 	cat <<EOF
-    _______________  
+    _______________
    / ___/ ___/ ___/  A compute node is going to be allocated and an
   / /__/ /__/ /__   interactive shell session launched on it.
-  \___/\___/\___/    
+  \___/\___/\___/
                   Hit CTL-D or enter "exit 0" to close the
-                 session and release the allocation.   
- 
+                 session and release the allocation.
+
              Waiting for free ressources... (Hit CTL-C to abort)
 
 EOF
@@ -163,10 +163,10 @@ function bridge_addon_mprun_spmd_pre_run {
 	then
 	    set -x
 	fi
-	
+
         ## on incremente le niveau de log
 	typeset -i BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
-    
+
         ## on ajoute une entete a la log
         typeset LOGGER="${LOGGER} Shell Addon :"
 
@@ -174,17 +174,18 @@ function bridge_addon_mprun_spmd_pre_run {
 
 
 	spmd_run_options+=" --pty"
+	spmd_run_options+=" --overlap"
 	spmd_run_options+=" --cpu_bind=none"
 
 	return 0
-	
+
     fi
-    
-    return 0   
+
+    return 0
 }
 
 function bridge_addon_mprun_spmd_post_run {
 
     return 0
-    
+
 }
