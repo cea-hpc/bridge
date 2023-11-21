@@ -1,0 +1,144 @@
+*****************************************************************************\
+#  scripts/addons/stdio-flux.ad -
+#******************************************************************************
+#  Copyright  CEA/DAM/DIF (2022)
+#
+#  This file is part of Bridge, an abstraction layer to ease batch system and
+#  resource manager usage in heterogeneous HPC environments.
+#
+#  Bridge is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  Bridge is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with Bridge.  If not, see <http://www.gnu.org/licenses/>
+#*****************************************************************************/
+#--------------------------------------------------------------------------------
+function bridge_addon_mprun_setopt {
+    typeset MYGETOPTOPTION="o:e:l:"
+    echo "${BRIDGE_MPRUN_GETOPT_OPTIONS}" | grep -q ${MYGETOPTOPTION}
+    if [ $? -ne 0 ]
+        then
+        BRIDGE_MPRUN_GETOPT_OPTIONS="${BRIDGE_MPRUN_GETOPT_OPTIONS}o:e:l"
+    fi
+
+    return 0
+}
+
+function bridge_addon_mprun_getopt {
+    ## on se place en mode debug si souhaite
+    typeset -i BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+    then
+        set -x
+    fi
+    ## on incremente le niveau de log
+    typeset -i BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+    ## on ajoute une entete a la log
+    typeset LOGGER="${LOGGER} Bridge Stdio flux Addon getopt:"
+
+    ## check user env for stdio_flux
+    if [[ -n ${BRIDGE_MPRUN_STDIO_FLUX_OUTPUT} ]]; then
+        BRIDGE_MPRUN_FLUX_STDOUT="${BRIDGE_MPRUN_STDIO_FLUX_OUTPUT}"
+    fi
+
+    ## on fixe le message d'aide a afficher si demande
+    typeset USAGE="\
+\t*) Stdio files with flux
+\t\t -o option : flux files stdout\n
+\t\t -e option : flux files stderr\n
+\t\t -l option : flux add rank labels to stdout, stderr lines \n"
+
+    ## on fixe le status de sortie par defaut
+    typeset exit_status=0
+
+
+    ## on parse les arguments
+    while getopts ${BRIDGE_MPRUN_GETOPT_OPTIONS} option
+    do
+        case ${option} in
+
+
+          h)
+              echo -e "${USAGE}" >&2
+              return 0
+              ;;
+
+          o)
+              BRIDGE_MPRUN_FLUX_STDOUT="${OPTARG}"
+              ;;
+
+          e)
+              BRIDGE_MPRUN_FLUX_STDERR="${OPTARG}"
+              ;;
+
+          l)
+              BRIDGE_MPRUN_FLUX_LABELIO=1
+              ;;
+
+          *)
+              ;;
+      esac
+    done
+
+
+    return 0
+
+}
+
+function bridge_addon_mprun_alteropt {
+    ## on se place en mode debug si souhaite
+    typeset -i BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+        then
+        set -x
+    fi
+    ## on incremente le niveau de log
+    typeset -i BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+    
+    ## on ajoute une entete a la log
+    typeset LOGGER="${LOGGER} Bridge Stdio Flux Addon :"
+    typeset ERROR="${ERROR} Bridge Stdio Flux Addon :"
+
+
+    if [[ -n ${BRIDGE_MPRUN_FLUX_STDOUT} ]]; then
+        spmd_run_extra_parameters+=( "--output=${BRIDGE_MPRUN_FLUX_STDOUT}" )
+    fi
+
+    if [[ -n ${BRIDGE_MPRUN_FLUX_STDERR} ]]; then
+        spmd_run_extra_parameters+=(  "--error=${BRIDGE_MPRUN_FLUX_STDERR}" )
+    fi
+
+    if [[ -n ${BRIDGE_MPRUN_FLUX_LABELIO} ]]; then
+        spmd_run_extra_parameters+=(  "-l" )
+    fi
+
+    return 0
+}
+
+function bridge_addon_mprun_spmd_pre_allocate {
+    return 0
+}
+
+function bridge_addon_mprun_spmd_post_allocate {
+
+    return 0
+
+}
+
+function bridge_addon_mprun_spmd_pre_run {
+
+    return 0
+}
+
+function bridge_addon_mprun_spmd_post_run {
+
+    return 0
+}
+
