@@ -254,7 +254,7 @@ function submit_cmd {
 	request_name=${scriptname}
     fi
     if [ "$LOCAL_FILEARG" = "-" ]; then
-        LOCAL_SCRIPTFILE=${TMPDIR:-/tmp}/STDIN$$
+        LOCAL_SCRIPTFILE=$(mktemp -p "${TMPDIR:-/tmp}" STDINXXXX)
         cat - > $LOCAL_SCRIPTFILE
         LOCAL_SCRIPTMODE=1
 	## on fixe un nom de requete si on en a pas (il sera eventuellement surcharge si le script en contient un)
@@ -489,13 +489,14 @@ function submit_cmd {
 	then
 	## on va faire une allocation dans slurm, donc pas besoin d'en refaire par la suite
 	export BRIDGE_MPRUN_ALLOCATION=yes
+        tmpfile=$(mktemp -p "${TMPDIR:-/tmp}" errmsubXXXX)
 	${LOGGER} "${local_submit_cmd} $(printf "%q " ${local_submit_args[@]}) ${extra_parameters} $LOCAL_SCRIPTFILE $(printf "%q " "$@")"
-	output=$(${local_submit_cmd} "${local_submit_args[@]}" ${extra_parameters} $LOCAL_SCRIPTFILE "$@" 2>/tmp/errmsub$$)
+	output=$(${local_submit_cmd} "${local_submit_args[@]}" ${extra_parameters} ${LOCAL_SCRIPTFILE} "$@" 2>"${tmpfile}")
 	exit_status=$?
-	output_err=`cat /tmp/errmsub$$`
-	if [ -f /tmp/errmsub$$ ]
+        output_err=$(cat "${tmpfile}")
+	if [ -f "${tmpfile}" ]
 	then
-	    \rm -f /tmp/errmsub$$
+	    \rm -f "${tmpfile}"
 	fi
     fi
 
@@ -613,7 +614,9 @@ function bsinfo_cmd {
        EXEC_SERVER=$(${BRIDGE_BSSTAT_CMD} -o exechost -b $batchid)
        if [  "$EXEC_SERVER" != "" -a "$EXEC_SERVER" != "-" ] 
             then
-                REMOTE_COMMAND=/cea/spool/home/$USER/gdb_$$
+                # shuf is part of coreutils
+                number=$(shuf -i 1-100000 -n 1)
+                REMOTE_COMMAND=/cea/spool/home/$USER/gdb_${number}
                 trap 'rm $REMOTE_COMMAND 2>/dev/null' 0 1
                 cat <<EOF > $REMOTE_COMMAND
 #! /bin/ksh

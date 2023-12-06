@@ -388,15 +388,16 @@ function submit_cmd {
            array_ids="0"
         fi
 
+        tmpfile=$(mktemp -p "${TMPDIR:-/tmp}" errmsubXXXX)
         ${LOGGER} xargs -P 100 -d ' ' -n 1 -I % ${local_submit_cmd} '--env=BRIDGE_MSUB_ARRAY_TASK_ID=%' "--env=PYTHONPATH=$OLDPYTHONPATH" --env=-KRB5CCNAME "${local_submit_args[@]}" ${extra_parameters} "$LOCAL_SCRIPTFILE" "$@" "$(printf "%q " "$@")"
 
-        output=$(/usr/bin/nodeset -e -S '\n' -R "$array_ids" | xargs -P 100 -n 1 -I % ${local_submit_cmd} '--env=BRIDGE_MSUB_ARRAY_TASK_ID=%' "--env=PYTHONPATH=$OLDPYTHONPATH" --env=-KRB5CCNAME "${local_submit_args[@]}" ${extra_parameters} "$LOCAL_SCRIPTFILE" "$@" 2>/tmp/errmsub$$)
+        output=$(/usr/bin/nodeset -e -S '\n' -R "$array_ids" | xargs -P 100 -n 1 -I % ${local_submit_cmd} '--env=BRIDGE_MSUB_ARRAY_TASK_ID=%' "--env=PYTHONPATH=$OLDPYTHONPATH" --env=-KRB5CCNAME "${local_submit_args[@]}" ${extra_parameters} "${LOCAL_SCRIPTFILE}" "$@" 2>"${tmpfile}")
 
         exit_status=$?
-        output_err=`cat /tmp/errmsub$$`
-        if [ -f /tmp/errmsub$$ ]
+        output_err=$(cat "${tmpfile}")
+        if [ -f "${tmpfile}" ]
         then
-            \rm -f /tmp/errmsub$$
+            \rm -f "${tmpfile}"
         fi
     fi
 

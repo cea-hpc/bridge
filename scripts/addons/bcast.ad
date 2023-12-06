@@ -83,7 +83,8 @@ function is_bcast_needed {
 
 function compute_bcast_name {
     typeset analyzed_file=( "$@" )
-    echo "/tmp/$(id -un)_${analyzed_file##*\/}_$$_${SLURM_JOBID}"
+    tmpfile=$(mktemp -p "${TMPDIR:-/tmp}" $(id -un)_${analyzed_file##*\/}_XXXX_${SLURM_JOBID})
+    echo $tmpfile
 }
 
 function do_bcast {

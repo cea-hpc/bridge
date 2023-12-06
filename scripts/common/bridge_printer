@@ -166,6 +166,8 @@ function bridge_printer {
 	    fi
 
 	    #### add process info to header if required
+            # Here $$ is needed as a process information
+            # it may not be relevant in container context
 	    if [[ ${PROCESSINFO} = "yes" ]]
 		then
 		MSG_HEAD="${MSG_HEAD} [${PROGNAME}:$$]"

@@ -1,5 +1,6 @@
 #! /bin/bash
-# exec 2>/tmp/trx_cea_strace_$$ ; set -x
+# trace_file=$(mktemp -p "${TMPDIR:-/tmp}" trx_cea_strace_XXX)
+# exec 2>${trace_file} ; set -x
 : numargs=$# : $@
 
 function usage

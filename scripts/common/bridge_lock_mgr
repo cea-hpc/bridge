@@ -387,8 +387,8 @@ function bridge_lock_mgr {
 		      ${LOGGER} "vanished lock : ${lockdata}"
 		      #### on attend un temps aleatoire a cause du probleme de concurrence
 		      #### mentionne dans les problemes connus
-		      #sleep $(echo toto | awk '{srand('"$$"');print int(rand()*10)+1}')
-		      #### on verirife que le lock n'a pas change avant de le supprimer
+		      # sleep $(shuf -i 1-10 -n 1)
+		      #### on verife que le lock n'a pas change avant de le supprimer
 		      #### et on recommence le process
 		      if [[ "${lockdata}" == "$(cat ${lockfile} 2>/dev/null)" ]] 
 			  then
