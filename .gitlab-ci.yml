@@ -1,5 +1,11 @@
 stages:
+  - check
   - build
+
+rpm-check:
+  stage: check
+  script:
+    - ~/bin/perfecto bridge.spec
 
 build-rpm:
   stage: build
