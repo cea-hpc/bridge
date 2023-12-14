@@ -1,5 +1,5 @@
 /*****************************************************************************\
- *  plugins/batch/slurm/batch_session.c - 
+ *  plugins/batch/slurm/batch_session.c -
  *****************************************************************************
  *  Copyright  CEA/DAM/DIF (2012)
  *
@@ -94,7 +94,7 @@ init_batch_session(bridge_batch_manager_t* p_batch_manager,
 		p_batch_session->par_time_limit=0;
 		p_batch_session->seq_mem_limit=0;
 		p_batch_session->par_mem_limit=0;
-    
+
 		/* Default to sequential job only */
 		p_batch_session->par_cores_nb_limit=DEFAULT_PAR_CPUS_NB_LIMIT;
 
@@ -165,7 +165,7 @@ get_batch_sessions(bridge_batch_manager_t* p_batch_manager,
 		   char* execHost,int parallel_infos_flag)
 {
 	int fstatus=-1;
-	
+
 	int i;
 
 	job_info_msg_t* pjim;
@@ -185,7 +185,7 @@ get_batch_sessions(bridge_batch_manager_t* p_batch_manager,
 	char mygroupbuf[mygroupbuf_len];
 
 
-	
+
 	bridge_batch_session_t* bn;
 
 	/* get session stats */
@@ -194,7 +194,7 @@ get_batch_sessions(bridge_batch_manager_t* p_batch_manager,
 		goto exit;
 	}
 	session_nb = pjim->record_count;
-	
+
 	/* build/initialize storage structures */
 	if(*p_p_batch_sessions!=NULL){
 		if(*p_batch_sessions_nb<session_nb)
@@ -213,7 +213,7 @@ get_batch_sessions(bridge_batch_manager_t* p_batch_manager,
 	}
 	stored_session_nb=0;
 
-	
+
 	/* fill structures */
 	for (i=0;i<pjim->record_count && stored_session_nb<session_nb;i++) {
 
@@ -221,7 +221,7 @@ get_batch_sessions(bridge_batch_manager_t* p_batch_manager,
 
 		/* get session pointer */
 		pji=pjim->job_array+i;
-		
+
 		if (pji->name == NULL)
 			continue;
 
@@ -234,7 +234,7 @@ get_batch_sessions(bridge_batch_manager_t* p_batch_manager,
 		case JOB_COMPLETE :
 		case JOB_CANCELLED :
 		case JOB_FAILED :
-		case JOB_TIMEOUT :	
+		case JOB_TIMEOUT :
 			loop=1;
 			break;
 		default:
@@ -248,9 +248,9 @@ get_batch_sessions(bridge_batch_manager_t* p_batch_manager,
 		if (jobname != NULL &&
 		    strcmp(jobname,pji->name) != 0)
 			continue;
-		
+
 		bn = &(*p_p_batch_sessions)[stored_session_nb];
-		
+
 		/* put default values */
 		init_batch_session(p_batch_manager,bn);
 
@@ -284,13 +284,13 @@ get_batch_sessions(bridge_batch_manager_t* p_batch_manager,
 			  break;
 			case JOB_SUSPENDED :
 			  bn->state=BRIDGE_BATCH_SESSION_STATE_SUSPENDED;
-			  break;			
+			  break;
 			default :
 			  bn->state=BRIDGE_BATCH_SESSION_STATE_UNKNOWN;
 			  break;
 
 			}
-		
+
 		/* user & group names */
 		if (getpwuid_r(pji->user_id,&mypasswd,mypasswdbuf,
 			       mypasswdbuf_len,&pmypasswd) == 0 &&
@@ -341,7 +341,12 @@ get_batch_sessions(bridge_batch_manager_t* p_batch_manager,
 
 		/* exec host and nodes list */
 		if (pji->nodes != NULL) {
+// Slurm >= 23.02.2
+#if SLURM_VERSION_NUMBER >= SLURM_VERSION_NUM(23,2,2)
+			hostlist_t *hl = slurm_hostlist_create(pji->nodes);
+#else
 			hostlist_t hl = slurm_hostlist_create(pji->nodes);
+#endif
 			bn->executing_hostname = slurm_hostlist_shift(hl);
 			slurm_hostlist_destroy(hl);
 			bridge_nodelist_add_nodes(&(bn->par_nodelist),pji->nodes);
@@ -392,7 +397,7 @@ get_batch_sessions(bridge_batch_manager_t* p_batch_manager,
 		}
 
 		/* queue filter */
-		if ( bn != NULL && 
+		if ( bn != NULL &&
 		     batch_queue != NULL && bn->queue != NULL &&
 		     strcmp(batch_queue,bn->queue)!=0 ) {
 			clean_batch_session(p_batch_manager,bn);
@@ -400,8 +405,8 @@ get_batch_sessions(bridge_batch_manager_t* p_batch_manager,
 		}
 
 		/* execHost filter */
-		if ( bn != NULL && 
-		     execHost != NULL && 
+		if ( bn != NULL &&
+		     execHost != NULL &&
 		     ( (bn->executing_hostname != NULL &&
 			strcmp(execHost,bn->executing_hostname)!=0 ) ||
 		       bn->executing_hostname == NULL ) ) {
@@ -410,7 +415,7 @@ get_batch_sessions(bridge_batch_manager_t* p_batch_manager,
 		}
 
 		/* batchid filter batch_sessions_batch_ids*/
-		if ( bn != NULL && 
+		if ( bn != NULL &&
 		     batch_sessions_batch_ids != NULL && bn->batch_id &&
 		     strcmp(batch_sessions_batch_ids,bn->batch_id)!=0 ) {
 			clean_batch_session(p_batch_manager,bn);
@@ -418,13 +423,13 @@ get_batch_sessions(bridge_batch_manager_t* p_batch_manager,
 		}
 
 		/* job name filter */
-		if ( bn != NULL && 
+		if ( bn != NULL &&
 		     jobname != NULL && bn->name &&
 		     strcmp(jobname,bn->name)!=0 ) {
 			clean_batch_session(p_batch_manager,bn);
 			bn=NULL;
 		}
-		
+
 		if ( bn != NULL ) {
 			stored_session_nb++;
 		}

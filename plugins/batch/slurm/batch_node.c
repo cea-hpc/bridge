@@ -1,5 +1,5 @@
 /*****************************************************************************\
- *  plugins/batch/slurm/batch_node.c - 
+ *  plugins/batch/slurm/batch_node.c -
  *****************************************************************************
  *  Copyright  CEA/DAM/DIF (2012)
  *
@@ -47,33 +47,33 @@ init_batch_node(bridge_batch_manager_t* p_batch_manager,
 		bridge_batch_node_t* p_batch_node)
 {
 	int fstatus=-1;
-	
+
 	if(p_batch_node!=NULL){
-		
+
 		p_batch_node->name=NULL;
 		p_batch_node->description=NULL;
 		p_batch_node->grouplist=NULL;
-		
+
 		p_batch_node->state=BRIDGE_BATCH_NODE_STATE_UNKNOWN;
-		
+
 		p_batch_node->running_jobs_nb=0;
 		p_batch_node->usersuspended_jobs_nb=0;
 		p_batch_node->syssuspended_jobs_nb=0;
 		p_batch_node->jobs_nb=0;
-		
+
 		p_batch_node->jobs_nb_limit=NO_LIMIT;
 		p_batch_node->perUser_jobs_nb_limit=NO_LIMIT;
-		
+
 		p_batch_node->free_swap=0;
 		p_batch_node->free_tmp=0;
 		p_batch_node->free_mem=0;
-		
+
 		p_batch_node->total_swap=0;
 		p_batch_node->total_tmp=0;
 		p_batch_node->total_mem=0;
-		
+
 		p_batch_node->one_min_cpu_load=0.0;
-  
+
 		fstatus=0;
 	}
 
@@ -118,7 +118,7 @@ get_batch_nodes(bridge_batch_manager_t* p_batch_manager,
 
 	int node_nb=0;
 	int stored_node_nb=0;
-	
+
 	bridge_batch_node_t* bn;
 
 	/* get jobs stats */
@@ -154,23 +154,23 @@ get_batch_nodes(bridge_batch_manager_t* p_batch_manager,
 		}
 	}
 	stored_node_nb=0;
-	
+
 	/* fill structures */
 	for (i=0;i<pnim->record_count && stored_node_nb<node_nb;i++) {
-		
+
 		/* get node pointer */
 		pni=pnim->node_array+i;
-		
+
 		if (pni->name == NULL)
 			continue;
-		
+
 		/* queue name filter */
 		if (batch_node_name != NULL &&
 		    strcmp(batch_node_name,pni->name) != 0)
 			continue;
-		
+
 		bn = &(*p_p_batch_nodes)[stored_node_nb];
-		
+
 		/* put default values */
 		init_batch_node(p_batch_manager,bn);
 
@@ -178,14 +178,14 @@ get_batch_nodes(bridge_batch_manager_t* p_batch_manager,
 		bn->name=strdup(pni->name);
 
 		switch(pni->node_state & NODE_STATE_BASE) {
-			
+
 		case NODE_STATE_ALLOCATED :
 			if (pni->node_state & NODE_STATE_DRAIN )
 				bn->state=BRIDGE_BATCH_NODE_STATE_CLOSED;
 			else
 				bn->state=BRIDGE_BATCH_NODE_STATE_BUSY;
 			break;
-			
+
 		case NODE_STATE_IDLE :
 			if (pni->node_state & NODE_STATE_DRAIN )
 				bn->state=BRIDGE_BATCH_NODE_STATE_CLOSED;
@@ -205,43 +205,47 @@ get_batch_nodes(bridge_batch_manager_t* p_batch_manager,
 		}
 		if ( pni->node_state & NODE_STATE_NO_RESPOND )
 			bn->state=BRIDGE_BATCH_NODE_STATE_UNREACHABLE;
-		
+
 		bn->free_swap=0;
 		bn->free_tmp=0;
 		bn->free_mem=0;
-		
+
 		bn->total_swap = 0;
 		bn->total_tmp = pni->tmp_disk;
 		bn->total_mem = pni->real_memory;
-		
+
 		bn->one_min_cpu_load=0.0;
 
 		bn->running_jobs_nb=0;
 		bn->usersuspended_jobs_nb=0;
 		bn->syssuspended_jobs_nb=0;
 		bn->jobs_nb=0;
-		
+
 		bn->jobs_nb_limit=NO_LIMIT;
 		bn->perUser_jobs_nb_limit=NO_LIMIT;
 
 		/* slurm */
 		for ( j=0 ; j < pjim->record_count ; j++ ) {
-		  
+
 		  pji=pjim->job_array+j;
-		  
+
 		  if ( ( pji->job_state & JOB_STATE_BASE ) == JOB_PENDING )
 		          continue;
 
 		  if ( pji->nodes == NULL )
 		          continue;
-
+// Slurm >= 23.02.2
+#if SLURM_VERSION_NUMBER >= SLURM_VERSION_NUM(23,2,2)
+		  hostlist_t *hl = slurm_hostlist_create(pji->nodes);
+#else
 		  hostlist_t hl = slurm_hostlist_create(pji->nodes);
+#endif
 		  if ( slurm_hostlist_find(hl,pni->name) == -1 ) {
 			  slurm_hostlist_destroy(hl);
 		          continue;
 		  }
 		  slurm_hostlist_destroy(hl);
-		  		  
+
 		  switch ( pji->job_state & JOB_STATE_BASE ) {
 		  case JOB_RUNNING :
 		    bn->running_jobs_nb++;
@@ -254,7 +258,7 @@ get_batch_nodes(bridge_batch_manager_t* p_batch_manager,
 		  default :
 		    break;
 		  }
-		  
+
 		}
 
 		stored_node_nb++;

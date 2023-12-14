@@ -1,5 +1,5 @@
 /*****************************************************************************\
- *  plugins/rm/slurm/slurm_rm_manager.c - 
+ *  plugins/rm/slurm/slurm_rm_manager.c -
  *****************************************************************************
  *  Copyright  CEA/DAM/DIF (2012)
  *
@@ -68,16 +68,16 @@ int
 get_rm_id(char** id)
 {
   int fstatus=-1;
-  
+
   char* rm_id = getenv("SLURM_JOBID");
-  
+
   if ( rm_id != NULL ) {
     *id = strdup(rm_id);
 
     if ( *id != NULL )
       fstatus=0;
   }
-  
+
   return fstatus;
 }
 
@@ -98,7 +98,11 @@ init_rm_manager(bridge_rm_manager_t* p_manager){
   p_manager->version=NULL;
   p_manager->cluster=NULL;
   p_manager->master=NULL;
-  
+
+#if SLURM_VERSION_NUMBER >= SLURM_VERSION_NUM(23,11,1)
+  /* add required slurm_init() since slurm 23.11.1 */
+  slurm_init(NULL);
+#endif
   /* get slurm API version */
   api_version=slurm_api_version();
   snprintf(version,128,"%ld.%ld.%ld",
@@ -112,7 +116,7 @@ init_rm_manager(bridge_rm_manager_t* p_manager){
       p_manager->type=strdup("SLURM");
       p_manager->version=strdup(version);
       p_manager->description=strdup("no desc");
-      
+
       /* get cluster and master names */
       if(pscc->control_machine[0]!=NULL)
 	{
@@ -187,10 +191,14 @@ clean_rm_manager(bridge_rm_manager_t* p_manager){
     {
       p_manager->private=NULL;
     }
+
+#if SLURM_VERSION_NUMBER >= SLURM_VERSION_NUM(23,11,1)
+  slurm_fini();
+#endif
   return fstatus;
 }
 
-int 
+int
 init_rm_partition(bridge_rm_manager_t * p_rm_manager,
 		  bridge_rm_partition_t * p_rm_partition){
   int status=0;
@@ -209,7 +217,7 @@ init_rm_partition(bridge_rm_manager_t * p_rm_manager,
       p_rm_partition->total_cores_nb=INVALID_INTEGER_VALUE;
       p_rm_partition->active_cores_nb=INVALID_INTEGER_VALUE;
       p_rm_partition->used_cores_nb=INVALID_INTEGER_VALUE;
-      
+
       p_rm_partition->total_nodes_nb=INVALID_INTEGER_VALUE;
       p_rm_partition->active_nodes_nb=INVALID_INTEGER_VALUE;
       p_rm_partition->used_nodes_nb=INVALID_INTEGER_VALUE;
@@ -241,20 +249,20 @@ clean_rm_partition(bridge_rm_manager_t * p_rm_manager,
 
       p_rm_partition->state=BRIDGE_RM_PARTITION_STATE_UNKNOWN;
       xfree(p_rm_partition->reason);
-      
+
       p_rm_partition->total_cores_nb=0;
       p_rm_partition->active_cores_nb=0;
       p_rm_partition->used_cores_nb=0;
-      
+
       p_rm_partition->total_nodes_nb=0;
       p_rm_partition->active_nodes_nb=0;
       p_rm_partition->used_nodes_nb=0;
-      
+
       p_rm_partition->time_limit=INVALID_TIME_VALUE;
       p_rm_partition->memory_limit=INVALID_TIME_VALUE;
-      
+
       p_rm_partition->start_time=INVALID_TIME_VALUE;
-      
+
       bridge_nodelist_free_contents(&(p_rm_partition->total_nodelist));
       bridge_nodelist_free_contents(&(p_rm_partition->active_nodelist));
       bridge_nodelist_free_contents(&(p_rm_partition->used_nodelist));
@@ -318,7 +326,7 @@ get_rm_partitions(bridge_rm_manager_t * p_rm_manager,
 	}
       partitions=*p_rm_partitions;
       real_partitions_nb=0;
-      
+
       /* fill in bridge rm partitions structure */
       if(partitions!=NULL)
 	{
@@ -326,7 +334,7 @@ get_rm_partitions(bridge_rm_manager_t * p_rm_manager,
 	    {
 	      /* get partition pointer */
 	      ppi=ppim->partition_array+i;
-	      
+
 	      /* apply  required filters */
 	      if(rm_partition_name!=NULL)
 		{
@@ -338,7 +346,7 @@ get_rm_partitions(bridge_rm_manager_t * p_rm_manager,
 		  else
 		    continue;
 		}
-	      
+
 	      /* initialize partition structure */
 	      init_rm_partition(p_rm_manager,&partitions[real_partitions_nb]);
 
@@ -362,11 +370,11 @@ get_rm_partitions(bridge_rm_manager_t * p_rm_manager,
 	      } else if (ppi->state_up == PARTITION_DOWN) {
 		  partitions[real_partitions_nb].state=BRIDGE_RM_PARTITION_STATE_OUT;
 		  partitions[real_partitions_nb].reason=strdup("submission only");
-	      } else {		      
+	      } else {
 		  partitions[real_partitions_nb].state=BRIDGE_RM_PARTITION_STATE_OUT;
 		  partitions[real_partitions_nb].reason=strdup("inactive");
 	      }
-	      
+
 	      /* resources information */
 	      partitions[real_partitions_nb].total_cores_nb=ppi->total_cpus;
 	      partitions[real_partitions_nb].total_nodes_nb=ppi->total_nodes;
@@ -378,8 +386,8 @@ get_rm_partitions(bridge_rm_manager_t * p_rm_manager,
 	      //partitions[real_partitions_nb].start_time=;
 	      bridge_nodelist_add_nodes(&(partitions[real_partitions_nb].total_nodelist),
 					ppi->nodes);
-	      
-	      /* usage & active information */ 
+
+	      /* usage & active information */
 	      if(pnim!=NULL)
 		{
 		  partitions[real_partitions_nb].used_nodes_nb=0;
@@ -397,7 +405,7 @@ get_rm_partitions(bridge_rm_manager_t * p_rm_manager,
 			  continue;
 			}
 		      bridge_nodelist_free_contents(&list);
-		      
+
 		      if((pni->node_state & NODE_STATE_BASE)==NODE_STATE_ALLOCATED)
 			{
 			  bridge_nodelist_add_nodes(&(partitions[real_partitions_nb].used_nodelist),
@@ -433,8 +441,8 @@ get_rm_partitions(bridge_rm_manager_t * p_rm_manager,
 		}
 	      }
 
-	      
-	
+
+
 	      /* node filtering */
 	      int skip_flag=0;
 	      if(intersectingNodes!=NULL) /* intersection */
@@ -466,30 +474,30 @@ get_rm_partitions(bridge_rm_manager_t * p_rm_manager,
 	      }
 	      else
 		real_partitions_nb++;
-	    
+
 	    }
 	}
-    
+
       /* skrink partitions buffer */
       *p_rm_partitions_nb=real_partitions_nb;
       if(real_partitions_nb!=partitions_nb)
 	*p_rm_partitions=(bridge_rm_partition_t*)realloc(*p_rm_partitions,real_partitions_nb*sizeof(bridge_rm_partition_t));
-    
+
       /* set return status */
       if(real_partitions_nb>0 && *p_rm_partitions!=NULL)
 	fstatus=0;
-     
+
       /* free slurm partition information */
       slurm_free_partition_info_msg(ppim);
     }
-  
+
   /* free slurm node info messages */
   if(pnim!=NULL)
     slurm_free_node_info_msg(pnim);
   /* free slurm job info messages */
   if(pjim!=NULL)
     slurm_free_job_info_msg(pjim);
-  
+
   return fstatus;
 }
 
@@ -509,16 +517,16 @@ init_rm_allocation(bridge_rm_manager_t * p_rm_manager,
       p_allocation->description=NULL; /* More info about allocation */
 
       p_allocation->partition=NULL; /* Allocation partition */
-      
+
       p_allocation->state=BRIDGE_RM_ALLOCATION_STATE_UNKNOWN; /* State of allocation */
       p_allocation->reason=NULL; /* reason of this state */
-      
+
       p_allocation->priority=INVALID_INTEGER_VALUE; /* Allocation priority */
-      
+
       p_allocation->username=NULL; /* allocation owner username*/
       p_allocation->userid=INVALID_INTEGER_VALUE; /* allocation owner username*/
       p_allocation->groupid=INVALID_INTEGER_VALUE; /* allocation owner groupname*/
-      
+
       p_allocation->submit_time=INVALID_TIME_VALUE; /* time of allocation request submission */
       p_allocation->start_time=INVALID_TIME_VALUE; /* time of allocation start */
       p_allocation->end_time=INVALID_TIME_VALUE; /* time of estimated or realized end time of allocation*/
@@ -526,26 +534,26 @@ init_rm_allocation(bridge_rm_manager_t * p_rm_manager,
 
       p_allocation->elapsed_time=INVALID_TIME_VALUE; /* time used by allocation */
       p_allocation->allocated_time=INVALID_TIME_VALUE; /* elapsed_time * cores_nb */
-      
+
       p_allocation->total_cores_nb=INVALID_INTEGER_VALUE; /* Total number of allocated cores */
       p_allocation->used_cores_nb=INVALID_INTEGER_VALUE; /* Number of cores in use */
-      
+
       p_allocation->total_nodes_nb=INVALID_INTEGER_VALUE; /* Total number of allocated nodes */
       p_allocation->used_nodes_nb=INVALID_INTEGER_VALUE; /* Number of nodes in use */
-      
+
       p_allocation->memory_usage=INVALID_INTEGER_VALUE; /* Average usage of memory per core */
-      
+
       p_allocation->system_time=INVALID_TIME_VALUE; /* sum of cores time used by system due to jobs activity */
       p_allocation->user_time=INVALID_TIME_VALUE; /* sum of cores time used by user due to jobs activity */
-      
+
       bridge_nodelist_init(&(p_allocation->nodelist),NULL,0);
-      
+
       p_allocation->allocating_hostname=NULL; /* Hostname where allocation request was submitted */
       p_allocation->allocating_session_id=INVALID_INTEGER_VALUE; /* Session ID on Hostname where allocation request was submitted */
       p_allocation->allocating_pid=INVALID_INTEGER_VALUE; /* Process ID of the allocator */
-      
+
       p_allocation->allocating_session_batchid=NULL; /* batchid value of allocating session ( may be invalid if not a batch session ) */
-      
+
       bridge_idlist_init(&(p_allocation->jobidlist),NULL,0); /* IDs of jobs launched by the allocation */
     }
   return status;
@@ -555,7 +563,7 @@ int
 clean_rm_allocation(bridge_rm_manager_t * p_rm_manager,
 		    bridge_rm_allocation_t * p_allocation){
   int status=0;
-  
+
   if(p_allocation==NULL)
     {
       status=-1;
@@ -574,19 +582,19 @@ clean_rm_allocation(bridge_rm_manager_t * p_rm_manager,
 	free(p_allocation->partition);
       if(p_allocation->reason != NULL)
 	free(p_allocation->reason);
-      
+
       bridge_nodelist_free_contents(&(p_allocation->nodelist));
-      
+
       bridge_idlist_free_contents(&(p_allocation->jobidlist));
-      
+
       if(p_allocation->allocating_hostname != NULL)
 	free(p_allocation->allocating_hostname);
       if(p_allocation->allocating_session_batchid != NULL)
 	free(p_allocation->allocating_session_batchid);
     }
-  
+
   return status;
-  
+
 }
 
 int
@@ -696,7 +704,7 @@ get_rm_allocations_base(bridge_rm_manager_t * p_rm_manager,
 	    /* initialize and set first stage allocation information */
 	    /* init allocation */
 	    init_rm_allocation(p_rm_manager,&allocations[real_allocations_nb]);
-		
+
 	    /* Allocation ID & Name */
 	    char strid[128];
 	    snprintf(strid,128,"%d",pji->job_id);
@@ -712,7 +720,7 @@ get_rm_allocations_base(bridge_rm_manager_t * p_rm_manager,
 	      {
 		allocations[real_allocations_nb].partition=strdup(pji->partition);
 	      }
-		
+
 	    /* Allocation State */
 	    enum job_states js=pji->job_state;
 	    if(js==JOB_PENDING)
@@ -754,30 +762,30 @@ get_rm_allocations_base(bridge_rm_manager_t * p_rm_manager,
 	      {
 		allocations[real_allocations_nb].state=BRIDGE_RM_ALLOCATION_STATE_UNKNOWN;
 	      }
-	    
+
 	    /* Allocation State Reason */
 	    allocations[real_allocations_nb].reason=strdup("-");
-	    
+
 	    /* Allocation priority */
 	    allocations[real_allocations_nb].priority=pji->priority;
-	    
+
 	    /* Allocation start time */
 	    allocations[real_allocations_nb].submit_time=pji->submit_time;
-	    
+
 	    /* Allocation start time */
 	    if ( pji->submit_time == pji->start_time && pji->job_state == JOB_PENDING ) {
 	      allocations[real_allocations_nb].start_time=INVALID_TIME_VALUE;
 	    }
 	    else
 	      allocations[real_allocations_nb].start_time=pji->start_time;
-	    
+
 	    /* Allocation end time */
 	    if ( allocations[real_allocations_nb].state != BRIDGE_RM_ALLOCATION_STATE_PENDING )
 	      allocations[real_allocations_nb].end_time=pji->end_time;
 
 	    /* Allocation total cores number */
 	    allocations[real_allocations_nb].total_cores_nb=pji->num_cpus;
-		
+
 	    /* Allocation nodes list && total nodes number */
 	    if(pji->nodes!=NULL) {
 	      bridge_nodelist_add_nodes(&(allocations[real_allocations_nb].nodelist),pji->nodes);
@@ -787,9 +795,9 @@ get_rm_allocations_base(bridge_rm_manager_t * p_rm_manager,
 	    /* use required nodes if no nodes still allocated */
 	    else
 	      allocations[real_allocations_nb].total_nodes_nb=pji->num_nodes;
-	    
+
 	    /* Allocation user name */
-	    if( getpwuid_r(pji->user_id,&mypasswd,mypasswdbuf,mypasswdbuf_len,&pmypasswd) == 0 
+	    if( getpwuid_r(pji->user_id,&mypasswd,mypasswdbuf,mypasswdbuf_len,&pmypasswd) == 0
 	       && pmypasswd != NULL ) {
 	      allocations[real_allocations_nb].username=strdup(mypasswd.pw_name);
 	    }
@@ -800,10 +808,10 @@ get_rm_allocations_base(bridge_rm_manager_t * p_rm_manager,
 	      }
 	      allocations[real_allocations_nb].username = username;
 	    }
-	    
+
 	    /* Allocation allocating session id */
 	    allocations[real_allocations_nb].allocating_session_id=pji->alloc_sid;
-	    
+
 	    /* Allocation allocating hostname */
 	    if(pji->alloc_node!=NULL)
 	      allocations[real_allocations_nb].allocating_hostname=strdup(pji->alloc_node);
@@ -828,7 +836,7 @@ get_rm_allocations_base(bridge_rm_manager_t * p_rm_manager,
 	      /* elapsed time */
 	      time(&current_time);
 	      allocations[real_allocations_nb].elapsed_time=current_time-pji->start_time;
-	      
+
 	      /* allocated time */
 	      allocations[real_allocations_nb].allocated_time=(current_time-pji->start_time-pji->pre_sus_time)*pji->num_cpus;
 	    }
@@ -895,7 +903,7 @@ get_rm_allocations_base(bridge_rm_manager_t * p_rm_manager,
 		  }
 		bridge_nodelist_free_contents(&list);
 	      }
-		
+
 	    /* get jobs information if allocation has to be kept */
 	    if(out_flag==0){
 	      if(slurm_get_job_steps(0,pji->job_id,0,&pjsirm,0)==0)
@@ -904,12 +912,12 @@ get_rm_allocations_base(bridge_rm_manager_t * p_rm_manager,
 		  for(k=0;k<pjsirm->job_step_count;k++)
 		    {
 		      pjsi=pjsirm->job_steps+k;
-		      
+
 		      /* an allocation is in use if at least one step is not */
 		      /* the batch one */
 		      if ( pjsi->step_id.step_id != SLURM_BATCH_SCRIPT )
 			allocations[real_allocations_nb].state=BRIDGE_RM_ALLOCATION_STATE_INUSE;
-		      
+
 		      snprintf(stepid,128,"%d",pjsi->step_id.step_id);
 		      bridge_idlist_add_ids(&(allocations[real_allocations_nb].jobidlist),
 					      stepid);
@@ -932,13 +940,13 @@ get_rm_allocations_base(bridge_rm_manager_t * p_rm_manager,
 	*p_rm_allocations_nb=real_allocations_nb;
 	if(real_allocations_nb!=nb_allocations)
 	  *p_rm_allocations=(bridge_rm_allocation_t*)realloc(*p_rm_allocations,real_allocations_nb*sizeof(bridge_rm_allocation_t));
-	
+
 	/* set return status */
 	if(real_allocations_nb>0)
 	  {
 	    fstatus=0;
 	  }
-	
+
       }
       /* clean slurm jobs infos data */
       slurm_free_job_info_msg(pjim);

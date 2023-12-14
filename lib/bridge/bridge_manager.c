@@ -1,5 +1,5 @@
 /*****************************************************************************\
- *  lib/bridge/bridge_manager.c - 
+ *  lib/bridge/bridge_manager.c -
  *****************************************************************************
  *  Copyright  CEA/DAM/DIF (2012)
  *
@@ -44,7 +44,7 @@
 char* bridge_version(){
 
   return BRIDGE_VERSION ;
-    
+
 }
 
 /*!
@@ -307,7 +307,7 @@ int bridge_unload_batch_system(bridge_manager_t* p_manager,
 			       bridge_batch_system_t* p_batch_system){
 
   int fstatus=-1;
-  
+
   if(p_batch_system->lib_handle!=NULL)
     dlclose(p_batch_system->lib_handle);
 
@@ -346,9 +346,9 @@ int bridge_load_rm_system(bridge_manager_t* p_manager,
 			  char* lib){
 
   int fstatus=1;
-  
+
   size_t lib_length;
-  
+
   /* Check that lib name and file are present */
   if(name==NULL || lib==NULL)
     return fstatus;
@@ -619,7 +619,7 @@ int bridge_manager_load_conf(bridge_manager_t* p_manager,
   int block_nb;
   int i;
   char* block_name;
-  
+
   char* pointer;
 
   /* Parse configuration file */
@@ -647,7 +647,7 @@ int bridge_manager_load_conf(bridge_manager_t* p_manager,
       }
       /* If resource manager block, get its conf */
       else if (strcmp("rm_system",block_name)==0){
-	/* name */ 
+	/* name */
 	pointer=config_GetKeyValueByName(config,i,"name");
 	if(pointer!=NULL){
 	  p_manager->rm_system_name=strdup(pointer);
@@ -787,7 +787,7 @@ int bridge_init_manager(bridge_manager_t* p_manager){
       return -3;
     }
   }
-  
+
   xverbose_setmaxlevel(p_manager->loglevel);
   xdebug_setmaxlevel(p_manager->debuglevel);
   xerror_setmaxlevel(p_manager->errorlevel);
@@ -855,8 +855,8 @@ int bridge_init_manager(bridge_manager_t* p_manager){
     batch_system_required=1;
     rm_system_required=1;
   }
-  
-  fstatus=0;  
+
+  fstatus=0;
   if(batch_system_required && !p_manager->batch_manager_flag){
     fstatus+=-10;
   }
@@ -898,7 +898,7 @@ int bridge_clean_manager(bridge_manager_t* p_manager){
     free(p_manager->plugins_dir);
     p_manager->plugins_dir=NULL;
   }
-  
+
   if(p_manager->batch_system_name!=NULL){
     free(p_manager->batch_system_name);
     p_manager->batch_system_name=NULL;
@@ -966,7 +966,7 @@ int bridge_get_batch_sessions(bridge_manager_t* p_manager,
 			      char* batch_queue,
 			      char* execHost,
 			      int rm_infos_flag){
-  
+
   int status=-1;
 
   /* just for binding */
@@ -978,14 +978,14 @@ int bridge_get_batch_sessions(bridge_manager_t* p_manager,
   int i;
   char* par_nodelist;
 
-  
+
   if(!p_manager->batch_manager_flag)
     return status;
   /* should never happened because of manager init function */
   if(p_manager->bs_rm_binding!=BRIDGE_BS_RM_BINDING_NONE &&
      !p_manager->rm_manager_flag)
     return status;
-    
+
   switch (p_manager->bs_rm_binding){
 
   case BRIDGE_BS_RM_BINDING_NONE :
@@ -1023,9 +1023,9 @@ int bridge_get_batch_sessions(bridge_manager_t* p_manager,
 					     NULL);
 	if(status==0){
 	  for(i=0;i<*p_batch_sessions_nb;i++){
-	    
+
 	    bsession=((*p_batch_sessions)+i);
-	    
+
 	    for(allocation_id=0;allocation_id<allocations_nb;allocation_id++){
 	      allocation=allocations_array+allocation_id;
 	      if(bsession->rm_id!=NULL){
@@ -1035,21 +1035,21 @@ int bridge_get_batch_sessions(bridge_manager_t* p_manager,
 		    bsession->par_cores_nb=allocation->total_cores_nb;
 		  bsession->par_time_used=allocation->allocated_time/allocation->total_cores_nb;
 		  bsession->par_mem_used=allocation->memory_usage;
-		  
+
 		  if(bridge_nodelist_get_compacted_string(&(allocation->nodelist),
 								&par_nodelist)==0){
-		    
+
 		    bridge_nodelist_add_nodes(&(bsession->par_nodelist),
 						    par_nodelist);
 		    free(par_nodelist);
 		  }
-		  
+
 		}
 	      }
 	    }
-	    
+
 	  }
-	  
+
 	  for(allocation_id=0;allocation_id<allocations_nb;allocation_id++){
 	    allocation=allocations_array+allocation_id;
 	    bridge_clean_rm_allocation(p_manager,allocation);
@@ -1057,7 +1057,7 @@ int bridge_get_batch_sessions(bridge_manager_t* p_manager,
 	  free(allocations_array);
 
 	}
-	
+
       }
 
       status=0;
@@ -1099,7 +1099,7 @@ int bridge_get_terminated_batch_sessions(bridge_manager_t* p_manager,
   if(p_manager->bs_rm_binding!=BRIDGE_BS_RM_BINDING_NONE &&
      !p_manager->rm_manager_flag)
     return fstatus;
-  
+
   fstatus=(p_manager->batch_system).get_terminated_batch_sessions(&(p_manager->batch_manager),
 								  p_batch_sessions,
 								  p_batch_sessions_nb,
@@ -1115,7 +1115,7 @@ int bridge_get_terminated_batch_sessions(bridge_manager_t* p_manager,
 
 int bridge_clean_batch_session(bridge_manager_t* p_manager,
 			       bridge_batch_session_t * p_batch_session){
- 
+
   int fstatus=-1;
 
   if(!p_manager->batch_manager_flag)
@@ -1134,7 +1134,7 @@ int bridge_get_batch_queues(bridge_manager_t* p_manager,
 
   if(!p_manager->batch_manager_flag)
     return fstatus;
-  
+
   fstatus=(p_manager->batch_system).get_batch_queues(&(p_manager->batch_manager),
 						     p_batch_queues,
 						     p_batch_queues_nb,
@@ -1144,12 +1144,12 @@ int bridge_get_batch_queues(bridge_manager_t* p_manager,
 
 int bridge_clean_batch_queue(bridge_manager_t* p_manager,
 			     bridge_batch_queue_t * p_batch_queue){
-  
+
   int fstatus=-1;
 
   if(!p_manager->batch_manager_flag)
     return fstatus;
-  
+
   fstatus=(p_manager->batch_system).clean_batch_queue(&(p_manager->batch_manager),
 						      p_batch_queue);
   return fstatus;
@@ -1163,7 +1163,7 @@ int bridge_get_batch_nodes(bridge_manager_t* p_manager,
 
   if(!p_manager->batch_manager_flag)
     return fstatus;
-  
+
   fstatus=(p_manager->batch_system).get_batch_nodes(&(p_manager->batch_manager),
 						    p_batch_nodes,
 						    p_batch_nodes_nb,
@@ -1173,7 +1173,7 @@ int bridge_get_batch_nodes(bridge_manager_t* p_manager,
 
 int bridge_clean_batch_node(bridge_manager_t* p_manager,
 			    bridge_batch_node_t * p_batch_node){
-  
+
   return (p_manager->batch_system).clean_batch_node(&(p_manager->batch_manager),
 						    p_batch_node);
 }
@@ -1249,7 +1249,7 @@ int bridge_get_terminated_rm_allocations(bridge_manager_t * p_manager,
 
 int bridge_clean_rm_allocation(bridge_manager_t* p_manager,
 			       bridge_rm_allocation_t * p_rm_allocation){
-  
+
   if(!p_manager->rm_manager_flag)
     return -1;
   return (p_manager->rm_system).clean_rm_allocation(&(p_manager->rm_manager),

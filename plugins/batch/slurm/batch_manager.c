@@ -1,5 +1,5 @@
 /*****************************************************************************\
- *  plugins/batch/slurm/batch_manager.c - 
+ *  plugins/batch/slurm/batch_manager.c -
  *****************************************************************************
  *  Copyright  CEA/DAM/DIF (2012)
  *
@@ -48,7 +48,7 @@ int
 init_batch_manager(bridge_batch_manager_t* p_batch_manager)
 {
 	int fstatus=-1;
-	
+
 	slurm_conf_t * pscc;
 	long api_version;
 	char version[128];
@@ -62,7 +62,11 @@ init_batch_manager(bridge_batch_manager_t* p_batch_manager)
 	p_batch_manager->type=NULL;
 	p_batch_manager->version=NULL;
 
-	  /* get slurm API version */
+#if SLURM_VERSION_NUMBER >= SLURM_VERSION_NUM(23,11,1)
+        /* add required slurm_init() since slurm 23.11.1 */
+        slurm_init(NULL);
+#endif
+	/* get slurm API version */
 	api_version=slurm_api_version();
 	snprintf(version,128,"%ld.%ld.%ld",
 		 SLURM_VERSION_MAJOR(api_version),
@@ -70,11 +74,11 @@ init_batch_manager(bridge_batch_manager_t* p_batch_manager)
 		 SLURM_VERSION_MICRO(api_version));
 
 	p_batch_manager->version=strdup(version);
-	
+
 
 	/* get slurm controller configuration */
 	if(slurm_load_ctl_conf(0,&pscc) != 0) {
-		DEBUG3_LOGGER("unable to get slurmctl configuration");		
+		DEBUG3_LOGGER("unable to get slurmctl configuration");
 		goto exit;
 	}
 
@@ -119,7 +123,7 @@ init_batch_manager(bridge_batch_manager_t* p_batch_manager)
 						strdup(separator+1);
 				}
 			}
-			
+
 			free(cluster);
 		}
 	}
@@ -162,7 +166,7 @@ check_batch_manager_validity(bridge_batch_manager_t* p_batch_manager)
 	   p_batch_manager->type &&
 	   p_batch_manager->version)
 		fstatus=0;
-	
+
 	return fstatus;
 }
 
@@ -176,6 +180,10 @@ clean_batch_manager(bridge_batch_manager_t* p_batch_manager)
 	xfree(p_batch_manager->version);
 	xfree(p_batch_manager->masters_list);
 
+#if SLURM_VERSION_NUMBER >= SLURM_VERSION_NUM(23,11,1)
+        slurm_fini();
+#endif
+
 	return 0;
 }
 
@@ -183,13 +191,13 @@ int
 get_batch_id(char** id)
 {
 	int fstatus=-1;
-	
+
 	char* bs_id = getenv("SLURM_JOBID");
   	if ( bs_id != NULL ) {
 		*id = strdup(bs_id);
 		if (*id != NULL)
 			fstatus=0;
 	}
-  
+
 	return fstatus;
 }
