@@ -1,28 +1,59 @@
 stages:
   - check
+  - basebuild
   - build
 
 rpm-check:
   stage: check
   script:
     - ~/bin/perfecto bridge.spec
+    - docker --version
 
-build-rpm:
-  stage: build
+build-dist:
+  stage: basebuild
   script:
     - ./configure --with-slurm --with-slurm-lib
     - make
     - make dist
-    - test -d $CCCSCRATCHDIR/bridge/rpmbuild && rm -fr $CCCSCRATCHDIR/bridge/rpmbuild/
-    - mkdir -p $CCCSCRATCHDIR/bridge/rpmbuild/{BUILD,BUILDROOT,RPMS,SOURCES,SPECS,SRPMS}
-    - cp bridge-*.tar.gz $CCCSCRATCHDIR/bridge/rpmbuild/SOURCES/
-    - cp bridge.spec $CCCSCRATCHDIR/bridge/rpmbuild/SPECS/
-    - cd $CCCSCRATCHDIR/bridge/rpmbuild/
-    - rpmbuild --define "_topdir `pwd`" -v -ba SPECS/bridge.spec
-    - cd -
-    - mkdir dist
-    - cp $CCCSCRATCHDIR/bridge/rpmbuild/RPMS/x86_64/bridge-*.rpm $CCCSCRATCHDIR/bridge/rpmbuild/SRPMS/bridge-*.rpm dist/
   artifacts:
     paths:
-      - dist/bridge-*.rpm
+      - bridge-*.tar.gz
     expire_in: 1 week
+
+# Building bridge for different systems with different version of slurm.
+# Slurm versions must be named as they are in schedMD's download web site.
+# DISTRIBUTION refers to a directory under `build` directory.
+# The docker process of building must put the results of the build into
+# a /dist directory that will be extracted.
+build-parametric:
+  parallel:
+    matrix:
+      - DISTRIBUTION: [almalinux8, almalinux9]
+        SLURM: [slurm-23.11.3, slurm-22.05.11]
+  stage: build
+  script:
+    # we use a directory named against $DISTRIBUTION in which we have
+    # our Dockerfile used to build bridge
+    - cd build/$DISTRIBUTION
+    # Getting slurm form the source
+    - https_proxy='http://webproxy:3128' curl -O https://download.schedmd.com/slurm/$SLURM.tar.bz2
+    # Extracting slurm.spec from source to be used in the Dockerfiles
+    - tar jOxvf $SLURM.tar.bz2 $SLURM/slurm.spec  > slurm.spec
+    # Copying bridge source and bridge spec file built in build-dist job
+    - cp ../../bridge-*.tar.gz .
+    - cp ../../bridge.spec .
+    # Creating the directory where we will put our builds results
+    - mkdir $DISTRIBUTION-$SLURM
+    # Building with a tag in order to be able to run it
+    - docker build -t $DISTRIBUTION-$SLURM .
+    # Running the build to extract the /dist directory
+    - docker run --rm $DISTRIBUTION-$SLURM tar -cC /dist . | tar -xC $DISTRIBUTION-$SLURM/
+    # Moving it to get cleaner artifacts
+    - mv $DISTRIBUTION-$SLURM/ ../../
+  artifacts:
+    name: $DISTRIBUTION-$SLURM
+    paths:
+      - $DISTRIBUTION-$SLURM/bridge-*.rpm
+    expire_in: 1 week
+  dependencies:
+      - build-dist
