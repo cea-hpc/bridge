@@ -33,7 +33,7 @@ rus_mgr {
 	protection_time		=	"0";
 	refresh_interval	=	"60";
 	synchro_command		=	"\
-	@prefix@/bin/cea_bsstat -o batchid,partimeused,partimelim 2>/dev/null";
+	@prefix@/bin/ccc_bsstat -o batchid,partimeused,partimelim 2>/dev/null";
 
 }
 #------------------------------------------------------------------------------#

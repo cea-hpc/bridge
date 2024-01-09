@@ -22,8 +22,10 @@
 %define _program_prefix ccc_
 %define prefix /usr
 %define sysconfdir /etc
+
+# By default compiling with slurm.
+# To compile without slurm you can use --without slurm as argument to rpmbuild
 %bcond_without slurm
-%define compat_target cea
 
 Summary: Bridge CCC In-House Batch Environment
 Name: bridge
@@ -139,20 +141,10 @@ rm %{buildroot}%{_sysconfdir}/logrotate.d/%{_program_prefix}bridged.systemd
 %endif
 chmod 0644 %{buildroot}%{_sysconfdir}/logrotate.d/%{_program_prefix}bridged
 
-%if %{?compat_target}0
-# create cea_ compatibility links
-for dr in %{buildroot}%{_bindir} %{buildroot}%{_sbindir} %{buildroot}%{_sysconfdir}/init.d %{buildroot}%{_sysconfdir}/sysconfig ; do
-    pushd $dr
-    for fl in %{_program_prefix}* ; do
-        ln -s $fl %{?compat_target}_${fl##%{_program_prefix}}
-    done
-    popd
-done
 # ensure bridged existence as it is used by systemd
 pushd %{buildroot}%{_sbindir}
 ln -s %{_program_prefix}bridged bridged
 popd
-%endif
 
 %post
 if [[ -f %{_sysconfdir}/logrotate.d/%{_program_prefix}bridged.rpmsave ]]
@@ -202,26 +194,6 @@ fi
 %{_includedir}/bridge_common.h
 %{_libdir}/libbridge.so
 
-%if %{?compat_target}0
-%package %{compat_target}_compat
-Summary: Compatibility links for alternative Bridge command prefix
-Group: System Environment/Base
-Requires: bridge
-%description %{compat_target}_compat
-Additional package providing %{compat_target}_* compatibility links to the
-%{_program_prefix}* commands provided by the standard flavor of Bridge.
-
-%files %{compat_target}_compat
-%defattr(-,root,root,-)
-%{_bindir}/%{compat_target}_*
-%{_sbindir}/%{compat_target}_*
-%if 0%{?_with_systemd}
-%else
-%config %{_sysconfdir}/init.d/%{compat_target}_bridged
-%endif
-%config (noreplace) %{_sysconfdir}/sysconfig/%{compat_target}_bridged
-%endif
-
 %if %{with slurm}
 %files slurm
 %defattr(-,root,root,-)
@@ -234,6 +206,10 @@ Additional package providing %{compat_target}_* compatibility links to the
 %endif
 
 %changelog
+* Tue Jan 09 2024 Olivier Delhomme <olivier.delhomme@cea.fr> - 1.5.11-2
+- Removes cea_ compatibility layer with associated package in bridge's
+  spec file.
+
 * Mon Nov 27 2023 Olivier Delhomme <olivier.delhomme@cea.fr> - 1.5.11-1
 - Allow overlapping (option --overlap) when using shell.ad addon
 - Adds env-cleaner.ad to allow one  to clean it's environment
