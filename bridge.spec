@@ -27,10 +27,14 @@
 # To compile without slurm you can use --without slurm as argument to rpmbuild
 %bcond_without slurm
 
+# By default creating flux rpm
+# To not create the package use rpmbuil with --without flux as argument
+%bcond_without flux
+
 Summary: Bridge CCC In-House Batch Environment
 Name: bridge
 Version: 1.5.12
-Release: 1%{?dist}
+Release: 2%{?dist}
 License: GPL License
 Group: System Environment/Base
 URL: https://github.com/cea-hpc/bridge
@@ -105,7 +109,7 @@ Requires: bridge >= %{version}
 BuildRequires: slurm-devel >= 22.05.3
 
 %description slurm
-Plugin that provides Slurm access accross the CCC Batch systems Bridge
+Plugin that provides Slurm access across the CCC Batch systems Bridge
 %endif
 
 %if 0%{?fedora} >= 28 || 0%{?rhel} >= 8
@@ -205,7 +209,27 @@ fi
 %{_libdir}/libbridge_*_slurm*
 %endif
 
+%if %{with flux}
+%package flux
+Summary: Flux plugins for Bridge CCC In-House Batch Environment
+Group: System Environment/Base
+Requires: slurm >= 22.05.3
+Requires: bridge >= %{version}
+BuildRequires: slurm-devel >= 22.05.3
+
+%description flux
+Plugin that provides Flux access across the CCC Batch systems Bridge
+
+%files flux
+%defattr(-,root,root,-)
+%{_prefix}/share/scripts/batch_system/plugins/flux
+%{_prefix}/share/scripts/resource_manager/plugins/flux
+%endif
+
 %changelog
+* Wed Jan 10 2024 Olivier Delhomme <olivier.delhomme@cea.fr> - 1.5.12-2
+- Adds flux plugin and flux addon and mpmd-cluster-heterogenous.ad
+  and env-cleaner.ad addons
 * Wed Jan 10 2024 Olivier Delhomme <olivier.delhomme@cea.fr> - 1.5.12-1
 - Removes cea_ compatibility layer with associated package. One
   should pay attention to configuration files and external scripts
@@ -275,7 +299,7 @@ fi
 * Thu Jun 13 2019 Regine Gaudin <regine.gaudin@cea.fr> - 1.5.6-5.ocean3
 - Suppress incompatibility -m option between -m affinity and -m unshare
   mounted filesystems:
-  supress bridge-1.5.6-slurm-affinity-addon.patch
+  suppress bridge-1.5.6-slurm-affinity-addon.patch
   add bridge-1.5.6.option_m_suppress.patch for suppressing -m in the help
   option used for unshare mounted filesystems
   bridge-1.5.6.filesystems_addon.patch
