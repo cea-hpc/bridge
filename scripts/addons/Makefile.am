@@ -39,12 +39,17 @@ dist_addonscripts_DATA		=	autoaccount.ad \
                                         reservation.ad \
                                         filesystems.ad \
                                         spank-stats.ad \
-                    					strace.ad \
+                                        strace.ad \
                                         shell.ad \
                                         tagoutput.ad \
                                         totalview.ad \
                                         vtune.ad \
                                         wrapper-DAM.ad \
-                                        x11.ad
+                                        x11.ad \
+                                        bulk-flux.ad \
+                                        flux.ad \
+                                        stdio-flux.ad \
+                                        mpmd-cluster-heterogenous.ad \
+                                        env-cleaner.ad
 
 dist_addonscripts_SCRIPTS	=	vtune.sh spank-stats.sh strace.sh

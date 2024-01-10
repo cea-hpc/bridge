@@ -7,7 +7,7 @@ bsprofilesdir		=	$(bsscriptsdir)/profiles
 dist_bin_SCRIPTS	=	msub mstat mdel mpp
 
 dist_bsplugins_DATA	=	plugins/generic plugins/lsf plugins/nqsII \
-				plugins/slurm plugins/torque
+				plugins/slurm plugins/torque plugins/flux
 
 dist_bsaddons_DATA	=	
 

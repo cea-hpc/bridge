@@ -8,7 +8,7 @@ rmprofilesdir		=	$(rmscriptsdir)/profiles
 dist_bin_SCRIPTS	=	mprun mpstat mpinfo
 
 dist_rmplugins_DATA	=	plugins/generic plugins/slurm plugins/nqsII plugins/rms \
-				plugins/torque plugins/ws plugins/lsf
+				plugins/torque plugins/ws plugins/lsf plugins/flux
 
 dist_rmaddons_DATA	=	addons/get_task_info
 
