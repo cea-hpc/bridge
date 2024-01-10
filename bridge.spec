@@ -33,8 +33,8 @@
 
 Summary: Bridge CCC In-House Batch Environment
 Name: bridge
-Version: 1.5.12
-Release: 2%{?dist}
+Version: 1.5.13
+Release: 1%{?dist}
 License: GPL License
 Group: System Environment/Base
 URL: https://github.com/cea-hpc/bridge
@@ -227,9 +227,10 @@ Plugin that provides Flux access across the CCC Batch systems Bridge
 %endif
 
 %changelog
-* Wed Jan 10 2024 Olivier Delhomme <olivier.delhomme@cea.fr> - 1.5.12-2
-- Adds flux plugin and flux addon and mpmd-cluster-heterogenous.ad
-  and env-cleaner.ad addons
+* Wed Jan 10 2024 Olivier Delhomme <olivier.delhomme@cea.fr> - 1.5.13-1
+- Adds flux plugins and flux addons and mpmd-cluster-heterogenous.ad
+  and env-cleaner.ad addons to installation and packaging systems.
+
 * Wed Jan 10 2024 Olivier Delhomme <olivier.delhomme@cea.fr> - 1.5.12-1
 - Removes cea_ compatibility layer with associated package. One
   should pay attention to configuration files and external scripts
