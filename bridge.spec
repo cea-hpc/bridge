@@ -29,7 +29,7 @@
 
 Summary: Bridge CCC In-House Batch Environment
 Name: bridge
-Version: 1.5.11
+Version: 1.5.12
 Release: 1%{?dist}
 License: GPL License
 Group: System Environment/Base
@@ -206,9 +206,13 @@ fi
 %endif
 
 %changelog
-* Tue Jan 09 2024 Olivier Delhomme <olivier.delhomme@cea.fr> - 1.5.11-2
-- Removes cea_ compatibility layer with associated package in bridge's
-  spec file.
+* Wed Jan 10 2024 Olivier Delhomme <olivier.delhomme@cea.fr> - 1.5.12-1
+- Removes cea_ compatibility layer with associated package. One
+  should pay attention to configuration files and external scripts
+  to change names from cea_ to ccc_ or used prefix.
+- Usage of $$ in scripts has been replaced with mktemp or shuf
+- slurm23 integration: this version compiles with either version
+  22 or 23 of slurm.
 
 * Mon Nov 27 2023 Olivier Delhomme <olivier.delhomme@cea.fr> - 1.5.11-1
 - Allow overlapping (option --overlap) when using shell.ad addon
