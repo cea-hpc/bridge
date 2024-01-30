@@ -12,13 +12,14 @@ RUN dnf check-update && dnf update -y ; \
     dnf install -y yum-utils;
 
 # Enables Code Ready Builder repository to get munge-devel package
-RUN dnf config-manager --set-enabled crb ;
+RUN dnf config-manager --set-enabled crb ; \
+    dnf install -y epel-release;
 
 # Needed to build slurm
 RUN dnf install -y munge munge-libs munge-devel mariadb-devel pam-devel readline-devel perl-ExtUtils-MakeMaker
 
 # Needed to build bridge
-RUN dnf install -y autoconf automake libtirpc-devel;
+RUN dnf install -y autoconf automake libtirpc-devel clustershell;
 
 # Building slurm's rpm and installing them
 RUN mkdir -p /root/rpmbuild/{BUILD,BUILDROOT,RPMS,SOURCES,SPECS,SRPMS}

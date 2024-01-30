@@ -28,7 +28,7 @@
 %bcond_without slurm
 
 # By default creating flux rpm
-# To not create the package use rpmbuil with --without flux as argument
+# To not create the package use rpmbuild with --without flux as argument
 %bcond_without flux
 
 Summary: Bridge CCC In-House Batch Environment
@@ -43,6 +43,8 @@ Source0: %{name}-%{version}.tar.gz
 BuildRequires: autoconf
 BuildRequires: automake
 BuildRequires: libtool
+
+Requires: clustershell >= 1.8.3
 
 %if 0%{?_with_systemd}
 # Required for %%post, %%preun, %%postun
@@ -106,6 +108,7 @@ Summary: Slurm plugins for Bridge CCC In-House Batch Environment
 Group: System Environment/Base
 Requires: slurm >= 22.05.3
 Requires: bridge >= %{version}
+Requires: clustershell >= 1.8.3
 BuildRequires: slurm-devel >= 22.05.3
 
 %description slurm
@@ -215,6 +218,7 @@ Summary: Flux plugins for Bridge CCC In-House Batch Environment
 Group: System Environment/Base
 Requires: slurm >= 22.05.3
 Requires: bridge >= %{version}
+Requires: clustershell >= 1.8.3
 BuildRequires: slurm-devel >= 22.05.3
 
 %description flux
