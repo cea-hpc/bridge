@@ -212,7 +212,7 @@ function bridge_addon_mprun_alteropt {
 
                 ## on met a jour le nombre de tache
                 bridge_mprun_nproc=${total_tasks}
-                bridge_mprun_nnode=${total_nodes}
+                ## fix slurm23  bridge_mprun_nnode=${total_nodes}
                 unset bridge_mprun_ncore
 
     		exclusive=yes
