@@ -1,5 +1,5 @@
 /*****************************************************************************\
- *  lib/xternal/xstream.c - 
+ *  lib/xternal/xstream.c -
  *****************************************************************************
  *  Copyright  CEA/DAM/DIF (2012)
  *
@@ -111,7 +111,7 @@ xstream_create(const char* hostname,
     return XERROR_STREAM_SOCKET_FAILED;
   }
   VERBOSE("socket creation succeed");
-  
+
   /* set reuse flag, restart will not crash due to an already bound TCP port */
   authorization=1;
   if(setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &authorization, sizeof(int))){
@@ -120,15 +120,15 @@ xstream_create(const char* hostname,
     return XERROR_STREAM_SETSOCKOPT_FAILED;
   }
   VERBOSE("socket REUSEADDR option is now set");
-  
-  /* 
-   * Set hint flag in order to listen on any address 
+
+  /*
+   * Set hint flag in order to listen on any address
    * if hostname is not specified
    */
   memset(&hints,0,sizeof(hints));
   hints.ai_flags=AI_PASSIVE;
   hints.ai_family=AF_INET;
-  
+
   /*
    * get 'hostname' network information
    */
@@ -147,13 +147,13 @@ xstream_create(const char* hostname,
      */
     for(ai=aitop; ai; ai=ai->ai_next){
       memcpy(&addr,ai->ai_addr,ai->ai_addrlen);
-      
+
       if(addr.sin_family==AF_INET){
 	memset(& addresse, 0, sizeof(struct sockaddr_in));
 	addresse.sin_family = AF_INET;
 	addresse.sin_port = addr.sin_port;
 	addresse.sin_addr.s_addr = addr.sin_addr.s_addr;
-	
+
 	if(bind(sock, (struct sockaddr*) &addresse, sizeof(struct sockaddr_in))<0){
 	  ERROR("bind(%s:%d) failed : %s",inet_ntoa(addr.sin_addr),ntohs(addr.sin_port),strerror(errno));
 	  fstatus=XERROR_STREAM_BIND_FAILED;
@@ -171,9 +171,9 @@ xstream_create(const char* hostname,
 
     /* free addrinfo structures */
     freeaddrinfo(aitop);
-    
+
   } /* getaddrinfo */
-  
+
 
   /*
    * Return the socket file descriptor if success, -1 otherwise
@@ -181,9 +181,9 @@ xstream_create(const char* hostname,
   if(fstatus==XSUCCESS)
     fstatus=sock;
   else{
-    close(sock);  
+    close(sock);
   }
-  
+
   EXIT_DEBUG2_MARK(fstatus);
 
   return fstatus;
@@ -205,7 +205,7 @@ xstream_connect(const char* hostname,
   struct addrinfo* aitop;
   struct sockaddr_in addr;
   struct sockaddr_in addresse;
-  
+
   socklen_t optlen;
   struct addrinfo hints;
 
@@ -249,7 +249,7 @@ xstream_connect(const char* hostname,
 	  continue;
 	}
 	VERBOSE("socket creation succeed");
-	
+
 	/* if timeout is not zero, set non blocking mode */
 	if(timeout!=0){
 	  sock_flags=fcntl(sock,F_GETFL);
@@ -320,14 +320,14 @@ xstream_connect(const char* hostname,
 	  fstatus=XSUCCESS;
 	  break;
 	}
-	
+
     } /* for (ai=...) */
 
     /* free addrinfo structures */
     freeaddrinfo(aitop);
 
   }
-  
+
   /* reverse socket flags */
   if(timeout!=0){
     fcntl(sock,F_SETFL,sock_flags);
@@ -339,7 +339,7 @@ xstream_connect(const char* hostname,
   if(fstatus==XSUCCESS)
     fstatus=sock;
   else{
-    close(sock);    
+    close(sock);
     fstatus=-1;
   }
 
@@ -359,7 +359,7 @@ xstream_accept(int socket){
   socklen_t addrlen;
 
   int fstatus=XERROR;
-  
+
   addrlen=sizeof(remote_addr);
 
   incoming_stream=accept(socket,(struct sockaddr *)&remote_addr,&addrlen);
@@ -373,7 +373,7 @@ xstream_accept(int socket){
   else{
     fstatus=incoming_stream;
   }
-  
+
   EXIT_DEBUG2_MARK(fstatus);
 
   return fstatus;
@@ -398,7 +398,7 @@ xstream_listen(int socket,int backlog){
   if(fstatus!=0){
     ERROR("error while specifying stream listening queue length : %s",strerror(errno));
   }
-  
+
   EXIT_DEBUG2_MARK(fstatus);
 
   return fstatus;
@@ -441,7 +441,7 @@ int xstream_send_timeout(int socket,char* buffer,size_t length,int timeout){
       ufds.events=POLLOUT;
     }
   }
-  
+
   /* get start time */
   gettimeofday(&start_time,NULL);
 
@@ -457,7 +457,7 @@ int xstream_send_timeout(int socket,char* buffer,size_t length,int timeout){
       timeleft=timeout
 	-(current_time.tv_sec-start_time.tv_sec)*1000
 	-(current_time.tv_sec-start_time.tv_sec)/1000;
-      
+
       if(timeleft<=0){
 	ERROR("send at %d/%d bytes transmitted : timeout",
 	      written_bytes,length);
@@ -479,7 +479,7 @@ int xstream_send_timeout(int socket,char* buffer,size_t length,int timeout){
 	  break;
 	}
 	else{
-	  
+
 	  /* we just check that the socket is still here */
 	  /* read from a closed nonblocking socket should return 0 */
 	  do{
@@ -492,10 +492,10 @@ int xstream_send_timeout(int socket,char* buffer,size_t length,int timeout){
 	    fstatus=XERROR_STREAM_SOCKET_CLOSED;
 	    break;
 	  }
-	  
+
 	}
       }
-      
+
       /* send data */
       rc=write(socket,buffer+written_bytes,length-written_bytes);
       VERBOSE3("write return code is %d (errno=%d)",rc,errno);
@@ -521,9 +521,9 @@ int xstream_send_timeout(int socket,char* buffer,size_t length,int timeout){
     }
     else
       break;
-    
+
   }
-  
+
   /* reverse socket flags */
   if(timeout!=0){
     fcntl(socket,F_SETFL,sock_flags);
@@ -532,7 +532,7 @@ int xstream_send_timeout(int socket,char* buffer,size_t length,int timeout){
   if(written_bytes==length){
     fstatus=XSUCCESS;
   }
-    
+
   return fstatus;
 }
 
@@ -547,7 +547,7 @@ int xstream_receive_timeout(int socket,char* buffer,size_t length,int timeout){
   int fstatus=-1;
   int rc;
   size_t read_bytes;
-  
+
   int sock_flags;
   int nonblock=0;
   struct pollfd ufds;
@@ -571,23 +571,23 @@ int xstream_receive_timeout(int socket,char* buffer,size_t length,int timeout){
       ufds.events=POLLIN;
     }
   }
-  
+
   /* get start time */
   gettimeofday(&start_time,NULL);
 
   /* send data */
   read_bytes=0;
   while(read_bytes<length){
-    
+
     /* attempt polling if non block mode is activated */
     if(nonblock){
       VERBOSE3("looking for POLLIN events on socket %d",socket);
-      
+
       gettimeofday(&current_time,NULL);
       timeleft=timeout
 	-(current_time.tv_sec-start_time.tv_sec)*1000
 	-(current_time.tv_sec-start_time.tv_sec)/1000;
-      
+
       if(timeleft<=0){
 	ERROR("receive at %d of %d bytes : timeout",
 	      read_bytes,length);
@@ -609,7 +609,7 @@ int xstream_receive_timeout(int socket,char* buffer,size_t length,int timeout){
 	  break;
 	}
       }
-      
+
       /* read data from socket */
       rc=read(socket,buffer+read_bytes,length-read_bytes);
       VERBOSE3("read return code is %d (errno=%d)",rc,errno);
@@ -642,13 +642,13 @@ int xstream_receive_timeout(int socket,char* buffer,size_t length,int timeout){
       fstatus=rc;
       break;
     }
-    
+
   }
 
   if(read_bytes==length){
     fstatus=XSUCCESS;
   }
-    
+
   return fstatus;
 }
 
@@ -656,7 +656,7 @@ int xstream_send_msg_timeout(int socket,char* buffer,size_t length,int timeout){
 
   int fstatus=-1;
   uint32_t nlength;
-  
+
   /* send message length */
   nlength=htonl(length);
   fstatus=xstream_send_timeout(socket,(char*)&nlength,sizeof(uint32_t),timeout);
@@ -674,7 +674,7 @@ int xstream_send_msg_timeout(int socket,char* buffer,size_t length,int timeout){
     else{
       ERROR("unable to send message");
     }
-    
+
   }
 
   return fstatus;
@@ -685,41 +685,45 @@ int xstream_receive_msg_timeout(int socket,char** buffer,size_t* length,int time
 
   int fstatus=XERROR;
   uint32_t nlength;
-  
+
   char* mbuf;
   size_t mlen;
-  
+
   /* receive message length */
   fstatus=xstream_receive_timeout(socket,(char*)&nlength,sizeof(uint32_t),timeout);
   if(fstatus){
     ERROR("unable to receive message length");
   }
   else{
-    mlen=ntohl(nlength);
-    VERBOSE("message length (%d) successfully received",mlen);
+      mlen=ntohl(nlength);
+      if (mlen >= 0 && mlen <= XSTREAM_MAX_LEN) {
 
-    /* allocate memory for message */
-    mbuf=(char*)malloc(mlen*sizeof(char));
-    if(mbuf==NULL){
-      fstatus=XERROR_MEMORY;
-    }
-    else{
+          VERBOSE("message length (%d) successfully received",mlen);
 
-      /* receive message data */
-      fstatus=xstream_receive(socket,mbuf,mlen);
-      if(fstatus){
-	ERROR("unable to receive message");
-	free(mbuf);
+          /* allocate memory for message */
+          mbuf=(char*)malloc(mlen*sizeof(char));
+          if(mbuf==NULL){
+              fstatus=XERROR_MEMORY;
+          }
+          else{
+
+              /* receive message data */
+              fstatus=xstream_receive(socket,mbuf,mlen);
+              if(fstatus){
+                  ERROR("unable to receive message");
+                  free(mbuf);
+              }
+              else{
+                  *buffer=mbuf;
+                  *length=mlen;
+                  VERBOSE("message successfully received");
+                  fstatus=XSUCCESS;
+              }
+          }
+      } else {
+          ERROR("message length (%d) not in boundaries 0 - %d", mlen, XSTREAM_MAX_LEN);
+          fstatus = XERROR_STREAM_WRONG_LENGTH;
       }
-      else{
-	*buffer=mbuf;
-	*length=mlen;
-	VERBOSE("message successfully received");
-	fstatus=XSUCCESS;
-      }
-
-    }
-    
   }
 
   return fstatus;

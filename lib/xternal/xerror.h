@@ -1,5 +1,5 @@
 /*****************************************************************************\
- *  lib/xternal/xerror.h - 
+ *  lib/xternal/xerror.h -
  *****************************************************************************
  *  Copyright  CEA/DAM/DIF (2012)
  *
@@ -61,6 +61,7 @@
 #define XERROR_STREAM_POLL_ERROR              -306
 #define XERROR_STREAM_TIMEOUT                 -307
 #define XERROR_STREAM_SOCKET_CLOSED           -308
+#define XERROR_STREAM_WRONG_LENGTH            -309
 
 /* xqueue related error code */
 #define XERROR_QUEUE_FREELIST_IS_NULL         -401

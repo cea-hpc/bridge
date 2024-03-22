@@ -1,5 +1,5 @@
 /*****************************************************************************\
- *  src/bridged/bridged.c - 
+ *  src/bridged/bridged.c -
  *****************************************************************************
  *  Copyright  CEA/DAM/DIF (2012)
  *
@@ -107,13 +107,13 @@ dispatcher_main_function(bridged_engine_t* engine,xqueue_t* socket_queue)
   }
   else{
     VERBOSE("dispatcher: bridged stream created on %s:%s (fd is %d)",hostname,port,socket);
-  
+
     if(xstream_listen(socket,engine->queue_size)){
       ERROR("dispatcher: unable to specify socket %d listening queue",socket);
     }
     else{
       VERBOSE("dispatcher: socket %d listening queue successfully specified",socket);
-	
+
       while(!eof_main_loop_flag){
 
 	incoming_socket=xstream_accept(socket);
@@ -139,7 +139,7 @@ dispatcher_main_function(bridged_engine_t* engine,xqueue_t* socket_queue)
 	    VERBOSE3("dispatcher: incoming connection (%d) successfully added to pending queue",incoming_socket);
 	    successful_dispatch++;
 	  }
-	  
+
 	}
 	/*_*/ /* accept event */
 
@@ -152,11 +152,11 @@ dispatcher_main_function(bridged_engine_t* engine,xqueue_t* socket_queue)
 
     }
     /*_*/ /* socket listening */
-      
+
     xstream_close(socket);
   }
   /*_*/ /* stream creation */
-    
+
 
   return fstatus;
 }
@@ -215,14 +215,14 @@ void * worker_main_function(void* p_args){
 	fstatus=xqueue_dequeue(squeue,&incoming_socket,sizeof(int));
 	if(fstatus==0){
 	  VERBOSE3("worker[%d] : incoming socket %d successfully dequeued",wargs->id,incoming_socket);
-	  
+
 	  /* disable cancellation and get the request */
 	  fstatus=pthread_setcancelstate(PTHREAD_CANCEL_DISABLE,&old_cancel_state);
 	  if(fstatus){
 	    ERROR2("worker[%d] : unable to disable cancellation");
 	  }
 	  else{
-	    
+
 	    /* process request */
 	    fstatus=worker_process_request(p_args,incoming_socket);
 	    if(fstatus){
@@ -231,29 +231,29 @@ void * worker_main_function(void* p_args){
 	    else{
 	      VERBOSE3("worker[%d] : incoming socket %d processing succeed",wargs->id,incoming_socket);
 	    }
-	    
+
 	    /* reenable cancellation */
 	    fstatus=pthread_setcancelstate(old_cancel_state,&old_cancel_state_bis);
 	    if(fstatus){
 	      ERROR2("worker[%d] : unable to reenable old cancellation state ");
 	  }
-	    
+
 	  }
 	  /*_*/ /* disable cancellation */
-	  
+
 	  /* close incoming socket */
 	  xstream_close(incoming_socket);
 	}
 	/*_*/ /* dequeue */
-	
+
       }
       while(!eof_worker_flag);
-      
-      
+
+
     }
-    
+
   }
-  
+
 }
 
 
@@ -308,14 +308,14 @@ int bridged_main_loop(bridged_engine_t* engine){
       fstatus=-4;
     }
     else{
-  
+
       /* initialize worker threads attributes */
       if(pthread_attr_init(&worker_attr)){
 	ERROR("bridged: unable to initialize worker threads attributes");
 	fstatus=-3;
       }
       else{
-      
+
 	/* set worker thread attributes */
 	status=pthread_attr_setdetachstate(&worker_attr,PTHREAD_CREATE_JOINABLE);
 	if(status){
@@ -327,13 +327,13 @@ int bridged_main_loop(bridged_engine_t* engine){
 	  ERROR("bridged: unable to set worker threads stack size (%d) attribute",worker_stacksize);
 	}
 	fstatus+=status;
-      
+
 	/* continue if previous set succeed */
 	if(fstatus){
 	  fstatus=-3;
 	}
 	else{
-	
+
 	  /* initialize worker args array */
 	  worker_args=(bridged_worker_args_t*)malloc(worker_nb*sizeof(bridged_worker_args_t));
 	  if(worker_args==NULL){
@@ -342,7 +342,7 @@ int bridged_main_loop(bridged_engine_t* engine){
 	  }
 	  else{
 	    VERBOSE("bridged: worker args array successfully allocated");
-	  
+
 	    /* initialize and launch workers */
 	    for(i=0;i<worker_nb;i++){
 	      worker_args[i].id=i;
@@ -360,12 +360,12 @@ int bridged_main_loop(bridged_engine_t* engine){
 		launched_worker_nb++;
 	      }
 	    }
-	  
+
 	    VERBOSE("bridged: %d/%d workers launched",worker_nb,launched_worker_nb);
-	  
+
 	    /* let the dispatcher takes over */
 	    fstatus=dispatcher_main_function(engine,&socket_queue);
-	  
+
 	    /* look for pending connections */
 	    if(xqueue_get_length(&socket_queue,&queued_item_nb)){
 	      ERROR("bridged: unable to get pending connections number");
@@ -391,26 +391,26 @@ int bridged_main_loop(bridged_engine_t* engine){
 	    }
 
 	    VERBOSE("bridged: %s",(reload_flag)?"reloading":"exiting");
-	  
+
 	    free(worker_args);
 	  }
 	  /*_*/ /* worker args array init */
 
 	}
 	/*_*/ /* thread attributes set up */
-    
+
 	/* destroy worker threads attributes */
 	pthread_attr_destroy(&worker_attr);
       }
 
-      /* destroy socket queue */  
+      /* destroy socket queue */
       xqueue_free_contents(&socket_queue);
     }
 
 
     bridge_rus_mgr_free_contents(&rus_mgr);
   }
-  
+
   return fstatus;
 }
 
@@ -440,7 +440,7 @@ int main(int argc,char** argv){
 \t-F\t\trun in foreground\n \
 \t-f conffile\tConfiguration file\n\n";
   int   option;
-  
+
   /* signal handling variables */
   struct sigaction saction;
 
@@ -457,7 +457,7 @@ int main(int argc,char** argv){
     progname=argv[0];
   else
     progname++;
-  
+
   /* process options */
   while((option = getopt(argc,argv,optstring)) != -1)
     {
@@ -487,7 +487,7 @@ int main(int argc,char** argv){
   /* set verbosity and debug level */
   xdebug_setmaxlevel(debug_level);
   xverbose_setmaxlevel(verbose_level);
-  
+
   /* set signal handlers (SIGTERM/SIGHUP/SIGCHLD) */
   saction.sa_handler=signal_handler;
   sigemptyset(&(saction.sa_mask));
@@ -518,11 +518,11 @@ int main(int argc,char** argv){
   while(!exit_flag)
     {
       reload_flag=0;
-    
+
       /* load configuration */
       fstatus=bridged_engine_init_from_config_file(&engine,conf_file_string);
       if(fstatus)
-	{  
+	{
 	  ERROR("bridged: unable to load configuration, exiting");
 	  /* error while loading conf, exit */
 	  exit_flag=1;
@@ -539,7 +539,7 @@ int main(int argc,char** argv){
 		  /* fork, father goes away */
 		  if(fork() != 0)
 		    exit(EXIT_SUCCESS);
-		  
+
 		  /* go into working directory */
 		  if(strlen(engine.cachedir)>0)
 		    {
@@ -549,19 +549,19 @@ int main(int argc,char** argv){
 		    working_directory="/";
 		  chdir(working_directory);
 		  VERBOSE("working directory is now %s",working_directory);
-		  
+
 		  /* change session ID, fork and keep only son */
 		  setsid();
 		  if(fork() != 0)
 		    exit(EXIT_SUCCESS);
-		  
+
 		  /* close all open file descriptor */
 		  for(i=0;i<FOPEN_MAX;i++)
 		    close(i);
 
 		  /* set background flag in order to do all this switch just once */
 		  background_flag=1;
-		  
+
 		}
 
 
@@ -604,10 +604,10 @@ int main(int argc,char** argv){
            xerror_setmaxlevel(engine.loglevel);
            xdebug_setmaxlevel(engine.debuglevel);
         }
-      } 
+      }
 
 	  /* start workers */
-	  
+
 	  /* launch main function */
 	  if ( bridged_main_loop(&engine) != 0 ) {
 
@@ -619,19 +619,19 @@ int main(int argc,char** argv){
 	  /*_*/
 
 	  /* stop workers */
-	  
+
 	  /* free engine contents */
 	  bridged_engine_free_contents(&engine);
 	  /*_*/
 
 	}
       /*_*/
-      
+
     }
   /*_*/
-  
+
   /* free config file */
   XFREE(conf_file_string);
-  
+
   return fstatus;
 }

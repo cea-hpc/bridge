@@ -1,5 +1,5 @@
 /*****************************************************************************\
- *  lib/xternal/xstream.h - 
+ *  lib/xternal/xstream.h -
  *****************************************************************************
  *  Copyright  CEA/DAM/DIF (2012)
  *
@@ -40,6 +40,10 @@
  */
 
 #include <sys/socket.h>
+
+
+#define XSTREAM_MAX_LEN 1048576
+
 
 /*!
  * \brief Create stream socket and connect it to given host and service
