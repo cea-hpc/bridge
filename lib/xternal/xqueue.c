@@ -66,9 +66,6 @@
 /* main header */
 #include "xqueue.h"
 
-/* local functions */
-int xqueue_get_length(xqueue_t* queue,int* length);
-
 int
 xqueue_init(xqueue_t* queue,unsigned int default_length,size_t item_size){
   int fstatus=XERROR;
@@ -160,7 +157,7 @@ xqueue_enqueue(xqueue_t* queue,void* data,size_t length){
   if(fstatus){
     return XERROR_MUTEX_LOCK_FAILED;
   }
-  pthread_cleanup_push(pthread_mutex_unlock,(void*)(&(queue->mutex)));
+  pthread_cleanup_push((void (*)(void *))pthread_mutex_unlock,(void*)(&(queue->mutex)));
 
   /* extract an item from freelist */
   freelist=&(queue->freelist);
@@ -239,7 +236,7 @@ xqueue_dequeue(xqueue_t* queue,void* data,size_t length){
     ERROR("unable to lock queue for dequeuing");
     return XERROR_MUTEX_LOCK_FAILED;
   }
-  pthread_cleanup_push(pthread_mutex_unlock,(void*)(&(queue->mutex)));
+  pthread_cleanup_push((void (*)(void *))pthread_mutex_unlock,(void*)(&(queue->mutex)));
 
   do{
     

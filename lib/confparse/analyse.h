@@ -52,6 +52,7 @@
 #ifndef CONFPARSER_H
 #define CONFPARSER_H
 
+#include <string.h>
 #include <stdio.h>
 
 

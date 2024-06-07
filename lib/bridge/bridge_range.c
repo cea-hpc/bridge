@@ -33,10 +33,6 @@
 #define DEFAULT_RANGELIST_SIZE       16
 #define DEFAULT_RANGELIST_INC_SIZE    8
 
-/* local functions */
-int bridge_rangelist_intersects(bridge_rangelist_t* a1,bridge_rangelist_t* a2);
-int bridge_rangelist_includes(bridge_rangelist_t* a1,bridge_rangelist_t* a2);
-
 int
 bridge_range_set(bridge_range_t* r1,long int v1,long int v2)
 {

@@ -124,7 +124,9 @@ xqueue_enqueue(xqueue_t* queue,void* data,size_t length);
 int
 xqueue_dequeue(xqueue_t* queue,void* data,size_t length);
 
+int xqueue_get_length(xqueue_t* queue,int* length);
 
+int xqueue_wait_4_emptiness(xqueue_t* queue);
 /*!
  * @}
 */

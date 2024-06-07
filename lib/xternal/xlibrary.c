@@ -20,6 +20,7 @@
  *  along with Bridge.  If not, see <http://www.gnu.org/licenses/>
 \*****************************************************************************/
 
+#define _GNU_SOURCE
 #define _XOPEN_SOURCE 600
 #include <string.h>
 #include <errno.h>
@@ -29,7 +30,6 @@ extern int errno;
 #include <unistd.h>
 #include <stdio.h>
 
-#define _GNU_SOURCE
 #include <pthread.h>
 #include <search.h>
 
@@ -98,8 +98,7 @@ int xlibrary_get_item_nolock(xlibrary_t* library,
 			     char* reference,
 			     void* item,
 			     size_t item_size);
-int xlibrary_remove_item_nolock(xlibrary_t* library,
-				char* reference);
+
 int xlibrary_add_item_nolock(xlibrary_t* library,
 			     char* reference,
 			     void* item,
@@ -240,7 +239,7 @@ xlibrary_get_item(xlibrary_t* library,
   }
   else{
     /* push unlock method ( used if externally canceled )*/
-    pthread_cleanup_push(pthread_mutex_unlock,(void*)(&(library->mutex)));
+    pthread_cleanup_push((void (*)(void *))pthread_mutex_unlock,(void*)(&(library->mutex)));
 
     /* call no lock method */
     fstatus=xlibrary_get_item_nolock(library,reference,item,item_size);
@@ -339,7 +338,7 @@ xlibrary_remove_item(xlibrary_t* library,
   }
   else{
     /* push unlock method ( used if externally canceled )*/
-    pthread_cleanup_push(pthread_mutex_unlock,(void*)(&(library->mutex)));
+    pthread_cleanup_push((void (*)(void *))pthread_mutex_unlock,(void*)(&(library->mutex)));
 
     /* call nolock method */
     fstatus=xlibrary_remove_item_nolock(library,reference);
@@ -434,7 +433,7 @@ xlibrary_add_item(xlibrary_t* library,
   }
   else{
     /* push unlock method ( used if externally canceled )*/
-    pthread_cleanup_push(pthread_mutex_unlock,(void*)(&(library->mutex)));
+    pthread_cleanup_push((void (*)(void *))pthread_mutex_unlock,(void*)(&(library->mutex)));
     
     /* call no lock method */
     fstatus=xlibrary_add_item_nolock(library,

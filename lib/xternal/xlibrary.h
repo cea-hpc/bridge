@@ -28,13 +28,12 @@
  */
 #ifndef __XLIBRARY_H_
 #define __XLIBRARY_H_
-
+#define _GNU_SOURCE
 /* multihtreading support */
 #include <pthread.h>
 
 #include "xerror.h"
 
-#define _GNU_SOURCE
 
 /* library implemented using a freelist */
 #include "xfreelist.h"
@@ -172,6 +171,15 @@ xlibrary_get_item(xlibrary_t* library,
 int
 xlibrary_remove_item(xlibrary_t* library,
 		     char* reference);
+
+int xlibrary_lock(xlibrary_t* library);
+
+int xlibrary_unlock(xlibrary_t* library);
+
+int xlibrary_update_index(xlibrary_t* library);
+
+int xlibrary_remove_item_nolock(xlibrary_t* library,
+				char* reference);
 
 /*!
  * @}

@@ -280,6 +280,10 @@ int bridge_rangelist_add_list(bridge_rangelist_t* array,char* list);
  * \retval -1 operation failed
  */
 int bridge_rangelist_sort(bridge_rangelist_t* array);
+
+int bridge_rangelist_intersects(bridge_rangelist_t* a1,bridge_rangelist_t* a2);
+
+int bridge_rangelist_includes(bridge_rangelist_t* a1,bridge_rangelist_t* a2);
 /*!
  * @}
 */
@@ -640,6 +644,8 @@ bridge_common_extended2condensed_nodelist(char* src_list,char** p_dst_list);
 int
 bridge_nodelist_intersects(bridge_nodelist_t* first_list,
 			   bridge_nodelist_t* second_list);
+
+int bridge_nodelist_includes(bridge_nodelist_t* first_list,bridge_nodelist_t* second_list);
 /*!
  * @}
 */
