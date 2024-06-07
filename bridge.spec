@@ -1,9 +1,4 @@
 # evaluate systemd availability
-%if 0%{?fedora} >= 17 || 0%{?rhel} >= 7
-%global _with_systemd 1
-%else
-%global _with_systemd 0
-%endif
 
 %undefine _enable_debug_packages
 %define debug_package %{nil}
@@ -46,15 +41,9 @@ BuildRequires: libtool
 
 Requires: clustershell >= 1.8.3
 
-%if 0%{?_with_systemd}
 # Required for %%post, %%preun, %%postun
 Requires:       systemd
-%if 0%{?fedora} >= 18 || 0%{?rhel} >= 7
 BuildRequires:  systemd
-%else
-BuildRequires:  systemd-units
-%endif
-%endif
 
 # by default program prefix is ccc_
 # you can alter it using --define "_program_prefix foo_" or remove it
@@ -136,16 +125,11 @@ autoreconf -fvi
 chmod 755 %{buildroot}/%{_prefix}/share/scripts/resource_manager/addons/get_task_info
 %endif
 
-%if 0%{?_with_systemd}
-# Systemd for fedora >= 17 or el 7
 install -d -m0755  %{buildroot}%{_unitdir}
 install -Dp -m0644 etc/init.d/bridged.service %{buildroot}%{_unitdir}/%{_program_prefix}bridged.service
 rm %{buildroot}%{_sysconfdir}/init.d/%{_program_prefix}bridged
 rm %{buildroot}%{_sysconfdir}/logrotate.d/%{_program_prefix}bridged
 mv %{buildroot}%{_sysconfdir}/logrotate.d/%{_program_prefix}bridged.systemd %{buildroot}%{_sysconfdir}/logrotate.d/%{_program_prefix}bridged
-%else
-rm %{buildroot}%{_sysconfdir}/logrotate.d/%{_program_prefix}bridged.systemd
-%endif
 chmod 0644 %{buildroot}%{_sysconfdir}/logrotate.d/%{_program_prefix}bridged
 
 # ensure bridged existence as it is used by systemd
@@ -185,12 +169,7 @@ fi
 %{_sbindir}/bridged
 %config (noreplace) %{_sysconfdir}/bridged.conf
 %config (noreplace) %{_sysconfdir}/bridgedapi.conf
-%if 0%{?_with_systemd}
 %{_unitdir}/%{_program_prefix}bridged.service
-%else
-%config %{_sysconfdir}/init.d/%{_program_prefix}bridged
-%config (noreplace) %{_sysconfdir}/sysconfig/%{_program_prefix}bridged
-%endif
 %{_sysconfdir}/logrotate.d/%{_program_prefix}bridged
 %{_includedir}/bridgedapi.h
 %{_libdir}/libbridgedapi.*
