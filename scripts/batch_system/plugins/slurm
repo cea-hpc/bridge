@@ -616,7 +616,11 @@ function bsinfo_cmd {
             then
                 # shuf is part of coreutils
                 number=$(shuf -i 1-100000 -n 1)
-                REMOTE_COMMAND=/cea/spool/home/$USER/gdb_${number}
+                # We need a directory that is visible by any node
+                # on a machine to put our gdb temporary command.
+                GDB_GLOBAL_DIR="$HOME/.local/share/bridge"
+                mkdir -p "${GDB_GLOBAL_DIR}"
+                REMOTE_COMMAND= "${GDB_GLOBAL_DIR}/gdb_${number}"
                 trap 'rm $REMOTE_COMMAND 2>/dev/null' 0 1
                 cat <<EOF > $REMOTE_COMMAND
 #! /bin/ksh
