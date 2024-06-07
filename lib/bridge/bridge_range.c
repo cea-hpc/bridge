@@ -338,7 +338,6 @@ bridge_rangelist_remove_range(bridge_rangelist_t* array,bridge_range_t* rin)
       /* initialize working ranges array */
       bridge_rangelist_init(&work_array);
       /* test if range intersects with this rangelist */
-      intersects_flag=0;
       fstatus=0;
       for(id=0;id<array->ranges_nb;id++)
 	{
@@ -439,7 +438,7 @@ bridge_rangelist_add_list(bridge_rangelist_t* array,char* list)
     end=begin;
     
     /* process input list */
-    while(end!='\0' && end<in_list+in_list_size+1)
+    while(*end!='\0' && end<in_list+in_list_size+1)
       {
 	while(isdigit(*end))
 	  end++;
