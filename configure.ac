@@ -62,6 +62,25 @@ AC_CHECK_HEADERS([rpc/types.h], [],
  ]
 )
 
+dnl ***********************************************************************
+dnl * If we are running automake >= 1.11, we can                          *
+dnl * have nicer compilation output. silent option                        *
+dnl ***********************************************************************
+AC_ARG_ENABLE([silent],
+     [  --disable-silent        Disable quiet compilation],
+     [case "${enableval}" in
+       yes) silent=false ;;
+       no)  silent=true ;;
+       *) AC_MSG_ERROR([bad value ${enableval} for --disable-silent]) ;;
+     esac],[silent=false])
+if test x$silent = xtrue
+then
+    AM_SILENT_RULES([no])
+else
+    AM_SILENT_RULES([yes])
+fi
+
+
 
 dnl build these conf files
 AC_CONFIG_FILES([Makefile
