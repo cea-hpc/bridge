@@ -15,7 +15,7 @@ void set_error(char * s);
 char err_str[ERRLEN]="";
 
 /* Stockage des chaines */
-char YY_PARSED_STRING[MAXSTRLEN];
+char YY_PARSED_STRING[MAXSTRLEN+1];
 
 void YY_BUFFER_APPEND(char * s){
     strncat( YY_PARSED_STRING,s, MAXSTRLEN);
