@@ -39,6 +39,10 @@ BuildRequires: autoconf
 BuildRequires: automake
 BuildRequires: libtool
 
+%if 0%{?fedora} >= 28 || 0%{?rhel} >= 8
+BuildRequires:  libtirpc-devel
+%endif
+
 Requires: clustershell >= 1.8.3
 
 # Required for %%post, %%preun, %%postun
@@ -103,11 +107,6 @@ BuildRequires: slurm-devel >= 22.05.3
 %description slurm
 Plugin that provides Slurm access across the CCC Batch systems Bridge
 %endif
-
-%if 0%{?fedora} >= 28 || 0%{?rhel} >= 8
-BuildRequires:  libtirpc-devel
-%endif
-
 
 %prep
 %setup -q
