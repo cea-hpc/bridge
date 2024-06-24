@@ -29,7 +29,7 @@ build-parametric:
   parallel:
     matrix:
       - DISTRIBUTION: [almalinux8, almalinux9]
-        SLURM: [slurm-24.05.0, slurm-23.11.7, slurm-22.05.11]
+        SLURM: [slurm-24.05.0, slurm-23.11.8, slurm-22.05.11]
   stage: build
   script:
     # we use a directory named against $DISTRIBUTION in which we have
