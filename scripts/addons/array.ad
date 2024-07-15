@@ -1,0 +1,188 @@
+#*****************************************************************************\
+#  scripts/addons/array.ad -
+#******************************************************************************
+#  Copyright  CEA/DAM/DIF (2022)
+#
+#  This file is part of Bridge, an abstraction layer to ease batch system and
+#  resource manager usage in heterogeneous HPC environments.
+#
+#  Bridge is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  Bridge is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with Bridge.  If not, see <http://www.gnu.org/licenses/>
+#*****************************************************************************/
+
+#################################################################################
+#
+# Addon for X11 support in Bridge for both msub and mprun
+#
+#################################################################################
+
+#################################################################################
+# MSUB X11 support
+#--------------------------------------------------------------------------------
+function bridge_addon_msub_setopt {
+    typeset MYGETOPTOPTION="y:"
+
+    echo "${BRIDGE_MSUB_GETOPT_OPTIONS}" | grep -q ${MYGETOPTOPTION}
+
+    if [ $? -ne 0 ]
+        then
+        BRIDGE_MSUB_GETOPT_OPTIONS="${BRIDGE_MSUB_GETOPT_OPTIONS}${MYGETOPTOPTION}"
+    fi
+
+    return 0
+}
+
+function bridge_addon_msub_getopt {
+
+    ## on se place en mode debug si souhaite
+    typeset -i BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+        then
+        set -x
+    fi
+
+    ## on incremente le niveau de log
+    typeset -i BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+
+    ## on ajoute une entete a la log
+    typeset LOGGER="${LOGGER} Array Addon :"
+    typeset ERROR="${ERROR} Array Addon :"
+
+    ## on fixe le message daide a afficher si demande
+    typeset USAGE="\
+\t*) Array
+\t\t -y <range>: submit an array of jobs
+"
+
+    ## on fixe le status de sortie par defaut
+    typeset exit_status=0
+
+    ## on parse les arguments
+    while getopts ${BRIDGE_MSUB_GETOPT_OPTIONS} option
+      do
+      case ${option} in
+
+          h)
+              echo -e "${USAGE}" >&2
+              return 0
+              ;;
+
+          y)
+              BRIDGE_MSUB_ADDON_ARRAY_RANGE=${OPTARG}
+              ${LOGGER} "Array ${OPTARG} selected by command line parameter"
+              ;;
+
+          *)
+              ;;
+      esac
+    done
+
+    export BRIDGE_MSUB_ADDON_ARRAY_RANGE
+    return ${exit_status:-1}
+}
+
+function bridge_addon_msub_alteropt {
+
+    ## on se place en mode debug si souhaite
+    typeset -i BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+        then
+        set -x
+    fi
+
+    ## on incremente le niveau de log
+    typeset -i BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+
+    ## on ajoute une entete a la log
+    typeset LOGGER="${LOGGER} Array Addon :"
+    typeset ERROR="${ERROR} Array Addon :"
+
+    ## si on a deja active l'addon on ne cherche pas dans le fichier
+    if [[ -z ${BRIDGE_MSUB_ADDON_ARRAY_RANGE} ]]
+    then
+        ## on parse le script msub
+        ARRAY_AWKSCRIPT='
+/^#MSUB/ {
+        opt=0
+        for(i=2; i<=NF; i++)
+                if ($i=="-y") {
+                        i++
+                        printf("BRIDGE_MSUB_ADDON_ARRAY_RANGE=%s ;", $i)
+                }
+        }
+'
+        ARRAY_ARGEXP=`${AWK:-awk} "$ARRAY_AWKSCRIPT" < ${BRIDGE_MSUB_SCRIPTFILE}`
+        if [[ -n ${ARRAY_ARGEXP} ]]
+        then
+            ${LOGGER} "Array selected by '#MSUB -y' pragma in input script"
+        fi
+        eval $ARRAY_ARGEXP
+    fi
+
+    if [[ -n ${BRIDGE_MSUB_ADDON_ARRAY_RANGE} ]]
+    then
+        submit_args+=( "-y" "${BRIDGE_MSUB_ADDON_ARRAY_RANGE}" )
+    fi
+
+    return 0
+}
+
+function bridge_addon_msub_alterscript {
+    return 0
+}
+#################################################################################
+
+
+#################################################################################
+# MPRUN FLUX support
+#--------------------------------------------------------------------------------
+function bridge_addon_mprun_setopt {
+
+    return 0
+}
+
+function bridge_addon_mprun_getopt {
+
+    return 0
+}
+
+function bridge_addon_mprun_alteropt {
+
+    return 0
+
+}
+
+function bridge_addon_mprun_spmd_pre_allocate {
+
+    return 0
+
+}
+
+function bridge_addon_mprun_spmd_post_allocate {
+
+    return 0
+
+}
+
+function bridge_addon_mprun_spmd_pre_run {
+
+    return 0
+
+}
+
+function bridge_addon_mprun_spmd_post_run {
+
+    return 0
+
+}
+#################################################################################
