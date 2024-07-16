@@ -244,6 +244,7 @@ function bridge_addon_mprun_spmd_pre_run {
     if [[ "$BRIDGE_MPRUN_ADDON_FLUX" -eq 1 ]]; then
         if [[ ${BRIDGE_MPRUN_ALLOCATION} == "yes" ]]; then
             typeset -a spmd_run_args_new
+            unset SLURM_CPUS_PER_TASK SLURM_TRES_PER_TASK
             spmd_run_args_new=(/usr/bin/env --unset=BRIDGE_MPRUN_ALLOCATION --unset=BRIDGE_MPRUN_LOOP --unset=BRIDGE_MPRUN_PARTITION --unset=BRIDGE_MPRUN_MAXTIME --unset=BRIDGE_MPRUN_MAXMEM --unset=BRIDGE_MPRUN_EXTRA_PARAMETERS --unset=BRIDGE_MPRUN_PROJECT --unset=spmd_run_options BRIDGE_MPRUN_NPROC=$bridge_mprun_addon_flux_orig_nproc BRIDGE_MPRUN_NCORE=$bridge_mprun_addon_flux_orig_ncore flux start -- "${spmd_run_args[@]}")
             spmd_run_args=("${spmd_run_args_new[@]}")
         fi
