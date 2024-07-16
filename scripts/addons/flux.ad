@@ -217,6 +217,11 @@ function bridge_addon_mprun_alteropt {
             unset bridge_mprun_ncore
             unset BRIDGE_MPRUN_NCORE
             bridge_mprun_nproc=$BRIDGE_MPRUN_NNODE
+            # Slurm specific workaround for cases where this is not set
+            if [[ -z "${bridge_mprun_nproc}" ]]; then
+                bridge_mprun_nproc=${SLURM_JOB_NUM_NODES}
+                bridge_mprun_nnode=${SLURM_JOB_NUM_NODES}
+            fi
         else
             bridge_mprun_force_allocation=yes
         fi
@@ -236,7 +241,6 @@ function bridge_addon_mprun_spmd_post_allocate {
 }
 
 function bridge_addon_mprun_spmd_pre_run {
-
     if [[ "$BRIDGE_MPRUN_ADDON_FLUX" -eq 1 ]]; then
         if [[ ${BRIDGE_MPRUN_ALLOCATION} == "yes" ]]; then
             typeset -a spmd_run_args_new
