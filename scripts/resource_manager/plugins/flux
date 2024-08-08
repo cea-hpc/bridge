@@ -60,8 +60,13 @@ function spmd_run_cmd {
     spmd_run_nproc=
     spmd_run_nnode=
 
-    spmd_run_cmd=${spmd_run_cmd:-flux mini run}
+    spmd_run_cmd=${spmd_run_cmd:-flux run}
     spmd_run_options=${spmd_run_options:- -o cpu-affinity=per-task}
+    if [[ "${BRIDGE_MPRUN_FLUX_APPEND}" == "yes" ]]
+        then
+        spmd_run_options="${spmd_run_options} -o output.mode=append"
+    fi
+
     spmd_run_args=
 
     while getopts Vc:n:N:p:A:M:T:E: option

@@ -48,6 +48,10 @@ function bridge_addon_mprun_getopt {
         BRIDGE_MPRUN_FLUX_STDOUT="${BRIDGE_MPRUN_STDIO_FLUX_OUTPUT}"
     fi
 
+    if [[ -n ${BRIDGE_MPRUN_STDIO_FLUX_APPEND} ]]; then
+        BRIDGE_MPRUN_FLUX_APPEND="${BRIDGE_MPRUN_STDIO_FLUX_APPEND}"
+    fi
+
     ## on fixe le message d'aide a afficher si demande
     typeset USAGE="\
 \t*) Stdio files with flux
