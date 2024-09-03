@@ -72,7 +72,7 @@ function submit_cmd {
     typeset VERSION="Slurm-1.0"
     typeset LOGGER="${LOGGER} submit:"
     typeset exit_status=0
-    typeset local_submit_cmd=${bridge_msub_cmd:-flux mini batch}
+    typeset local_submit_cmd=${bridge_msub_cmd:-flux batch}
     typeset -a local_submit_args
     if [[ -n "${bridge_msub_args[@]}" ]]
     then

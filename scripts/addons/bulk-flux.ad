@@ -175,7 +175,7 @@ EOF
     bridge_mprun_ncore='{1}'
     bridge_mprun_args=(bash -c '{2}' :::+ "${cmd_ntasks_list[@]}" :::+ "${cmd_cpus_list[@]}"  :::: "$temporary_file")
     spmd_run_extra_parameters+=( '--wait' '--output=bulk_{seq}_{{id}}.out' )
-    spmd_run_cmd="flux mini bulksubmit"
+    spmd_run_cmd="flux bulksubmit"
     spmd_run_separator=" "
     export BRIDGE_MPRUN_ADDON_BULK_TEMPORARY_FILE=$temporary_file
 
