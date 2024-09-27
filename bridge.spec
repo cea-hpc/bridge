@@ -28,7 +28,7 @@
 
 Summary: Bridge CCC In-House Batch Environment
 Name: bridge
-Version: 1.5.13
+Version: 1.5.14
 Release: 1%{?dist}
 License: GPL License
 Group: System Environment/Base
@@ -209,6 +209,26 @@ Plugin that provides Flux access across the CCC Batch systems Bridge
 %endif
 
 %changelog
+* Fri Sep 27 2024 Olivier Delhomme <olivier.delhomme@cea.fr> - 1.5.14-1
+- Fix for mpmd and Slurm 23
+- bridge.spec file now requires clustershell as nodeset is used
+  in the project. systemd availability check removed (presumed
+  always available)
+- Boundary check before usage in xstream.c
+- Building bridge in silent mode by default
+- Corrects a pointer comparison against a value
+- Avoiding a compilation warning because of a too short destination
+- Code maintenance: new headers and put some function declarations
+  into them
+- Corrects a hardcoded PATH into something more generic:
+  "$HOME/.local/share/bridge"
+- Corrects a bug that prevented -a usage in #MSUB directives
+- Array addon added
+- flux: adaptation for slurm 23.11 and stdio append mode. Removed
+  mini command used in flux invocation since it is deprecated
+  since flux 0.48.0 version.
+
+
 * Wed Jan 10 2024 Olivier Delhomme <olivier.delhomme@cea.fr> - 1.5.13-1
 - Adds flux plugins and flux addons and mpmd-cluster-heterogenous.ad
   and env-cleaner.ad addons to installation and packaging systems.

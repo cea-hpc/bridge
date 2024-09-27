@@ -1,3 +1,24 @@
+* Changes in bridge-1.5.14
+==========================
+
+    -- Fix for mpmd and Slurm 23
+    -- bridge.spec file now requires clustershell as nodeset is used
+       in the project. systemd availability check removed (presumed
+       always available)
+    -- Boundary check before usage in xstream.c
+    -- Building bridge in silent mode by default
+    -- Corrects a pointer comparison against a value
+    -- Avoiding a compilation warning because of a too short destination
+    -- Code maintenance: new headers and put some function declarations
+       into them
+    -- Corrects a hardcoded PATH into something more generic:
+       "$HOME/.local/share/bridge"
+    -- Corrects a bug that prevented -a usage in #MSUB directives
+    -- Array addon added
+    -- flux: adaptation for slurm 23.11 and stdio append mode. Removed
+       mini command used in flux invocation since it is deprecated
+       since flux 0.48.0 version.
+
 * Changes in bridge-1.5.13
 ==========================
 
