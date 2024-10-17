@@ -29,7 +29,7 @@
 Summary: Bridge CCC In-House Batch Environment
 Name: bridge
 Version: 1.5.14
-Release: 1%{?dist}
+Release: 2%{?dist}
 License: GPL License
 Group: System Environment/Base
 URL: https://github.com/cea-hpc/bridge
@@ -43,7 +43,7 @@ BuildRequires: libtool
 BuildRequires:  libtirpc-devel
 %endif
 
-Requires: clustershell >= 1.8.3
+Requires: clustershell
 
 # Required for %%post, %%preun, %%postun
 Requires:       systemd
@@ -209,6 +209,10 @@ Plugin that provides Flux access across the CCC Batch systems Bridge
 %endif
 
 %changelog
+* Thu Oct 17 2024 Olivier Delhomme <olivier.delhomme@cea.fr> - 1.5.14-2
+- fix bridge.spec to avoid requiring a specific version of clustershell
+  as any decent version will provide a functional nodeset program
+
 * Fri Sep 27 2024 Olivier Delhomme <olivier.delhomme@cea.fr> - 1.5.14-1
 - Fix for mpmd and Slurm 23
 - bridge.spec file now requires clustershell as nodeset is used
