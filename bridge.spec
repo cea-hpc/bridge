@@ -29,7 +29,7 @@
 Summary: Bridge CCC In-House Batch Environment
 Name: bridge
 Version: 1.5.14
-Release: 2%{?dist}
+Release: 3%{?dist}
 License: GPL License
 Group: System Environment/Base
 URL: https://github.com/cea-hpc/bridge
@@ -101,7 +101,7 @@ Summary: Slurm plugins for Bridge CCC In-House Batch Environment
 Group: System Environment/Base
 Requires: slurm >= 22.05.3
 Requires: bridge >= %{version}
-Requires: clustershell >= 1.8.3
+Requires: clustershell
 BuildRequires: slurm-devel >= 22.05.3
 
 %description slurm
@@ -196,7 +196,7 @@ Summary: Flux plugins for Bridge CCC In-House Batch Environment
 Group: System Environment/Base
 Requires: slurm >= 22.05.3
 Requires: bridge >= %{version}
-Requires: clustershell >= 1.8.3
+Requires: clustershell
 BuildRequires: slurm-devel >= 22.05.3
 
 %description flux
@@ -209,6 +209,10 @@ Plugin that provides Flux access across the CCC Batch systems Bridge
 %endif
 
 %changelog
+* Fri Oct 18 2024 Olivier Delhomme <olivier.delhomme@cea.fr> - 1.5.14-3
+- fix bridge.spec to avoid requiring a specific version of clustershell
+  in all packages: bridge-slurm and bridge-flux.
+
 * Thu Oct 17 2024 Olivier Delhomme <olivier.delhomme@cea.fr> - 1.5.14-2
 - fix bridge.spec to avoid requiring a specific version of clustershell
   as any decent version will provide a functional nodeset program
