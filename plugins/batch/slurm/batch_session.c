@@ -46,7 +46,11 @@
 #endif
 
 /*Missing in slurm.h*/
+#if SLURM_VERSION_NUMBER >= SLURM_VERSION_NUM(24,0,5)
+extern char *slurm_job_state_reason_string(enum job_state_reason inx);
+#else
 extern char *slurm_job_reason_string(enum job_state_reason inx);
+#endif
 
 #define DEFAULT_PAR_CPUS_NB_LIMIT 0
 
@@ -276,7 +280,11 @@ get_batch_sessions(bridge_batch_manager_t* p_batch_manager,
 			  if ( pji->state_desc != NULL )
 			    bn->reason=strdup(pji->state_desc);
 			  else
+#if SLURM_VERSION_NUMBER >= SLURM_VERSION_NUM(24,0,5)
+			    bn->reason=strdup(slurm_job_state_reason_string(pji->state_reason));
+#else
 			    bn->reason=strdup(slurm_job_reason_string(pji->state_reason));
+#endif
 			  break;
 			case JOB_RUNNING :
 			  bn->state=BRIDGE_BATCH_SESSION_STATE_RUNNING;
