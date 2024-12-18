@@ -144,7 +144,8 @@ function spmd_run_cmd {
         fi
         if [[ -n ${spmd_run_maxtime} ]]
             then
-            spmd_run_options="${spmd_run_options} -t ${spmd_run_maxtime}"
+            # Using FSD notation with an 's' for seconds
+            spmd_run_options="${spmd_run_options} -t ${spmd_run_maxtime}s"
         fi
 
         OLDPYTHONPATH=$PYTHONPATH
