@@ -137,7 +137,7 @@ function bridge_addon_mprun_alteropt {
     if [[ -n "${bridge_mprun_nproc}" ]]; then
         default_nproc=${bridge_mprun_nproc}
     elif [[ -n "${BRIDGE_MPRUN_NPROC}" ]]; then
-        default_nproc=${BRIDGE_MPRUN_NPROC}x
+        default_nproc=${BRIDGE_MPRUN_NPROC}
     elif [[ -n "${BRIDGE_MSUB_NPROC}" ]]; then
         default_nproc=${BRIDGE_MSUB_NPROC}
     else
