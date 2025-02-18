@@ -1,7 +1,8 @@
 scriptsdir			=	$(datadir)/scripts
 addonscriptsdir			=	$(scriptsdir)/addons
 
-dist_addonscripts_DATA		=	autoaccount.ad \
+dist_addonscripts_DATA		=	array.ad \
+					autoaccount.ad \
 					autocarto.ad \
 					autodefmem.ad \
 					autoexclusive.ad \
