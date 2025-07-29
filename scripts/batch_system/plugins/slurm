@@ -650,8 +650,9 @@ EOF
        EXEC_SERVER=$(${BRIDGE_BSSTAT_CMD} -o exechost -b $batchid)
        if [  "$EXEC_SERVER" != "" -a "$EXEC_SERVER" != "-" ] 
             then
-            REMOTE_COMMAND="ps f -o pid,ppid,stat,wchan,rss,%cpu,start,cputime,command -p \`scontrol listpids $batchid | cut -d' ' -f1 | sed '1,2d'\`"
-            ssh $EXEC_SERVER  $REMOTE_COMMAND 2>/dev/null
+              REMOTE_COMMAND1="ps f -o pid,ppid,stat,wchan,rss,%cpu,start,cputime,command -p \`scontrol listpids \"$batchid\" | cut -d' ' -f1 | sed '1,2d'\`"
+              REMOTE_COMMAND2="ps auxf"
+              SLURM_JOB_ID=$batchid ssh $EXEC_SERVER "if [ "\$_PCOCC_CURRENT_IMAGE" == "" ] ; then $REMOTE_COMMAND1; else $REMOTE_COMMAND2; fi" 2>/dev/null
        fi
     else
         scontrol show job $@
