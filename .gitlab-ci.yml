@@ -1,3 +1,12 @@
+variables:
+  CI_CCC_WITH_DOCKER: "true"
+  CI_CCC_TIMELIMIT: "60"
+
+default:
+  interruptible: true
+  tags:
+    - gitlab-runner-pcocc
+
 stages:
   - check
   - basebuild
@@ -26,6 +35,8 @@ build-dist:
 # The docker process of building must put the results of the build into
 # a /dist directory that will be extracted.
 build-parametric:
+  variables:
+    CI_CCC_NUM_CORES: "16"
   parallel:
     matrix:
       - DISTRIBUTION: [almalinux8, almalinux9]
@@ -36,7 +47,7 @@ build-parametric:
     # our Dockerfile used to build bridge
     - cd build/$DISTRIBUTION
     # Getting slurm form the source
-    - https_proxy='http://webproxy:3128' curl -O https://download.schedmd.com/slurm/$SLURM.tar.bz2
+    - docker run --rm curlimages/curl -s https://download.schedmd.com/slurm/$SLURM.tar.bz2 >$SLURM.tar.bz2
     # Extracting slurm.spec from source to be used in the Dockerfiles
     - tar jOxvf $SLURM.tar.bz2 $SLURM/slurm.spec  > slurm.spec
     # Copying bridge source and bridge spec file built in build-dist job
