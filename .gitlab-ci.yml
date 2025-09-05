@@ -15,8 +15,7 @@ stages:
 rpm-check:
   stage: check
   script:
-    - ~/bin/perfecto bridge.spec
-    - docker --version
+    - docker run --rm -v "$PWD":/perfecto -w /perfecto essentialkaos/perfecto -I PF2,PF12,LNT0 bridge.spec
 
 build-dist:
   stage: basebuild
