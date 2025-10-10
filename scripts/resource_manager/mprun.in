@@ -89,7 +89,7 @@ if [[ ! -d ${BRIDGE_CONFDIR} ]]
 fi
 #------------------------------------------------------------------------------------------------------------------
 # on fixe les options de base du script, utilisees par les addons pour parser les lignes de commandes
-typeset BRIDGE_MPRUN_GETOPT_OPTIONS="DhvVc:n:N:p:A:M:xT:P:KE:Z:"
+typeset BRIDGE_MPRUN_GETOPT_OPTIONS="DhvVc:n:N:p:A:M:xT:P:KE:Z:g:"
 #------------------------------------------------------------------------------------------------------------------
 typeset BRIDGE_HOSTNAME=$(hostname 2>/dev/null)
 #------------------------------------------------------------------------------------------------------------------

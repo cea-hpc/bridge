@@ -353,6 +353,7 @@ dist_addonscripts_DATA = array.ad \
                                         bulk-flux.ad \
                                         flux.ad \
                                         stdio-flux.ad \
+					gpus-flux.ad \
                                         mpmd-cluster-heterogenous.ad \
                                         env-cleaner.ad
 

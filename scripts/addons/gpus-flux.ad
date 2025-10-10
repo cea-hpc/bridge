@@ -1,0 +1,96 @@
+#******************************************************************************
+#  Copyright  CEA/DAM/DIF (2022)
+#--------------------------------------------------------------------------------
+function bridge_addon_mprun_setopt {
+    typeset MYGETOPTOPTION="g:"
+    echo "${BRIDGE_MPRUN_GETOPT_OPTIONS}" | grep -q ${MYGETOPTOPTION}
+    if [ $? -ne 0 ]
+        then
+        BRIDGE_MPRUN_GETOPT_OPTIONS="${BRIDGE_MPRUN_GETOPT_OPTIONS}g"
+    fi
+
+    return 0
+}
+
+function bridge_addon_mprun_getopt {
+    ## on se place en mode debug si souhaite
+    typeset -i BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+    then
+        set -x
+    fi
+    typeset -i BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+    ## on ajoute une entete a la log
+    typeset LOGGER="${LOGGER} Bridge Gpus flux Addon getopt:"
+
+    ## on fixe le message d'aide a afficher si demande
+    typeset USAGE="\
+\t*) Gpus with flux \n
+\t\t -g option : flux add gpus number \n"
+
+    ## on fixe le status de sortie par defaut
+    typeset exit_status=0
+
+    ## on parse les arguments
+    while getopts ${BRIDGE_MPRUN_GETOPT_OPTIONS} option
+    do
+        case ${option} in
+
+
+          h)
+              echo -e "${USAGE}" >&2
+              return 0
+              ;;
+
+          g)
+              BRIDGE_MPRUN_FLUX_GPUS="${OPTARG}"
+              ;;
+
+          *)
+              ;;
+      esac
+   done
+
+
+    return 0
+
+}
+function bridge_addon_mprun_alteropt {
+    ## on se place en mode debug si souhaite
+    typeset -i BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+        then
+        set -x
+    fi
+    ## on incremente le niveau de log
+    typeset -i BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+    
+    ## on ajoute une entete a la log
+    typeset LOGGER="${LOGGER} Bridge Gpus Flux Addon :"
+
+    if [[ -n ${BRIDGE_MPRUN_FLUX_GPUS} ]]; then
+        spmd_run_extra_parameters+=("-g ${BRIDGE_MPRUN_FLUX_GPUS}" )
+    fi
+
+    return 0
+}
+function bridge_addon_mprun_spmd_pre_allocate {
+    return 0
+}
+
+function bridge_addon_mprun_spmd_post_allocate {
+
+    return 0
+
+}
+
+function bridge_addon_mprun_spmd_pre_run {
+
+    return 0
+}
+
+function bridge_addon_mprun_spmd_post_run {
+
+    return 0
+}
+
