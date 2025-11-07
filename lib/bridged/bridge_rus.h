@@ -1,5 +1,5 @@
 /*****************************************************************************\
- *  lib/bridged/bridge_rus.h - 
+ *  lib/bridged/bridge_rus.h -
  *****************************************************************************
  *  Copyright  CEA/DAM/DIF (2012)
  *
@@ -73,7 +73,7 @@
  * \struct bridge_rus_record
  * \brief bridge resource usage basic record
  *
- * this structure hold usage information about 
+ * this structure hold usage information about
  * a specific allocation referenced by its unique identifier
  *
  */
@@ -97,7 +97,7 @@ typedef struct bridge_rus_record {
  * \retval BRIDGE_RUS_SUCCESS on success
  * \retval BRIDGE_RUS_ERROR_BAD_ID on failure due to an invalid ID
  * \retval BRIDGE_RUS_ERROR on any other failure
- *  
+ *
  */
 int
 bridge_rus_record_init(bridge_rus_record_t* record,char* id);
@@ -111,7 +111,7 @@ bridge_rus_record_init(bridge_rus_record_t* record,char* id);
  *
  * \retval BRIDGE_RUS_SUCCESS on success
  * \retval BRIDGE_RUS_ERROR on any other failure
- *  
+ *
  */
 int
 bridge_rus_record_free_contents(bridge_rus_record_t* record);
@@ -129,7 +129,7 @@ bridge_rus_record_free_contents(bridge_rus_record_t* record);
  * \struct bridge_rus_mgr
  * \brief bridge resource usage records manager
  *
- * a bridge resource usage manager collects 
+ * a bridge resource usage manager collects
  * information about allocations usage and stores it
  * using bridge resource usage record into a library
  * for further access.
@@ -156,14 +156,14 @@ typedef struct bridge_rus_mgr {
  * \brief initialize bridge resource manager \a rus based on configuration stored in \a config_file
  *
  * \param rus pointer on the structure to initialize
- * \param config_file URI of the configuration file to use for initiailization
+ * \param config_file URI of the configuration file to use for initialization
  *
  * \retval BRIDGE_RUS_SUCCESS on success
  * \retval BRIDGE_RUS_ERROR_NO_CONF_FILE on failure because no conf file is defined
  * \retval BRIDGE_RUS_ERROR_BAD_CONF_FILE on failure due to a bad conf file
  * \retval BRIDGE_RUS_ERROR_LIBRARY_INIT on failure due to library init failure
  * \retval BRIDGE_RUS_ERROR on any other failure
- *  
+ *
  */
 int
 bridge_rus_mgr_init(bridge_rus_mgr_t* rus,char* config_file);
@@ -176,7 +176,7 @@ bridge_rus_mgr_init(bridge_rus_mgr_t* rus,char* config_file);
  *
  * \retval BRIDGE_RUS_SUCCESS on success
  * \retval BRIDGE_RUS_ERROR on failure
- *  
+ *
  */
 int
 bridge_rus_mgr_free_contents(bridge_rus_mgr_t* rus);
@@ -185,14 +185,14 @@ bridge_rus_mgr_free_contents(bridge_rus_mgr_t* rus);
  * \fn int bridge_rus_mgr_synchronise(bridge_rus_mgr_t* rus,unsigned long * pnb)
  * \brief collect resource usage information
  *
- * \param rus pointer on the manager structure to use 
- * \param pnb pointer on the current number of items stored 
+ * \param rus pointer on the manager structure to use
+ * \param pnb pointer on the current number of items stored
  *
  * \retval BRIDGE_RUS_SUCCESS on success
  * \retval BRIDGE_RUS_ERROR_SYNC_CMD_INVALID on failure due to an invalid command
  * \retval BRIDGE_RUS_ERROR_SYNC_CMD_FAILED on failure while executing command
  * \retval BRIDGE_RUS_ERROR on any other failure
- *  
+ *
  */
 int
 bridge_rus_mgr_synchronise(bridge_rus_mgr_t* rus,unsigned long * pnb);
@@ -208,7 +208,7 @@ bridge_rus_mgr_synchronise(bridge_rus_mgr_t* rus,unsigned long * pnb);
  * \retval BRIDGE_RUS_SUCCESS on success
  * \retval BRIDGE_RUS_ERROR_ITEM_NOT_FOUND on failure due to error while getting item from library
  * \retval BRIDGE_RUS_ERROR on any other failure
- *  
+ *
  */
 int
 bridge_rus_mgr_get_record(bridge_rus_mgr_t* rus,bridge_rus_record_t* record);
