@@ -186,7 +186,7 @@ typeset USAGE="usage : ${PROGNAME} [-dvhV] \\
 
  -T time_limit : maximum walltime of the batch job in seconds (default=18000)
  -M mem_limit  : maximum memory amount required per allocated core in Mo (default is chosen by the underlying system)
-                 ('default' can be explicitely specified to override existing '#MSUB -M' pragmas)
+                 ('default' can be explicitly specified to override existing '#MSUB -M' pragmas)
 
  -W            : let multiple jobs sharing the same name and user run simultaneously (default is ${singleton_W_default})
  -w            : prevent multiple jobs sharing the same name and user to run simultaneously (default is ${singleton_w_default})

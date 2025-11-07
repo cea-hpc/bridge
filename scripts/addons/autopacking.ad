@@ -90,7 +90,7 @@ function bridge_addon_msub_alteropt {
     then
 	high_t=0
     fi
-    # only proceed if requested nodes # not explicitely defined
+    # only proceed if requested nodes # not explicitly defined
     if  [[ -n ${BRIDGE_MSUB_NPROC} ]] && \
 	[[ -z ${BRIDGE_MSUB_NNODE} ]] && [[ -n ${low_t} ]]
     then
@@ -224,7 +224,7 @@ function bridge_addon_mprun_alteropt {
     then
 	high_t=0
     fi
-    # only proceed if requested nodes # not explicitely defined
+    # only proceed if requested nodes # not explicitly defined
     if  [[ -n ${bridge_mprun_nproc} ]] && \
 	[[ -z ${bridge_mprun_nnode} ]] && [[ -n ${low_t} ]]
     then

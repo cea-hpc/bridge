@@ -131,7 +131,7 @@ function bridge_addon_mprun_alteropt {
     	    fi
 
     	    if [[ -z ${selected_partition} ]]; then
-    		${LOGGER} "MPMD Addon : please select a partition explicitely"
+    		${LOGGER} "MPMD Addon : please select a partition explicitly"
     		return 1
     	    fi
 
