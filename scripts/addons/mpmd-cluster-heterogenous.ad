@@ -222,7 +222,7 @@ function bridge_addon_mprun_alteropt {
     		fi
 
     		#Remove front space
-    		BRIDGE_MPRUN_ADDON_MPMD_DISTIRBUTION="${BRIDGE_MPRUN_ADDON_MPMD_DISTRIBUTION:1}"
+    		BRIDGE_MPRUN_ADDON_MPMD_DISTRIBUTION="${BRIDGE_MPRUN_ADDON_MPMD_DISTRIBUTION:1}"
     		export BRIDGE_MPRUN_ADDON_MPMD_DISTRIBUTION
 
     		${LOGGER} "task count is now ${bridge_mprun_nproc}"
