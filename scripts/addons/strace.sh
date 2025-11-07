@@ -14,7 +14,7 @@ usage: $ARGV0 [-o <dir>] [-O <opts>] [-R <mpi_rank>] -- command args
 
 	Mpi ranks may be specified 
 	- as a list of numerical ranges
-	- or using 'nodeset' command synatx with 'mpi' as nodename
+	- or using 'nodeset' command syntax with 'mpi' as nodename
 
 	Ex: -R 1-4,8-9
 	    -R mpi[1-4,8-9]

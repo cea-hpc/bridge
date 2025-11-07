@@ -71,7 +71,7 @@ function bridge_addon_mprun_getopt {
 
 \tMpi ranks may be specified
 \t- as a list of numerical ranges
-\t- or using 'nodeset' command synatx with 'mpi' as nodename
+\t- or using 'nodeset' command syntax with 'mpi' as nodename
 
 \tEx: -R 1-4,8-9
 \t\t-R mpi[1-4,8-9]
