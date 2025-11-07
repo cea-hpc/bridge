@@ -896,7 +896,7 @@ if [[ -n ${BRIDGE_MSUB_NNODE} ]]
 	BRIDGE_MSUB_NNODE=${BRIDGE_MSUB_NPROC}
     fi
     submit_args+=( "-N" "${BRIDGE_MSUB_NNODE}" )
-    # usefull to ${BRIDGE_MPRUN_CMD}
+    # useful to ${BRIDGE_MPRUN_CMD}
     export BRIDGE_MPRUN_NNODE=${BRIDGE_MSUB_NNODE}
 else
     export BRIDGE_MPRUN_NNODE=
@@ -906,7 +906,7 @@ export BRIDGE_MSUB_NNODE
 if [[ -n ${BRIDGE_MSUB_NPROC} ]]
     then
     submit_args+=( "-n" "${BRIDGE_MSUB_NPROC}" )
-    # usefull to ${BRIDGE_MPRUN_CMD}
+    # useful to ${BRIDGE_MPRUN_CMD}
     export BRIDGE_MPRUN_NPROC=${BRIDGE_MSUB_NPROC}
 else
     export BRIDGE_MPRUN_NPROC=
@@ -916,7 +916,7 @@ export BRIDGE_MSUB_NPROC
 if [[ -n ${BRIDGE_MSUB_NCORE} ]]
     then
     submit_args+=( "-c" "${BRIDGE_MSUB_NCORE}" )
-    # usefull to ${BRIDGE_MPRUN_CMD}
+    # useful to ${BRIDGE_MPRUN_CMD}
     export BRIDGE_MPRUN_NCORE=${BRIDGE_MSUB_NCORE}
 else
     export BRIDGE_MPRUN_NCORE=
@@ -932,7 +932,7 @@ export BRIDGE_MSUB_MAXSTIME
 if [[ -n ${BRIDGE_MSUB_MAXMEM} ]]
     then
     submit_args+=( "-M" "${BRIDGE_MSUB_MAXMEM[@]}" )
-    # usefull to ${BRIDGE_MPRUN_CMD}
+    # useful to ${BRIDGE_MPRUN_CMD}
     export BRIDGE_MPRUN_MAXMEM=${BRIDGE_MSUB_MAXMEM}
 else
     export BRIDGE_MPRUN_MAXMEM=
@@ -942,7 +942,7 @@ export BRIDGE_MSUB_MAXMEM
 if [[ -n ${BRIDGE_MSUB_MAXTIME} ]]
     then
     submit_args+=( "-T" "${BRIDGE_MSUB_MAXTIME[@]}" )
-    # usefull to ${BRIDGE_MPRUN_CMD}
+    # useful to ${BRIDGE_MPRUN_CMD}
     export BRIDGE_MPRUN_MAXTIME=${BRIDGE_MSUB_MAXTIME}
 else
     export BRIDGE_MPRUN_MAXTIME=
