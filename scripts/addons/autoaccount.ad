@@ -66,7 +66,7 @@ function bridge_addon_msub_alteropt {
     	    typeset origacct=`extract_base_acct $defacct`
     	else
     	    if [[ ${BRIDGE_MSUB_PROJECT} == *@* ]]; then
-    	       ## User specifed his subaccount, hopefully he knows what he is doing
+    	       ## User specified his subaccount, hopefully he knows what he is doing
     		${LOGGER} "Sub account ${BRIDGE_MSUB_PROJECT} is already set, skipping"
     		return 0
     	    elif [[ ${BRIDGE_MSUB_PROJECT} == "root" ]]; then
@@ -85,7 +85,7 @@ function bridge_addon_msub_alteropt {
 	    return 0
     	else
     	    if [[ ${BRIDGE_MSUB_PROJECT} == *@* ]]; then
-    	       ## User specifed his subaccount, hopefully he knows what he is doing
+    	       ## User specified his subaccount, hopefully he knows what he is doing
     		${LOGGER} "Sub account ${BRIDGE_MSUB_PROJECT} is already set, skipping"
     		return 0
     	    elif [[ ${BRIDGE_MSUB_PROJECT} == "root" ]]; then
@@ -150,7 +150,7 @@ function bridge_addon_mprun_alteropt {
     	    typeset origacct=`extract_base_acct $defacct`
     	else
     	    if [[ ${bridge_mprun_project} == *@* ]]; then
-    	       ## User specifed his subaccount, hopefully he knows what he is doing
+    	       ## User specified his subaccount, hopefully he knows what he is doing
     		${LOGGER} "Sub account ${bridge_mprun_project} is already set, skipping"
     		return 0
     	    elif [[ ${bridge_mprun_project} == "root" ]]; then
@@ -170,7 +170,7 @@ function bridge_addon_mprun_alteropt {
 	    return 0
     	else
     	    if [[ ${bridge_mprun_project} == *@* ]]; then
-    	       ## User specifed his subaccount, hopefully he knows what he is doing
+    	       ## User specified his subaccount, hopefully he knows what he is doing
     		${LOGGER} "Sub account ${bridge_mprun_project} is already set, skipping"
     		return 0
     	    elif [[ ${bridge_mprun_project} == "root" ]]; then
