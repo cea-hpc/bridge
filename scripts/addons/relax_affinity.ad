@@ -1,7 +1,7 @@
 #################################################################################
 #
 # Addon for slurm-relax-affinity support in Bridge
-# Requires to install slurm-relax-affintiy RPM on the login/compute nodes
+# Requires to install slurm-relax-affinity RPM on the login/compute nodes
 # 
 # Variables defined to configure the behavior :
 #
