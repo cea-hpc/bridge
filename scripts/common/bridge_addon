@@ -30,7 +30,7 @@
 #
 # cette fonction appelle par ordre alphabetique l'ensemble des fichiers addons 
 # du repertoire defini par le variable d'environnement BRIDGE_ADDON_DIR
-# et execute la commande passee en 1er argument a l'aide des arguements suivant
+# et execute la commande passee en 1er argument a l'aide des arguments suivant
 #
 # si un addon renvoie un status different de 0, alors la fonction s'arrete et renvoie ce status
 # au programme appelant. Cette fonctionnalite est utilise lorsqu'un addon prend a pris la main 
