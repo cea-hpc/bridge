@@ -60,9 +60,9 @@ function bridge_addon_mprun_getopt {
     ## on fixe le message d'aide a afficher si demande
     typeset USAGE="\
 \t*) Labelling
-\t\t -l : prepend stdout/stderr lines with correponding tasks information \n\
+\t\t -l : prepend stdout/stderr lines with corresponding tasks information \n\
 \t\t      (results depend on underlying launch mechanism and should not\n\
-\t\t       be automatically post-processed for that reason) \
+\t\t      be automatically post-processed for that reason) \
 
 "
     
