@@ -297,7 +297,7 @@ function submit_cmd {
 #         state         : Status of batch session                     reason        : More informations about status
 #         user          : Name of batch session owner                 group         : Name of batch session owner group
 #         project       : Name of batch session owner project
-#         subhost       : Submission host                             subtime       : submition time
+#         subhost       : Submission host                             subtime       : submission time
 #         queue         : Batch queue of batch session                priority      : Batch session priority
 #         exechost      : Execution host                              sid           : Execution session id
 #         starttime     : Execution start time                        endtime       : Execution end time
