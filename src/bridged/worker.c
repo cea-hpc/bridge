@@ -1,5 +1,5 @@
 /*****************************************************************************\
- *  src/bridged/worker.c - 
+ *  src/bridged/worker.c -
  *****************************************************************************
  *  Copyright  CEA/DAM/DIF (2012)
  *
@@ -80,25 +80,25 @@ int worker_send_error_reply(void* p_args,int stream,char* error_message){
     }
     else{
       VERBOSE3("worker[%d] : error reply message successfully marshalled",wargs->id);
-      
+
       /* send marshalled ping reply message */
       fstatus=xstream_send_msg_timeout(stream,buffer,length,wargs->engine->timeout);
       if(fstatus){
 	ERROR3("worker[%d] : unable to send error reply marshalled message",wargs->id);
       }
       else{
-	VERBOSE3("worker[%d] : error reply marshalled message successfully sended",wargs->id);
+	VERBOSE3("worker[%d] : error reply marshalled message successfully sent",wargs->id);
 	fstatus=0;
       }
-      
+
       /* free marshalled reply message */
       free(buffer);
     }
-    
+
     /* free reply bridge message */
     xmessage_free_contents(&rep);
-  } 
-  
+  }
+
   return fstatus;
 }
 
@@ -117,7 +117,7 @@ int worker_process_ping_request(void* p_args,int stream,xmessage_t* req){
   if(wargs==NULL){
     return -1;
   }
-  
+
   engine=wargs->engine;
 
   /* initialize ping reply message */
@@ -142,14 +142,14 @@ int worker_process_ping_request(void* p_args,int stream,xmessage_t* req){
 	ERROR3("worker[%d] : unable to send ping reply marshalled message",wargs->id);
       }
       else{
-	VERBOSE3("worker[%d] : ping reply marshalled message successfully sended",wargs->id);
+	VERBOSE3("worker[%d] : ping reply marshalled message successfully sent",wargs->id);
 	fstatus=0;
       }
 
       /* free marshalled reply message */
       free(buffer);
     }
-    
+
     /* free reply bridge message */
     xmessage_free_contents(&rep);
   }
@@ -193,7 +193,7 @@ int worker_process_get_request(void* p_args,int stream,xmessage_t* req){
   if(wargs==NULL){
     return -1;
   }
-  
+
   engine=wargs->engine;
   rmgr=wargs->rus_mgr;
 
@@ -223,7 +223,7 @@ int worker_process_get_request(void* p_args,int stream,xmessage_t* req){
 	fstatus=-1;
       }
       else{
-	
+
 	used_time=record.used_time;
 	usable_time=record.usable_time;
 	halt_time=0;
@@ -245,7 +245,7 @@ int worker_process_get_request(void* p_args,int stream,xmessage_t* req){
 	  }
 	  else{
 	    VERBOSE3("worker[%d] : reply message successfully created",wargs->id);
-	
+
 	    /* marshall get reply message */
 	    fstatus=xmessage_marshall(&rep,&buffer,&length);
 	    if(fstatus){
@@ -253,25 +253,25 @@ int worker_process_get_request(void* p_args,int stream,xmessage_t* req){
 	    }
 	    else{
 	      VERBOSE3("worker[%d] : get reply message successfully marshalled",wargs->id);
-	  
+
 	      /* send marshalled get reply message */
 	      fstatus=xstream_send_msg_timeout(stream,buffer,length,wargs->engine->timeout);
 	      if(fstatus){
 		VERBOSE3("worker[%d] : unable to send get reply marshalled message",wargs->id);
 	      }
 	      else{
-		VERBOSE3("worker[%d] : get reply marshalled message successfully sended",wargs->id);
+		VERBOSE3("worker[%d] : get reply marshalled message successfully sent",wargs->id);
 		fstatus=0;
 	      }
-	  
+
 	      /* free marshalled reply message */
 	      free(buffer);
 	    }
-	
+
 	    /* free reply bridge message */
 	    xmessage_free_contents(&rep);
 	  }
-      
+
 	  bridge_get_rep_free_contents(&bgrep);
 	}
 
@@ -290,7 +290,7 @@ int worker_process_get_request(void* p_args,int stream,xmessage_t* req){
 	       (bgreq.batchid==NULL)?"-":bgreq.batchid,
 	       (bgreq.rmid==NULL)?"-":bgreq.rmid,
 	       used_time,usable_time,halt_time);
-    
+
     bridge_get_req_free_contents(&bgreq);
   }
   /*_*/ /* get request initialization */
@@ -311,12 +311,12 @@ int worker_process_request(void* p_args,int socket){
   xmessage_t req;
 
   int rstatus=0;
-  
+
   wargs=(bridged_worker_args_t*)p_args;
   if(wargs==NULL){
     return -1;
   }
-  
+
   engine=wargs->engine;
 
   VERBOSE3("worker[%d] : handling connection on socket %d",wargs->id,socket);
@@ -330,7 +330,7 @@ int worker_process_request(void* p_args,int socket){
     }
     else{
       VERBOSE3("worker[%d] : marshalled request reception succeed",wargs->id);
-      
+
       /* unmarshall request */
       fstatus=xmessage_unmarshall(&req,buffer,length);
       if(fstatus){
@@ -338,10 +338,10 @@ int worker_process_request(void* p_args,int socket){
 	rstatus=20;
       }
       else{
-	
+
 	/* process request */
 	switch(req.type){
-	  
+
 	case XPING_REQUEST :
 	  VERBOSE3("worker[%d] : ping request received",wargs->id);
 	  fstatus=worker_process_ping_request(p_args,socket,&req);
@@ -351,7 +351,7 @@ int worker_process_request(void* p_args,int socket){
 	  VERBOSE3("worker[%d] : get request received",wargs->id);
 	  fstatus=worker_process_get_request(p_args,socket,&req);
 	  break;
-	  
+
 	case XEND_REQUEST :
 	  VERBOSE3("worker[%d] : end request received",wargs->id);
 	  rstatus=1;
@@ -361,14 +361,14 @@ int worker_process_request(void* p_args,int socket){
 	  VERBOSE3("worker[%d] : invalid request received",wargs->id);
 	  rstatus=30;
 	  break;
-	  
+
 	}
-	
+
 	/* free bridge request */
 	xmessage_free_contents(&req);
       }
       /*_*/ /* unmarshall received msg */
-      
+
       /* free received msg */
       free(buffer);
       buffer=NULL;
@@ -376,6 +376,6 @@ int worker_process_request(void* p_args,int socket){
     /*_*/ /* receive request */
 
   }
-  
+
   return fstatus;
 }
