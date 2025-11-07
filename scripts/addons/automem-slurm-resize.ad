@@ -112,7 +112,7 @@ function bridge_addon_msub_alteropt {
 	${LOGGER} "requested mem modified from ${mempercpu} to ${BRIDGE_MSUB_MAXMEM} Mo"
     fi
 
-    ## on regarde si la parition demandee est compatible avec la demande.
+    ## on regarde si la partition demandee est compatible avec la demande.
     ## Si oui on la prend. Si non, on le log et on cherche une autre partition (on pourrait
     ## etre plus violent et sortir en erreur...
     if [[ -n ${BRIDGE_MSUB_QUEUE} ]]
@@ -221,7 +221,7 @@ function bridge_addon_mprun_alteropt {
 	${LOGGER} "requested mem modified from ${mempercpu} to ${bridge_mprun_maxmem} Mo"
     fi
 
-    ## on regarde si la parition demandee est compatible avec la demande.
+    ## on regarde si la partition demandee est compatible avec la demande.
     ## Si oui on la prend. Si non, on le log et on cherche une autre partition (on pourrait
     ## etre plus violent et sortir en erreur...
     typeset valid_queue
