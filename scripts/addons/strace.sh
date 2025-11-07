@@ -70,7 +70,7 @@ fi
 typeset -i  errflag=0
 typeset ARGV0=${0##*/}			# basename de la commande
 typeset OPTSTRING=":o:O:R:t:"		# liste des options
-typeset STRACE_OPTIONS=""		# addtional strace options
+typeset STRACE_OPTIONS=""		# additional strace options
 typeset MPI_ALLPROCS="mpi[0-$((SLURM_NTASKS - 1))]"	# all mpi process
 typeset MPI_RANGE="$MPI_ALLPROCS"	# by default, trace all process
 typeset tracer="strace"
