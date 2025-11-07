@@ -180,7 +180,7 @@ bash$
 On constate ici que LSF, LSF avec binding Slurm, NQS, et Slurm sont supportes. (via les --with-*)
 Il est possible de specifier les chemins d'acces aux produits lorsque ceux-ci ne sont pas places aux 
 emplacements par defaut. Dans ce cas, le chemin indiquer doit permettre d'acceder aux entetes en lui 
-ajoutant 'include' et aux librarires en lui ajoutant 'lib'. Le repertoire des librairies peut toutefois
+ajoutant 'include' et aux librairies en lui ajoutant 'lib'. Le repertoire des librairies peut toutefois
 etre indiquement independamment en utilisant l'option '--with-produit-lib=PATH'. A ce moment la, le chemin
 indique est directement le chemin incluant le repertoire 'lib'.
 
