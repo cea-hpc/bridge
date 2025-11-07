@@ -906,7 +906,17 @@ get_rm_allocations_base(bridge_rm_manager_t * p_rm_manager,
 
 	    /* get jobs information if allocation has to be kept */
 	    if(out_flag==0){
-	      if(slurm_get_job_steps(0,pji->job_id,0,&pjsirm,0)==0)
+#if SLURM_VERSION_NUMBER >= SLURM_VERSION_NUM(25,11,0)
+              slurm_step_id_t tmp_step_id = {
+                  .sluid = 0,
+                  .job_id = pji->job_id,
+                  .step_het_comp = NO_VAL,
+                  .step_id = 0,
+              };
+              if(slurm_get_job_steps(&tmp_step_id, &pjsirm, 0)==0)
+#else
+              if(slurm_get_job_steps(0,pji->job_id,0,&pjsirm,0)==0)
+#endif
 		{
 		  char stepid[128];
 		  for(k=0;k<pjsirm->job_step_count;k++)
