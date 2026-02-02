@@ -192,6 +192,7 @@ function bridge_addon_mprun_spmd_pre_run {
 	${LOGGER} "Totalview addon : replacing current launch command '${spmd_run_cmd} ${spmd_run_options} ${spmd_run_separator}'"
 	${LOGGER} "Totalview addon : new launch command is '${spmd_run_cmd_new} ${spmd_run_options_new} ${spmd_run_separator_new}'"
 	export TVDSVRLAUNCHCMD=ssh
+        export __TV_WORKAROUND__=1
 	spmd_run_cmd="${spmd_run_cmd_new}"
 	spmd_run_options="${spmd_run_options_new}"
 	spmd_run_separator="${spmd_run_separator_new}"
