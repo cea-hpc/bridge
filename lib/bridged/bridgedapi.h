@@ -1,5 +1,5 @@
 /*****************************************************************************\
- *  lib/bridged/bridgedapi.h - 
+ *  lib/bridged/bridgedapi.h -
  *****************************************************************************
  *  Copyright  CEA/DAM/DIF (2012)
  *
@@ -80,10 +80,10 @@ bridgedapi_ping(char* conf_file);
  * \param rmid unique identifier of the resource managed job to get information of (NULL if not defined)
  * \param usable pointer on a time_t field that will hold usable time
  * \param used pointer on a time_t field that will hold used time
- * \param halt pointer on a time_t field that will hold a hypothetic halt time (or 0 if no halt time defined
+ * \param halt pointer on a time_t field that will hold a hypothetical halt time (or 0 if no halt time defined)
  *
  * \retval BRIDGE_SUCCESS success
- * \retval BRIDGE_ERROR_REQUEST_FAILED server says it can not give a valid response ( bad batchid or rmid )
+ * \retval BRIDGE_ERROR_REQUEST_FAILED server says it can not give a valid response (bad batchid or rmid)
  * \retval BRIDGE_ERROR_REQUEST_MALFORMED_REPLY reply is invalid
  * \retval BRIDGE_ERROR_STREAM_CONNECT_FAILED connection to servers failed
  * \retval BRIDGE_ERROR_STREAM_TRANS_FAILED transmission with server failed
