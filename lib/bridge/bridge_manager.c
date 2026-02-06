@@ -264,6 +264,28 @@ int bridge_load_batch_system(bridge_manager_t* p_manager,
 	else
 	  DEBUG2_LOGGER("function '%s' is now loaded from library '%s'",
 		       "get_batch_nodes",p_batch_system->lib);
+	/* load manager info get function (optional) */
+	p_batch_system->get_manager_info=
+	  (int (*)(bridge_manager_info_t*))
+	  dlsym(p_batch_system->lib_handle,"get_manager_info");
+	if(p_batch_system->get_manager_info==NULL){
+	  DEBUG2_LOGGER("Optional function '%s' not found in library '%s'",
+		       "get_manager_info",p_batch_system->lib);
+	}
+	else
+	  DEBUG2_LOGGER("function '%s' is now loaded from library '%s'",
+		       "get_manager_info",p_batch_system->lib);
+	/* load manager info clean function (optional) */
+	p_batch_system->clean_manager_info=
+	  (int (*)(bridge_manager_info_t*))
+	  dlsym(p_batch_system->lib_handle,"clean_manager_info");
+	if(p_batch_system->clean_manager_info==NULL){
+	  DEBUG2_LOGGER("Optional function '%s' not found in library '%s'",
+		       "clean_manager_info",p_batch_system->lib);
+	}
+	else
+	  DEBUG2_LOGGER("function '%s' is now loaded from library '%s'",
+		       "clean_manager_info",p_batch_system->lib);
 	/* Check that all functions were successfully loaded */
 	if(p_batch_system->get_batch_id!=NULL
 	   && p_batch_system->init_batch_session!=NULL
@@ -541,6 +563,28 @@ int bridge_load_rm_system(bridge_manager_t* p_manager,
 	else
 	  DEBUG2_LOGGER("function '%s' is now loaded from library '%s'",
 		       "get_rm_nodes",p_rm_system->lib);
+	/* load manager info get function (optional) */
+	p_rm_system->get_manager_info=
+	  (int (*)(bridge_manager_info_t*))
+	  dlsym(p_rm_system->lib_handle,"get_manager_info");
+	if(p_rm_system->get_manager_info==NULL){
+	  DEBUG2_LOGGER("Optional function '%s' not found in library '%s'",
+		       "get_manager_info",p_rm_system->lib);
+	}
+	else
+	  DEBUG2_LOGGER("function '%s' is now loaded from library '%s'",
+		       "get_manager_info",p_rm_system->lib);
+	/* load manager info clean function (optional) */
+	p_rm_system->clean_manager_info=
+	  (int (*)(bridge_manager_info_t*))
+	  dlsym(p_rm_system->lib_handle,"clean_manager_info");
+	if(p_rm_system->clean_manager_info==NULL){
+	  DEBUG2_LOGGER("Optional function '%s' not found in library '%s'",
+		       "clean_manager_info",p_rm_system->lib);
+	}
+	else
+	  DEBUG2_LOGGER("function '%s' is now loaded from library '%s'",
+		       "clean_manager_info",p_rm_system->lib);
 	/* Check that all functions were successfully loaded */
 	if(p_rm_system->get_rm_id!=NULL
 	   && p_rm_system->init_rm_allocation!=NULL
@@ -1177,6 +1221,34 @@ int bridge_clean_batch_node(bridge_manager_t* p_manager,
   return (p_manager->batch_system).clean_batch_node(&(p_manager->batch_manager),
 						    p_batch_node);
 }
+
+int bridge_get_batch_manager_info(bridge_manager_t* p_manager,
+				  bridge_manager_info_t* p_info){
+  int fstatus=-1;
+
+  if(!p_manager->batch_system_flag)
+    return fstatus;
+
+  if(p_manager->batch_system.get_manager_info==NULL)
+    return fstatus;
+
+  fstatus=(p_manager->batch_system).get_manager_info(p_info);
+  return fstatus;
+}
+
+int bridge_clean_batch_manager_info(bridge_manager_t* p_manager,
+				    bridge_manager_info_t* p_info){
+  int fstatus=-1;
+
+  if(!p_manager->batch_system_flag)
+    return fstatus;
+
+  if(p_manager->batch_system.clean_manager_info==NULL)
+    return fstatus;
+
+  fstatus=(p_manager->batch_system).clean_manager_info(p_info);
+  return fstatus;
+}
 /*
  * ---------------------------------------------------------------------------------------------------
  * EOF Batch system related functions                                                                   FIN
@@ -1280,6 +1352,34 @@ int bridge_clean_rm_partition(bridge_manager_t* p_manager,
     return 1;
   return (p_manager->rm_system).clean_rm_partition(&(p_manager->rm_manager),
 						   p_rm_partition);
+}
+
+int bridge_get_rm_manager_info(bridge_manager_t* p_manager,
+			       bridge_manager_info_t* p_info){
+  int fstatus=-1;
+
+  if(!p_manager->rm_system_flag)
+    return fstatus;
+
+  if(p_manager->rm_system.get_manager_info==NULL)
+    return fstatus;
+
+  fstatus=(p_manager->rm_system).get_manager_info(p_info);
+  return fstatus;
+}
+
+int bridge_clean_rm_manager_info(bridge_manager_t* p_manager,
+				 bridge_manager_info_t* p_info){
+  int fstatus=-1;
+
+  if(!p_manager->rm_system_flag)
+    return fstatus;
+
+  if(p_manager->rm_system.clean_manager_info==NULL)
+    return fstatus;
+
+  fstatus=(p_manager->rm_system).clean_manager_info(p_info);
+  return fstatus;
 }
 /*
  * ---------------------------------------------------------------------------------------------------

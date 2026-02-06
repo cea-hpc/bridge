@@ -85,19 +85,18 @@ int
 init_rm_manager(bridge_rm_manager_t* p_manager){
 
   int fstatus=-1;
-  char* cluster;
-  char* p;
 
   long api_version;
   char version[128];
 
-  char* separator;
-
-  slurm_conf_t * pscc;
-
-  p_manager->version=NULL;
+  /* deprecated fields - kept for ABI compatibility */
   p_manager->cluster=NULL;
   p_manager->master=NULL;
+  p_manager->masters_list=NULL;
+
+  p_manager->version=NULL;
+  p_manager->type=NULL;
+  p_manager->description=NULL;
 
 #if SLURM_VERSION_NUMBER >= SLURM_VERSION_NUM(23,11,1)
   /* add required slurm_init() since slurm 23.11.1 */
@@ -110,56 +109,12 @@ init_rm_manager(bridge_rm_manager_t* p_manager){
 	   SLURM_VERSION_MINOR(api_version),
 	   SLURM_VERSION_MICRO(api_version));
 
-  /* get slurm controller configuration */
-  if(slurm_load_ctl_conf(0,&pscc)==0)
-    {
-      p_manager->type=strdup("SLURM");
-      p_manager->version=strdup(version);
-      p_manager->description=strdup("no desc");
+  p_manager->type=strdup("SLURM");
+  p_manager->version=strdup(version);
+  p_manager->description=strdup("no desc");
 
-      /* get cluster and master names */
-      if(pscc->control_machine[0]!=NULL)
-	{
-	  p_manager->master=strdup(pscc->control_machine[0]);
-	  cluster=strdup(p_manager->master);
-	  if(cluster!=NULL)
-	    {
-	      separator=index(cluster,'-');
-	      if(separator==NULL)
-		{
-		  p=cluster;
-		  while(!isdigit(*p) && *p!='\0')
-		    p++;
-		  if(*p!='\0')
-		    {
-		      *p='\0';
-		      p_manager->cluster=strdup(cluster);
-		    }
-		}
-	      else
-		{
-		  if(strncmp("mgr",separator+1,4)==0)
-		    {
-		      *separator='\0';
-		      p_manager->cluster=strdup(cluster);
-		    }
-		  else if(strncmp("cws",separator-3,3)==0)
-		    {
-		      p_manager->cluster=strdup(separator+1);
-		    }
-		}
-	      free(cluster);
-	    }
-	}
-      p_manager->masters_list=NULL;
-      fstatus=0;
-      /* free slurm controller configuration data */
-      slurm_free_ctl_conf(pscc);
-    }
-  else
-    {
-      DEBUG3_LOGGER("unable to get slurmctl configuration");
-    }
+  if(p_manager->type && p_manager->version && p_manager->description)
+    fstatus=0;
 
   return fstatus;
 
@@ -171,8 +126,6 @@ bridge_rm_check_manager_validity(bridge_rm_manager_t* p_manager){
   int fstatus=-1;
   if( p_manager->type!=NULL &&
       p_manager->version!=NULL &&
-      p_manager->cluster!=NULL &&
-      p_manager->master!=NULL &&
       p_manager->description!=NULL)
     fstatus=0;
   return fstatus;
@@ -184,8 +137,6 @@ clean_rm_manager(bridge_rm_manager_t* p_manager){
   int fstatus=0;
   xfree(p_manager->type);
   xfree(p_manager->version);
-  xfree(p_manager->cluster);
-  xfree(p_manager->master);
   xfree(p_manager->description);
   if(p_manager->private!=NULL)
     {
@@ -196,6 +147,97 @@ clean_rm_manager(bridge_rm_manager_t* p_manager){
   slurm_fini();
 #endif
   return fstatus;
+}
+
+int
+get_manager_info(bridge_manager_info_t* p_info)
+{
+  int fstatus=-1;
+  slurm_conf_t *pscc;
+  char* cluster;
+  char* p;
+  char* separator;
+  int i;
+
+  p_info->cluster = NULL;
+  p_info->master = NULL;
+  p_info->masters_list = NULL;
+
+  /* get slurm controller configuration */
+  if(slurm_load_ctl_conf(0, &pscc) != 0) {
+    DEBUG3_LOGGER("unable to get slurmctl configuration");
+    return fstatus;
+  }
+
+  /* get master name */
+  if (pscc->control_machine[0] != NULL)
+    p_info->master = strdup(pscc->control_machine[0]);
+
+  /* get cluster name */
+  if (pscc->cluster_name != NULL) {
+    p_info->cluster = strdup(pscc->cluster_name);
+  }
+  else if (p_info->master != NULL) {
+    /* guess it using master name */
+    cluster = strdup(p_info->master);
+    if (cluster != NULL) {
+      separator = index(cluster, '-');
+      if (separator == NULL) {
+        p = cluster;
+        while (!isdigit(*p) && *p != '\0')
+          p++;
+        if (*p != '\0') {
+          *p = '\0';
+          p_info->cluster = strdup(cluster);
+        }
+      }
+      else {
+        if (strncmp("mgr", separator+1, 4) == 0) {
+          *separator = '\0';
+          p_info->cluster = strdup(cluster);
+        }
+        else if (strncmp("cws", separator-3, 3) == 0) {
+          p_info->cluster = strdup(separator+1);
+        }
+      }
+      free(cluster);
+    }
+  }
+
+  /* build masters list */
+  if (pscc->control_cnt >= 2) {
+    p_info->masters_list = malloc(sizeof(char *) * (pscc->control_cnt + 1));
+    if (p_info->masters_list != NULL) {
+      for (i = 0; i < pscc->control_cnt; i++) {
+        p_info->masters_list[i] = strdup(pscc->control_machine[i]);
+      }
+      p_info->masters_list[pscc->control_cnt] = NULL;
+    }
+  }
+
+  /* free slurm controller configuration data */
+  slurm_free_ctl_conf(pscc);
+
+  fstatus = 0;
+  return fstatus;
+}
+
+int
+clean_manager_info(bridge_manager_info_t* p_info)
+{
+  int i;
+
+  xfree(p_info->cluster);
+  xfree(p_info->master);
+
+  if (p_info->masters_list != NULL) {
+    for (i = 0; p_info->masters_list[i] != NULL; i++) {
+      xfree(p_info->masters_list[i]);
+    }
+    xfree(p_info->masters_list);
+  }
+
+  return 0;
 }
 
 int

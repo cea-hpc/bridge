@@ -47,16 +47,15 @@ int
 init_batch_manager(bridge_batch_manager_t* p_batch_manager)
 {
 	int fstatus=-1;
-  
+
 	struct batch_status * ostat;
 	struct attrl *attr;
 
-	char* cluster_name;
-	char* master_name;
-
+	/* deprecated fields - kept for ABI compatibility */
 	p_batch_manager->cluster=NULL;
 	p_batch_manager->master=NULL;
 	p_batch_manager->masters_list=NULL;
+
 	p_batch_manager->description=NULL;
 	p_batch_manager->type=NULL;
 	p_batch_manager->version=NULL;
@@ -72,21 +71,6 @@ init_batch_manager(bridge_batch_manager_t* p_batch_manager)
 	/* set information based on pbs_server */
 	p_batch_manager->type=strdup("Torque");
 	p_batch_manager->description=strdup("Torque Batch System");
-	p_batch_manager->master=strdup(pbs_server);
-	p_batch_manager->cluster=strdup(pbs_server);
-	if ( p_batch_manager->cluster != NULL ) {
-		char* p;
-		int i;
-		i = strlen(p_batch_manager->cluster);
-		p=p_batch_manager->cluster + i - 1 ;
-		while ( isdigit(*p) ) {
-			*p='\0';
-			p--;
-			i--;
-			if ( i == 0 )
-				break;
-		}
-	}
 
 	/* get master stats */
 	ostat = pbs_statserver(pbs_fd,NULL,NULL);
@@ -104,7 +88,7 @@ init_batch_manager(bridge_batch_manager_t* p_batch_manager)
 		}
 		attr = attr->next ;
 	}
-	
+
 	/* clean master stats */
 	pbs_statfree(ostat);
 
@@ -126,13 +110,9 @@ check_batch_manager_validity(bridge_batch_manager_t* p_batch_manager)
 {
 	int fstatus=-1;
 
-	if(
-		p_batch_manager->cluster &&
-		p_batch_manager->master &&
-		p_batch_manager->description &&
-		p_batch_manager->type &&
-		p_batch_manager->version
-		)
+	if(p_batch_manager->description &&
+	   p_batch_manager->type &&
+	   p_batch_manager->version)
 		fstatus=0;
 
 	return fstatus;
@@ -150,12 +130,9 @@ clean_batch_manager(bridge_batch_manager_t* p_batch_manager)
 	if ( con_fd >= 0 )
 		pbs_disconnect(con_fd);
 
-	xfree(p_batch_manager->cluster);
-	xfree(p_batch_manager->master);
 	xfree(p_batch_manager->description);
 	xfree(p_batch_manager->type);
 	xfree(p_batch_manager->version);
-	xfree(p_batch_manager->masters_list);
 
 	fstatus=0;
 
@@ -186,6 +163,54 @@ get_batch_id(char** id)
 		}
 
 	}
-  
+
 	return fstatus;
+}
+
+int
+get_manager_info(bridge_manager_info_t* p_info)
+{
+	int fstatus=-1;
+
+	p_info->cluster = NULL;
+	p_info->master = NULL;
+	p_info->masters_list = NULL;
+
+	if (pbs_server == NULL) {
+		DEBUG3_LOGGER("pbs_server not available");
+		return fstatus;
+	}
+
+	/* get master name */
+	p_info->master = strdup(pbs_server);
+
+	/* guess cluster name from pbs_server by stripping trailing digits */
+	if (p_info->master != NULL) {
+		char* p;
+		int i;
+		p_info->cluster = strdup(pbs_server);
+		if (p_info->cluster != NULL) {
+			i = strlen(p_info->cluster);
+			p = p_info->cluster + i - 1;
+			while (isdigit(*p)) {
+				*p = '\0';
+				p--;
+				i--;
+				if (i == 0)
+					break;
+			}
+		}
+	}
+
+	fstatus = 0;
+	return fstatus;
+}
+
+int
+clean_manager_info(bridge_manager_info_t* p_info)
+{
+	xfree(p_info->cluster);
+	xfree(p_info->master);
+	xfree(p_info->masters_list);
+	return 0;
 }

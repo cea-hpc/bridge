@@ -32,42 +32,45 @@
 #define PROG_VERSION  "1.0.1"
 
 /*!
- * \brief display batch manager information on file stream in an extended form 
+ * \brief display batch manager information on file stream in an extended form
  * \internal
  *
  * \param stream FILE* on which to write output
  * \param bm pointer on a batch manager structure to display
+ * \param info pointer on a manager info structure (for cluster/master)
  *
  * \retval 0 on success
  * \retval -1 on failure
  */
-int display_bridge_batch_manager_on_file_stream(FILE* stream,bridge_batch_manager_t* bm);
+int display_bridge_batch_manager_on_file_stream(FILE* stream,bridge_batch_manager_t* bm,bridge_manager_info_t* info);
 
 /*!
- * \brief display batch manager information on file stream in an classic form 
+ * \brief display batch manager information on file stream in an classic form
  * \internal
  *
  * \param stream FILE* on which to write output
  * \param bm pointer on a batch manager structure to display
+ * \param info pointer on a manager info structure (for cluster/master)
  *
  * \retval 0 on success
  * \retval -1 on failure
  */
-int display_classic_bridge_batch_manager_on_file_stream(FILE * stream,bridge_batch_manager_t* bm);
+int display_classic_bridge_batch_manager_on_file_stream(FILE * stream,bridge_batch_manager_t* bm,bridge_manager_info_t* info);
 
 /*!
- * \brief display required information about batch manager on file stream 
+ * \brief display required information about batch manager on file stream
  * \internal
  *
  * \param stream FILE* on which to write output
  * \param bm pointer on a batch manager structure to display
+ * \param info pointer on a manager info structure (for cluster/master)
  * \param output_fields comma separated list of information to display
  * \param separator string to write on stream between each required information
  *
  * \retval 0 on success
  * \retval -1 on failure
  */
-int display_by_fields_bridge_batch_manager_on_file_stream(FILE* stream,bridge_batch_manager_t* bm,char* output_fields,char* separator);
+int display_by_fields_bridge_batch_manager_on_file_stream(FILE* stream,bridge_batch_manager_t* bm,bridge_manager_info_t* info,char* output_fields,char* separator);
 
 int main(int argc,char **argv){
 
@@ -158,25 +161,40 @@ int main(int argc,char **argv){
 
   if(bridge_init_manager(&manager)==0){
 
+    bridge_manager_info_t info;
+    int info_loaded = 0;
+
+    /* get manager info (cluster/master) on demand */
+    if(bridge_get_batch_manager_info(&manager, &info) == 0){
+      info_loaded = 1;
+    }
+
     switch(display_mode){
 
     case EXTENDED_DISPLAY :
-      display_bridge_batch_manager_on_file_stream(stdout,&(manager.batch_manager));
+      display_bridge_batch_manager_on_file_stream(stdout,&(manager.batch_manager),
+						  info_loaded ? &info : NULL);
       break;
 
     case CLASSIC_DISPLAY :
-      display_classic_bridge_batch_manager_on_file_stream(stdout,NULL);
-      display_classic_bridge_batch_manager_on_file_stream(stdout,&(manager.batch_manager));
+      display_classic_bridge_batch_manager_on_file_stream(stdout,NULL,NULL);
+      display_classic_bridge_batch_manager_on_file_stream(stdout,&(manager.batch_manager),
+							  info_loaded ? &info : NULL);
       break;
 
     case COMPOSITE_DISPLAY :
       if(verbosity)
-	display_by_fields_bridge_batch_manager_on_file_stream(stdout,NULL,output_fields,separator);
+	display_by_fields_bridge_batch_manager_on_file_stream(stdout,NULL,NULL,output_fields,separator);
       display_by_fields_bridge_batch_manager_on_file_stream(stdout,&(manager.batch_manager),
+							    info_loaded ? &info : NULL,
 							    output_fields,separator);
       break;
 
     }
+
+    if(info_loaded)
+      bridge_clean_batch_manager_info(&manager, &info);
+
     fstatus=0;
     bridge_clean_manager(&manager);
   }
@@ -197,12 +215,12 @@ int main(int argc,char **argv){
 
 
 
-int display_bridge_batch_manager_on_file_stream(FILE* stream,bridge_batch_manager_t* bm){
+int display_bridge_batch_manager_on_file_stream(FILE* stream,bridge_batch_manager_t* bm,bridge_manager_info_t* info){
 
   fprintf(stream,
 	  "-------------------------------------------------------\n");
-  if(bm->cluster!=NULL)
-    fprintf(stream,"Cluster \t\t: %s\n",bm->cluster);
+  if(info!=NULL && info->cluster!=NULL)
+    fprintf(stream,"Cluster \t\t: %s\n",info->cluster);
   else
     fprintf(stream,"Cluster \t\t: -\n");
 
@@ -221,8 +239,8 @@ int display_bridge_batch_manager_on_file_stream(FILE* stream,bridge_batch_manage
   else
     fprintf(stream,"Version \t\t: -\n");
 
-  if(bm->master!=NULL)
-    fprintf(stream,"Master \t\t\t: %s\n",bm->master);
+  if(info!=NULL && info->master!=NULL)
+    fprintf(stream,"Master \t\t\t: %s\n",info->master);
   else
     fprintf(stream,"Master \t\t\t: -\n");
 
@@ -231,9 +249,9 @@ int display_bridge_batch_manager_on_file_stream(FILE* stream,bridge_batch_manage
   return 0;
 }
 
-int display_classic_bridge_batch_manager_on_file_stream(FILE * stream,bridge_batch_manager_t* bm){
+int display_classic_bridge_batch_manager_on_file_stream(FILE * stream,bridge_batch_manager_t* bm,bridge_manager_info_t* info){
   int fstatus=0;
-  
+
   if(!bm){
     fprintf(stream,"%-16s %-16s %-16s %-16s %-16s\n",
 	    "----------------",
@@ -251,10 +269,10 @@ int display_classic_bridge_batch_manager_on_file_stream(FILE * stream,bridge_bat
   }
   else{
     fprintf(stream,"%-16s %-16s %-16s %-16s %-16s\n",
-	    (bm->cluster==NULL)?"-":bm->cluster,
+	    (info==NULL || info->cluster==NULL)?"-":info->cluster,
 	    (bm->type==NULL)?"-":bm->type,
 	    (bm->version==NULL)?"-":bm->version,
-	    (bm->master==NULL)?"-":bm->master,
+	    (info==NULL || info->master==NULL)?"-":info->master,
 	    (bm->description==NULL)?"-":bm->description);
     fprintf(stream,"%-16s %-16s %-16s %-16s %-16s\n",
 	    "----------------",
@@ -267,7 +285,7 @@ int display_classic_bridge_batch_manager_on_file_stream(FILE * stream,bridge_bat
   return fstatus;
 }
 
-int display_by_fields_bridge_batch_manager_on_file_stream(FILE* stream,bridge_batch_manager_t* bm,char* output_fields,char* separator){
+int display_by_fields_bridge_batch_manager_on_file_stream(FILE* stream,bridge_batch_manager_t* bm,bridge_manager_info_t* info,char* output_fields,char* separator){
 
   int status=0;
 
@@ -297,8 +315,8 @@ int display_by_fields_bridge_batch_manager_on_file_stream(FILE* stream,bridge_ba
 
 	/* Manager cluster name */
 	else if(strcmp(token,"cluster")==0){
-	  if(bm->cluster!=NULL)
-	    fprintf(stream,"%s",bm->cluster);
+	  if(info!=NULL && info->cluster!=NULL)
+	    fprintf(stream,"%s",info->cluster);
 	  else
 	    fprintf(stream,"-");
 	}
@@ -325,8 +343,8 @@ int display_by_fields_bridge_batch_manager_on_file_stream(FILE* stream,bridge_ba
 	}
 	/* Manager master name */
 	else if(strcmp(token,"master")==0){
-	  if(bm->master!=NULL)
-	    fprintf(stream,"%s",bm->master);
+	  if(info!=NULL && info->master!=NULL)
+	    fprintf(stream,"%s",info->master);
 	  else
 	    fprintf(stream,"-");
 	}
@@ -344,6 +362,6 @@ int display_by_fields_bridge_batch_manager_on_file_stream(FILE* stream,bridge_ba
   }
 
   fprintf(stream,"\n");
-  
+
   return 0;
 }

@@ -30,42 +30,45 @@
 #define PROG_VERSION  "1.0.1"
 
 /*!
- * \brief display rm manager information on file stream in an extended form 
+ * \brief display rm manager information on file stream in an extended form
  * \internal
  *
  * \param stream FILE* on which to write output
  * \param rm pointer on a rm manager structure to display
+ * \param info pointer on a manager info structure (for cluster/master)
  *
  * \retval 0 on success
  * \retval -1 on failure
  */
-int display_bridge_rm_manager_on_file_stream(FILE* stream,bridge_rm_manager_t* rm);
+int display_bridge_rm_manager_on_file_stream(FILE* stream,bridge_rm_manager_t* rm,bridge_manager_info_t* info);
 
 /*!
- * \brief display rm manager information on file stream in an classic form 
+ * \brief display rm manager information on file stream in an classic form
  * \internal
  *
  * \param stream FILE* on which to write output
  * \param rm pointer on a rm manager structure to display
+ * \param info pointer on a manager info structure (for cluster/master)
  *
  * \retval 0 on success
  * \retval -1 on failure
  */
-int display_classic_bridge_rm_manager_on_file_stream(FILE * stream,bridge_rm_manager_t* rm);
+int display_classic_bridge_rm_manager_on_file_stream(FILE * stream,bridge_rm_manager_t* rm,bridge_manager_info_t* info);
 
 /*!
- * \brief display required information about rm manager on file stream 
+ * \brief display required information about rm manager on file stream
  * \internal
  *
  * \param stream FILE* on which to write output
  * \param rm pointer on a rm manager structure to display
+ * \param info pointer on a manager info structure (for cluster/master)
  * \param output_fields comma separated list of information to display
  * \param separator string to write on stream between each required information
  *
  * \retval 0 on success
  * \retval -1 on failure
  */
-int display_by_fields_bridge_rm_manager_on_file_stream(FILE* stream,bridge_rm_manager_t* rm,char* output_fields,char* separator);
+int display_by_fields_bridge_rm_manager_on_file_stream(FILE* stream,bridge_rm_manager_t* rm,bridge_manager_info_t* info,char* output_fields,char* separator);
 
 int main(int argc,char **argv){
 
@@ -156,25 +159,41 @@ int main(int argc,char **argv){
 
   if(bridge_init_manager(&manager)==0){
     if(manager.rm_manager_flag){
+
+      bridge_manager_info_t info;
+      int info_loaded = 0;
+
+      /* get manager info (cluster/master) on demand */
+      if(bridge_get_rm_manager_info(&manager, &info) == 0){
+        info_loaded = 1;
+      }
+
       switch(display_mode){
 
       case EXTENDED_DISPLAY :
-	display_bridge_rm_manager_on_file_stream(stdout,&(manager.rm_manager));
+	display_bridge_rm_manager_on_file_stream(stdout,&(manager.rm_manager),
+						 info_loaded ? &info : NULL);
 	break;
-	
+
       case CLASSIC_DISPLAY :
-	display_classic_bridge_rm_manager_on_file_stream(stdout,NULL);
-	display_classic_bridge_rm_manager_on_file_stream(stdout,&(manager.rm_manager));
+	display_classic_bridge_rm_manager_on_file_stream(stdout,NULL,NULL);
+	display_classic_bridge_rm_manager_on_file_stream(stdout,&(manager.rm_manager),
+							 info_loaded ? &info : NULL);
 	break;
-	
+
       case COMPOSITE_DISPLAY :
 	if(verbosity)
-	  display_by_fields_bridge_rm_manager_on_file_stream(stdout,NULL,output_fields,separator);
+	  display_by_fields_bridge_rm_manager_on_file_stream(stdout,NULL,NULL,output_fields,separator);
 	display_by_fields_bridge_rm_manager_on_file_stream(stdout,&(manager.rm_manager),
-							       output_fields,separator);
+							   info_loaded ? &info : NULL,
+							   output_fields,separator);
 	break;
-	
+
       }
+
+      if(info_loaded)
+        bridge_clean_rm_manager_info(&manager, &info);
+
       fstatus=0;
     }
     bridge_clean_manager(&manager);
@@ -196,12 +215,12 @@ int main(int argc,char **argv){
 
 
 
-int display_bridge_rm_manager_on_file_stream(FILE* stream,bridge_rm_manager_t* rm){
-  
+int display_bridge_rm_manager_on_file_stream(FILE* stream,bridge_rm_manager_t* rm,bridge_manager_info_t* info){
+
   fprintf(stream,
 	  "-------------------------------------------------------\n");
-  if(rm->cluster!=NULL)
-    fprintf(stream,"Cluster \t\t: %s\n",rm->cluster);
+  if(info!=NULL && info->cluster!=NULL)
+    fprintf(stream,"Cluster \t\t: %s\n",info->cluster);
   else
     fprintf(stream,"Cluster \t\t: -\n");
 
@@ -220,8 +239,8 @@ int display_bridge_rm_manager_on_file_stream(FILE* stream,bridge_rm_manager_t* r
   else
     fprintf(stream,"Version \t\t: -\n");
 
-  if(rm->master!=NULL)
-    fprintf(stream,"Master \t\t\t: %s\n",rm->master);
+  if(info!=NULL && info->master!=NULL)
+    fprintf(stream,"Master \t\t\t: %s\n",info->master);
   else
     fprintf(stream,"Master \t\t\t: -\n");
 
@@ -230,9 +249,9 @@ int display_bridge_rm_manager_on_file_stream(FILE* stream,bridge_rm_manager_t* r
   return 0;
 }
 
-int display_classic_bridge_rm_manager_on_file_stream(FILE * stream,bridge_rm_manager_t* rm){
+int display_classic_bridge_rm_manager_on_file_stream(FILE * stream,bridge_rm_manager_t* rm,bridge_manager_info_t* info){
   int fstatus=0;
-  
+
   if(!rm){
     fprintf(stream,"%-16s %-16s %-16s %-16s %-16s\n",
 	    "----------------",
@@ -250,10 +269,10 @@ int display_classic_bridge_rm_manager_on_file_stream(FILE * stream,bridge_rm_man
   }
   else{
     fprintf(stream,"%-16s %-16s %-16s %-16s %-16s\n",
-	    rm->cluster != NULL ? rm->cluster : "unknown",
+	    (info==NULL || info->cluster==NULL) ? "unknown" : info->cluster,
 	    rm->type != NULL ? rm->type : "unknown",
 	    rm->version != NULL ? rm->version : "unknown",
-	    rm->master != NULL ? rm->master : "unknown",
+	    (info==NULL || info->master==NULL) ? "unknown" : info->master,
 	    rm->description != NULL ? rm->description : "unknown");
     fprintf(stream,"%-16s %-16s %-16s %-16s %-16s\n",
 	    "----------------",
@@ -266,7 +285,7 @@ int display_classic_bridge_rm_manager_on_file_stream(FILE * stream,bridge_rm_man
   return fstatus;
 }
 
-int display_by_fields_bridge_rm_manager_on_file_stream(FILE* stream,bridge_rm_manager_t* rm,char* output_fields,char* separator){
+int display_by_fields_bridge_rm_manager_on_file_stream(FILE* stream,bridge_rm_manager_t* rm,bridge_manager_info_t* info,char* output_fields,char* separator){
 
   int status=0;
 
@@ -296,8 +315,8 @@ int display_by_fields_bridge_rm_manager_on_file_stream(FILE* stream,bridge_rm_ma
 
 	/* Manager cluster name */
 	else if(strcmp(token,"cluster")==0){
-	  if(rm->cluster!=NULL)
-	    fprintf(stream,"%s",rm->cluster);
+	  if(info!=NULL && info->cluster!=NULL)
+	    fprintf(stream,"%s",info->cluster);
 	  else
 	    fprintf(stream,"-");
 	}
@@ -324,8 +343,8 @@ int display_by_fields_bridge_rm_manager_on_file_stream(FILE* stream,bridge_rm_ma
 	}
 	/* Manager master name */
 	else if(strcmp(token,"master")==0){
-	  if(rm->master!=NULL)
-	    fprintf(stream,"%s",rm->master);
+	  if(info!=NULL && info->master!=NULL)
+	    fprintf(stream,"%s",info->master);
 	  else
 	    fprintf(stream,"-");
 	}
@@ -343,6 +362,6 @@ int display_by_fields_bridge_rm_manager_on_file_stream(FILE* stream,bridge_rm_ma
   }
 
   fprintf(stream,"\n");
-  
+
   return 0;
 }

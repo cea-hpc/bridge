@@ -39,6 +39,32 @@
 #define INVALID_INTEGER_VALUE (int) -1
 #define NO_LIMIT 0
 
+/*! \addtogroup BRIDGE_MANAGER_INFO
+ *  @{
+ */
+/*!
+ * \ingroup BRIDGE_MANAGER_INFO
+ * \brief structure used to store cluster/master information retrieved on demand
+ */
+typedef struct bridge_manager_info {
+
+  char* cluster; /*!<
+		  * name of the cluster managed by this manager
+		  */
+
+  char* master; /*!<
+		 * name of the current manager host
+		 */
+
+  char** masters_list; /*!<
+			* NULL terminated list of potential masters
+			*/
+
+} bridge_manager_info_t;
+/*!
+ * @}
+*/
+
 /*! \addtogroup BRIDGE_BATCH_MANAGER
  *  @{
  */
@@ -57,20 +83,23 @@ typedef struct bridge_batch_manager {
 		  */
 
   char* cluster; /*!<
-	       * name of the `batch cluster` managed by this manager
-	       */
+		  * @deprecated Use bridge_get_batch_manager_info() instead.
+		  * Always NULL - kept for ABI compatibility.
+		  */
 
   char* description; /*!<
 		      * a little description
 		      */
 
   char* master; /*!<
-		 * name of the current manager host
+		 * @deprecated Use bridge_get_batch_manager_info() instead.
+		 * Always NULL - kept for ABI compatibility.
 		 */
 
   char** masters_list; /*!<
-			* NULL terminated list of potential masters
-			*/   
+			* @deprecated Use bridge_get_batch_manager_info() instead.
+			* Always NULL - kept for ABI compatibility.
+			*/
 
   void* private; /*!<
 		  * Private pointer that can be used to store
@@ -369,6 +398,8 @@ typedef struct bridge_batch_system {
 		     */
 
   int (*get_batch_id) (char** p_id);
+  int (*get_manager_info) (bridge_manager_info_t * p_info);
+  int (*clean_manager_info) (bridge_manager_info_t * p_info);
 
   /* batch manager related functions */
   int (*init_batch_manager) (bridge_batch_manager_t * p_batch_manager);
@@ -426,31 +457,36 @@ typedef struct bridge_batch_system {
 
 
 /*! \addtogroup BRIDGE_RM_SYSTEM
- * \brief structure used to store information about batch manager
+ * \brief structure used to store information about resource manager
  *  @{
  */
 typedef struct bridge_rm_manager {
 
-
   char* type; /*!<
 	       * type of resource manager used
 	       */
+
   char* version; /*!<
 		  * version of resource manager used
 		  */
 
   char* cluster; /*!<
-		  * name of the `cluster` managed by this manager
+		  * @deprecated Use bridge_get_rm_manager_info() instead.
+		  * Always NULL - kept for ABI compatibility.
 		  */
+
   char* description; /*!<
 		      * a little description
 		      */
+
   char* master; /*!<
-		 * name of the current manager host
+		 * @deprecated Use bridge_get_rm_manager_info() instead.
+		 * Always NULL - kept for ABI compatibility.
 		 */
-  
+
   char** masters_list; /*!<
-			* NULL terminated list of potential masters
+			* @deprecated Use bridge_get_rm_manager_info() instead.
+			* Always NULL - kept for ABI compatibility.
 			*/
 
   void* private; /*!<
@@ -640,7 +676,9 @@ typedef struct bridge_rm_system {
 		     */
 
   int (*get_rm_id) (char** p_id);
-  
+  int (*get_manager_info) (bridge_manager_info_t * p_info);
+  int (*clean_manager_info) (bridge_manager_info_t * p_info);
+
   /* rm manager related functions */
   int (*init_rm_manager) (bridge_rm_manager_t * p_rm_manager);
   int (*clean_rm_manager) (bridge_rm_manager_t * p_rm_manager);
@@ -791,6 +829,36 @@ int bridge_clean_manager(bridge_manager_t* p_manager);
  * \retval  * batch system plugin function return value
 */
 int bridge_get_batch_id(bridge_manager_t * p_manager,char** p_id);
+
+/*!
+ * \ingroup BRIDGE_BATCH_SYSTEM
+ * \brief Get batch manager info (cluster, master, masters_list)
+ *
+ * This function retrieves cluster/master information on demand,
+ * avoiding the need to query this data during manager initialization.
+ *
+ * \param p_manager pointer on a bridge manager structure
+ * \param p_info pointer on a bridge_manager_info_t structure to fill
+ *
+ * \retval  0 operation successfully done
+ * \retval -1 no batch system loaded in bridge manager
+ * \retval  * batch system plugin function return value
+*/
+int bridge_get_batch_manager_info(bridge_manager_t * p_manager,
+				  bridge_manager_info_t * p_info);
+
+/*!
+ * \ingroup BRIDGE_BATCH_SYSTEM
+ * \brief Clean batch manager info structure
+ *
+ * \param p_manager pointer on a bridge manager structure
+ * \param p_info pointer on a bridge_manager_info_t structure to clean
+ *
+ * \retval  0 operation successfully done
+ * \retval -1 no batch system loaded in bridge manager
+*/
+int bridge_clean_batch_manager_info(bridge_manager_t * p_manager,
+				    bridge_manager_info_t * p_info);
 
 /*!
  * \ingroup BRIDGE_BATCH_SYSTEM
@@ -981,6 +1049,36 @@ int bridge_clean_batch_node(bridge_manager_t* p_manager,
  * \retval  * resource manager plugin function return value
 */
 int bridge_get_rm_id(bridge_manager_t * p_manager, char** p_id);
+
+/*!
+ * \ingroup BRIDGE_RM_SYSTEM
+ * \brief Get rm manager info (cluster, master, masters_list)
+ *
+ * This function retrieves cluster/master information on demand,
+ * avoiding the need to query this data during manager initialization.
+ *
+ * \param p_manager pointer on a bridge manager structure
+ * \param p_info pointer on a bridge_manager_info_t structure to fill
+ *
+ * \retval  0 operation successfully done
+ * \retval -1 no rm system loaded in bridge manager
+ * \retval  * resource manager plugin function return value
+*/
+int bridge_get_rm_manager_info(bridge_manager_t * p_manager,
+			       bridge_manager_info_t * p_info);
+
+/*!
+ * \ingroup BRIDGE_RM_SYSTEM
+ * \brief Clean rm manager info structure
+ *
+ * \param p_manager pointer on a bridge manager structure
+ * \param p_info pointer on a bridge_manager_info_t structure to clean
+ *
+ * \retval  0 operation successfully done
+ * \retval -1 no rm system loaded in bridge manager
+*/
+int bridge_clean_rm_manager_info(bridge_manager_t * p_manager,
+				 bridge_manager_info_t * p_info);
 
 /*!
  * \ingroup BRIDGE_RM_SYSTEM

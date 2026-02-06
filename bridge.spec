@@ -28,8 +28,8 @@
 
 Summary: Bridge CCC In-House Batch Environment
 Name: bridge
-Version: 1.5.14
-Release: 3%{?dist}
+Version: 1.6.0
+Release: 1%{?dist}
 License: GPL License
 Group: System Environment/Base
 URL: https://github.com/cea-hpc/bridge
@@ -209,6 +209,9 @@ Plugin that provides Flux access across the CCC Batch systems Bridge
 %endif
 
 %changelog
+* Tue Feb 25 2025 François Diakhaté <francois.diakhate@cea.fr> - 1.6.0-1
+- Bump version to 1.6.0
+
 * Fri Oct 18 2024 Olivier Delhomme <olivier.delhomme@cea.fr> - 1.5.14-3
 - fix bridge.spec to avoid requiring a specific version of clustershell
   in all packages: bridge-slurm and bridge-flux.
