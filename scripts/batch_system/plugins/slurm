@@ -333,30 +333,32 @@ function submit_cmd {
     if [[ -n ${mail_addr} ]]
 	then
 	local_submit_args+=( "--mail-user=${mail_addr[@]}" )
-	## on a toujours envoye des messages en cas d'erreur, gardons ce comportement
-	local_submit_args+=( "--mail-type=FAIL" )
 	if [[ -n ${mail_info} ]]
 	    then
+	## on a toujours envoye des messages en cas d'erreur, gardons ce comportement
+             multiple_types="FAIL"
 	     for mail_type in ${mail_info//,/ } 
-	     do
+	       do
 		 case ${mail_type} in
 		     begin)
-			 local_submit_args+=( "--mail-type=BEGIN" )
+			     multiple_types+=",BEGIN"
 			 ;;
 		     end)
-			 local_submit_args+=( "--mail-type=END" )
+                             multiple_types+=",END"
 			 ;;
 		     requeue)
-			 local_submit_args+=( "--mail-type=REQUEUE" )
+			     multiple_types+=",REQUEUE"
 			 ;;
 		     *)
 			 ${ERROR} "Unsupported mail type for this batch system: ${mail_type}"
 			 exit 1
 			 ;;
-		     esac
-	     done
+		 esac
+	       done
+	     local_submit_args+=( "--mail-type=${multiple_types}")
 	else
-	    local_submit_args+=( "--mail-type=END" )
+	## si type non precise avec l'adresse mail, FAIL et END par defaut
+	     local_submit_args+=( "--mail-type=FAIL,END" )
 	fi
     fi
 
