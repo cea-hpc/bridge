@@ -37,6 +37,42 @@ function bridge_addon_msub_setopt {
 
 function bridge_addon_msub_getopt {
 
+    ## on se place en mode debug si souhaite
+    typeset -i BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+    then
+        set -x
+    fi
+
+    ## on incremente le niveau de log
+    typeset -i BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+
+    ## on ajoute une entete a la log
+    typeset LOGGER="${LOGGER} Bridge Preload Addon :"
+
+    typeset USAGE="\
+\t*) Preload addon\
+\n\t This addon sets the LD_PRELOAD environment variable before job submission.\
+\n\t It prepends the specified library to any existing LD_PRELOAD value.\
+\n\t\
+\n\t Configuration via environment variable:\
+\n\t\t BRIDGE_MSUB_PRELOAD : colon-separated list of libraries to preload\
+\n\t\
+\n\t Example:\
+\n\t\t BRIDGE_MSUB_PRELOAD=/path/to/lib.so msub script.sh\n"
+
+    while getopts ${BRIDGE_MSUB_GETOPT_OPTIONS} option
+    do
+        case ${option} in
+            h)
+                echo -e "${USAGE}" >&2
+                return 0
+                ;;
+            *)
+                ;;
+        esac
+    done
+
     return 0
 }
 
@@ -85,6 +121,42 @@ function bridge_addon_mprun_setopt {
 }
 
 function bridge_addon_mprun_getopt {
+
+    ## on se place en mode debug si souhaite
+    typeset -i BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+    then
+        set -x
+    fi
+
+    ## on incremente le niveau de log
+    typeset -i BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+
+    ## on ajoute une entete a la log
+    typeset LOGGER="${LOGGER} Bridge Preload Addon :"
+
+    typeset USAGE="\
+\t*) Preload addon\
+\n\t This addon sets the LD_PRELOAD environment variable for the parallel execution.\
+\n\t It prepends the specified library to any existing LD_PRELOAD value.\
+\n\t\
+\n\t Configuration via environment variable:\
+\n\t\t BRIDGE_MPRUN_PRELOAD : colon-separated list of libraries to preload\
+\n\t\
+\n\t Example:\
+\n\t\t BRIDGE_MPRUN_PRELOAD=/path/to/lib.so mprun -n 4 ./myapp\n"
+
+    while getopts ${BRIDGE_MPRUN_GETOPT_OPTIONS} option
+    do
+        case ${option} in
+            h)
+                echo -e "${USAGE}" >&2
+                return 0
+                ;;
+            *)
+                ;;
+        esac
+    done
 
     return 0
 }
