@@ -22,43 +22,60 @@
 
 #################################################################################
 #
-# Addon for executing command between mprun and exec in Bridge
+# Addon for preexec support in Bridge for mprun
+#
+# This addon inserts a command between srun/mpirun and the user executable.
+# The resulting command line becomes:
+#
+#   srun [srun_options] <preexec_cmd> [preexec_args] [--] <user_executable> [args]
+#
+# Configuration is done exclusively via environment variables:
+#
+#   BRIDGE_MPRUN_PREEXEC        command to insert before the user executable (required)
+#   BRIDGE_MPRUN_PREEXEC_ARGS   optional arguments to pass to the preexec command
+#   BRIDGE_PREEXEC_SEPARATOR    set to 1 to insert a '--' separator (default: 0)
+#
+# Typical use cases:
+#   - wrappers (e.g. numactl, taskset, time, env)
+#   - profilers/tracers that wrap the executable
+#   - custom launchers
+#
+# Examples:
+#   BRIDGE_MPRUN_PREEXEC="numactl" mprun -n 4 ./myapp
+#   BRIDGE_MPRUN_PREEXEC="numactl" BRIDGE_MPRUN_PREEXEC_ARGS="--membind=0" mprun -n 4 ./myapp
 #
 #################################################################################
 
+
 #################################################################################
-# MSUB QOS support
+# MSUB - not supported
 #--------------------------------------------------------------------------------
+
 function bridge_addon_msub_setopt {
-
     return 0
-
 }
 
 function bridge_addon_msub_getopt {
-
     return 0
 }
 
 function bridge_addon_msub_alteropt {
-
     return 0
 }
 
 function bridge_addon_msub_alterscript {
-
     return 0
 }
+
 #################################################################################
 
 
 #################################################################################
-# MPRUN QOS support
+# MPRUN preexec support
 #--------------------------------------------------------------------------------
+
 function bridge_addon_mprun_setopt {
-
     return 0
-
 }
 
 function bridge_addon_mprun_getopt {
@@ -66,94 +83,123 @@ function bridge_addon_mprun_getopt {
     ## on se place en mode debug si souhaite
     typeset -i BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
     if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
-	then
-	set -x
+    then
+        set -x
     fi
-    
+
     ## on incremente le niveau de log
     typeset -i BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
-    
-    ## on ajoute une entete a la log
-    typeset LOGGER="${LOGGER} Preexec Addon :"
 
-    ## on fixe le message d'aide a afficher si demande
+    ## on ajoute une entete a la log
+    typeset LOGGER="${LOGGER} Bridge Preexec Addon :"
+
+    ## message d'aide
     typeset USAGE="\
-\t*) Preexec:
-\t Insert a command between mprun and the application
-\t Usage: set BRIDGE_MPRUN_PREEXEC environment variable with a command
-\n"
-    
-    ## on fixe le status de sortie par defaut
-    typeset exit_status=0
-    
-    ## on parse les arguments
-    while getopts ${BRIDGE_MPRUN_GETOPT_OPTIONS} option	
-      do
-      case ${option} in
-	  
-	  h)
-	      echo -e "${USAGE}" >&2
-	      return 0
-	      ;;
-	  *)
-	      ;;
-      esac
+\t*) Preexec addon
+\t\t BRIDGE_MPRUN_PREEXEC       : command to insert between srun and the user executable
+\t\t BRIDGE_MPRUN_PREEXEC_ARGS  : optional arguments for the preexec command
+\t\t BRIDGE_PREEXEC_SEPARATOR    : set to 1 to insert a '--' separator\n"
+
+    while getopts ${BRIDGE_MPRUN_GETOPT_OPTIONS} option
+    do
+        case ${option} in
+            h)
+                echo -e "${USAGE}" >&2
+                return 0
+                ;;
+            *)
+                ;;
+        esac
     done
 
-    return ${exit_status}
+    return 0
 }
 
 function bridge_addon_mprun_alteropt {
 
-    return 0
+    ## on se place en mode debug si souhaite
+    typeset -i BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+    then
+        set -x
+    fi
 
+    ## on incremente le niveau de log
+    typeset -i BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+
+    ## on ajoute une entete a la log
+    typeset LOGGER="${LOGGER} Bridge Preexec Addon :"
+
+    if [[ -n ${BRIDGE_MPRUN_PREEXEC} ]]
+    then
+        ${LOGGER} "BRIDGE_MPRUN_PREEXEC is set to '${BRIDGE_MPRUN_PREEXEC}'"
+        export BRIDGE_MPRUN_PREEXEC
+        [[ -n ${BRIDGE_MPRUN_PREEXEC_ARGS} ]] && export BRIDGE_MPRUN_PREEXEC_ARGS
+    else
+        ${LOGGER} "BRIDGE_MPRUN_PREEXEC is not set, nothing to do"
+    fi
+
+    return 0
 }
 
 function bridge_addon_mprun_spmd_pre_allocate {
-
     return 0
-
 }
 
 function bridge_addon_mprun_spmd_post_allocate {
-
     return 0
-
 }
 
 function bridge_addon_mprun_spmd_pre_run {
 
-    ## Debug mode
+    ## on se place en mode debug si souhaite
     typeset -i BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
     if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
-	then
-	set -x
+    then
+        set -x
     fi
 
-    ## Increase verbosity level
+    ## on incremente le niveau de log
     typeset -i BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
 
-    ## Header for log
+    ## on ajoute une entete a la log
     typeset LOGGER="${LOGGER} Bridge Preexec Addon :"
-    typeset ERROR="${ERROR} Bridge Preexec Addon :"
 
-    ## if BRIDGE_MPRUN_PREEXEC exist
-    if [ -n "${BRIDGE_MPRUN_PREEXEC}" ]
-	then
-	${LOGGER} "BRIDGE_MPRUN_PREEXEC is now ${BRIDGE_MPRUN_PREEXEC}"
-	## on ajoute BRIDGE_MPRUN_PREEXEC a la commande a executer
-	spmd_run_args=(${BRIDGE_MPRUN_PREEXEC} "${spmd_run_args[@]}")
+    ## on insere la commande preexec entre srun et l'executable utilisateur
+    if [[ -n ${BRIDGE_MPRUN_PREEXEC} ]]
+    then
+        typeset -a spmd_run_args_new
+
+        ## la commande preexec
+        spmd_run_args_new+=( ${BRIDGE_MPRUN_PREEXEC} )
+
+        ## ses arguments optionnels
+        if [[ -n ${BRIDGE_MPRUN_PREEXEC_ARGS} ]]
+        then
+            spmd_run_args_new+=( ${BRIDGE_MPRUN_PREEXEC_ARGS} )
+        fi
+
+        ## separateur '--' uniquement si explicitement demande
+        if [[ ${BRIDGE_PREEXEC_SEPARATOR:-0} -eq 1 ]]
+        then
+            spmd_run_args_new+=( "--" )
+        fi
+
+        ## les args originaux de l'executable
+        spmd_run_args_new+=( "${spmd_run_args[@]}" )
+
+        ${LOGGER} "inserting preexec command '${BRIDGE_MPRUN_PREEXEC}' before '${spmd_run_args[*]}'"
+        ${LOGGER} "new spmd_run_args: '${spmd_run_args_new[*]}'"
+
+        spmd_run_args=( "${spmd_run_args_new[@]}" )
     else
-	${LOGGER} "BRIDGE_MPRUN_PREEXEC is not initialized"
+        ${LOGGER} "BRIDGE_MPRUN_PREEXEC is not set, nothing to do"
     fi
 
     return 0
-
 }
 
 function bridge_addon_mprun_spmd_post_run {
-
     return 0
-
 }
 #################################################################################
