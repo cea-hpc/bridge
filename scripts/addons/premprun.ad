@@ -1,0 +1,236 @@
+#*****************************************************************************\
+#  scripts/addons/premprun.ad -
+#******************************************************************************
+#  Copyright  CEA/DAM/DIF (2026)
+#
+#  This file is part of Bridge, an abstraction layer to ease batch system and
+#  resource manager usage in heterogeneous HPC environments.
+#
+#  Bridge is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  Bridge is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with Bridge.  If not, see <http://www.gnu.org/licenses/>
+#*****************************************************************************/
+
+#################################################################################
+#
+# Addon for premprun support in Bridge for mprun
+#
+# This addon inserts a command before srun/mpirun itself.
+# The resulting command line becomes:
+#
+#   <premprun_cmd> [premprun_args] [--] srun [srun_options] <user_executable> [args]
+#
+# Configuration is done exclusively via environment variables:
+#
+#   BRIDGE_MPRUN_PREMPRUN       command to insert before srun/mpirun (required)
+#   BRIDGE_MPRUN_PREMPRUN_ARGS  optional arguments to pass to the premprun command
+#   BRIDGE_PREMPRUN_SEPARATOR   set to 1 to insert a '--' separator (default: 0)
+#
+# Typical use cases:
+#   - time, perf stat, stdbuf, numactl wrapping the whole srun invocation
+#   - custom environment wrappers that must surround the launcher
+#
+# Examples:
+#   BRIDGE_MPRUN_PREMPRUN="time" mprun -n 4 ./myapp
+#   BRIDGE_MPRUN_PREMPRUN="numactl" BRIDGE_MPRUN_PREMPRUN_ARGS="--membind=0" mprun -n 4 ./myapp
+#
+#################################################################################
+
+
+#################################################################################
+# MSUB - not supported
+#--------------------------------------------------------------------------------
+
+function bridge_addon_msub_setopt {
+    return 0
+}
+
+function bridge_addon_msub_getopt {
+    return 0
+}
+
+function bridge_addon_msub_alteropt {
+    return 0
+}
+
+function bridge_addon_msub_alterscript {
+    return 0
+}
+
+#################################################################################
+
+
+#################################################################################
+# MPRUN premprun support
+#--------------------------------------------------------------------------------
+
+function bridge_addon_mprun_setopt {
+    return 0
+}
+
+function bridge_addon_mprun_getopt {
+
+    ## on se place en mode debug si souhaite
+    typeset -i BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+    then
+        set -x
+    fi
+
+    ## on incremente le niveau de log
+    typeset -i BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+
+    ## on ajoute une entete a la log
+    typeset LOGGER="${LOGGER} Bridge Premprun Addon :"
+
+    ## message d'aide
+    typeset USAGE="\
+\t*) Premprun addon
+\t\t BRIDGE_MPRUN_PREMPRUN      : command to insert before srun/mpirun
+\t\t BRIDGE_MPRUN_PREMPRUN_ARGS : optional arguments for the premprun command
+\t\t BRIDGE_PREMPRUN_SEPARATOR   : set to 1 to insert a '--' separator\n"
+
+    while getopts ${BRIDGE_MPRUN_GETOPT_OPTIONS} option
+    do
+        case ${option} in
+            h)
+                echo -e "${USAGE}" >&2
+                return 0
+                ;;
+            *)
+                ;;
+        esac
+    done
+
+    return 0
+}
+
+function bridge_addon_mprun_alteropt {
+
+    ## on se place en mode debug si souhaite
+    typeset -i BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+    then
+        set -x
+    fi
+
+    ## on incremente le niveau de log
+    typeset -i BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+
+    ## on ajoute une entete a la log
+    typeset LOGGER="${LOGGER} Bridge Premprun Addon :"
+
+    if [[ -n ${BRIDGE_MPRUN_PREMPRUN} ]]
+    then
+        ${LOGGER} "BRIDGE_MPRUN_PREMPRUN is set to '${BRIDGE_MPRUN_PREMPRUN}'"
+        export BRIDGE_MPRUN_PREMPRUN
+        [[ -n ${BRIDGE_MPRUN_PREMPRUN_ARGS} ]] && export BRIDGE_MPRUN_PREMPRUN_ARGS
+    else
+        ${LOGGER} "BRIDGE_MPRUN_PREMPRUN is not set, nothing to do"
+    fi
+
+    return 0
+}
+
+function bridge_addon_mprun_spmd_pre_allocate {
+    return 0
+}
+
+function bridge_addon_mprun_spmd_post_allocate {
+    return 0
+}
+
+function bridge_addon_mprun_spmd_pre_run {
+
+    ## on se place en mode debug si souhaite
+    typeset -i BRIDGE_DEBUG_LEVEL=${BRIDGE_DEBUG_LEVEL:-0}+1
+    if [ "${BRIDGE_DEBUG_MODE}" = "yes" ] && [[ ${BRIDGE_DEBUG_LEVEL} -le ${BRIDGE_DEBUG_MAXLEVEL} ]]
+    then
+        set -x
+    fi
+
+    ## on incremente le niveau de log
+    typeset -i BRIDGE_VERBOSE_LEVEL=${BRIDGE_VERBOSE_LEVEL:-0}+1
+
+    ## on ajoute une entete a la log
+    typeset LOGGER="${LOGGER} Bridge Premprun Addon :"
+
+    ## A ce stade, spmd_run_options est encore vide mais les variables
+    ## spmd_run_nproc, spmd_run_nnode, spmd_run_partition, spmd_run_ncore,
+    ## spmd_run_maxmem, spmd_run_maxtime, spmd_run_project sont déjà renseignées.
+    ## On reconstruit les options srun ici, puis on fait le swap :
+    ##   spmd_run_cmd     -> wrapper
+    ##   spmd_run_options -> [wrapper_args] [--] srun <options_reconstruites>
+    ## Le plugin slurm verra spmd_run_cmd != "srun" et n'ajoutera plus rien.
+    if [[ -n ${BRIDGE_MPRUN_PREMPRUN} ]]
+    then
+        typeset original_spmd_run_cmd="${spmd_run_cmd}"
+
+        ## reconstruction des options srun depuis les variables parsées
+        typeset srun_opts=
+        [[ -n ${spmd_run_ncore} ]]      && srun_opts="${srun_opts} -c ${spmd_run_ncore}"
+        [[ -n ${spmd_run_nproc} ]]      && srun_opts="${srun_opts} -n ${spmd_run_nproc}"
+        [[ -n ${spmd_run_nnode} ]]      && srun_opts="${srun_opts} -N ${spmd_run_nnode}-${spmd_run_nnode}"
+        [[ -n ${spmd_run_partition} ]]  && srun_opts="${srun_opts} -p ${spmd_run_partition}"
+        [[ -n ${spmd_run_project} ]]    && srun_opts="${srun_opts} -A ${spmd_run_project}"
+        [[ -n ${spmd_run_maxmem} ]]     && srun_opts="${srun_opts} --mem-per-cpu=${spmd_run_maxmem}"
+        if [[ -n ${spmd_run_maxtime} ]]
+        then
+            typeset -i runlimit residu
+            (( runlimit = ${spmd_run_maxtime##*-} / 60 ))
+            (( residu   = ${spmd_run_maxtime##*-} % 60 ))
+            srun_opts="${srun_opts} --time ${runlimit}:${residu}"
+        fi
+
+        ## la nouvelle commande devient le wrapper
+        spmd_run_cmd="${BRIDGE_MPRUN_PREMPRUN}"
+
+        ## on construit les nouvelles options :
+        ## [premprun_args] [--] srun <options_srun>
+        typeset new_spmd_run_options=
+
+        if [[ -n ${BRIDGE_MPRUN_PREMPRUN_ARGS} ]]
+        then
+            new_spmd_run_options="${BRIDGE_MPRUN_PREMPRUN_ARGS}"
+        fi
+
+        if [[ ${BRIDGE_PREMPRUN_SEPARATOR:-0} -eq 1 ]]
+        then
+            new_spmd_run_options="${new_spmd_run_options} --"
+        fi
+
+        new_spmd_run_options="${new_spmd_run_options} ${original_spmd_run_cmd}${srun_opts}"
+        spmd_run_options="${new_spmd_run_options}"
+
+        ## on vide les variables pour éviter que le plugin ne les réutilise
+        spmd_run_ncore=
+        spmd_run_nproc=
+        spmd_run_nnode=
+        spmd_run_partition=
+        spmd_run_project=
+        spmd_run_maxmem=
+        spmd_run_maxtime=
+
+        ${LOGGER} "inserting premprun command '${BRIDGE_MPRUN_PREMPRUN}' before '${original_spmd_run_cmd}'"
+        ${LOGGER} "new spmd_run_cmd: '${spmd_run_cmd}'"
+        ${LOGGER} "new spmd_run_options: '${spmd_run_options}'"
+    else
+        ${LOGGER} "BRIDGE_MPRUN_PREMPRUN is not set, nothing to do"
+    fi
+
+    return 0
+}
+
+function bridge_addon_mprun_spmd_post_run {
+    return 0
+}
+#################################################################################
