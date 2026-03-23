@@ -20,6 +20,7 @@ rpm-check:
 build-dist:
   stage: basebuild
   script:
+    - ./autogen.sh
     - ./configure --with-slurm --with-slurm-lib
     - make
     - make dist
@@ -55,7 +56,7 @@ build-parametric:
     # Creating the directory where we will put our builds results
     - mkdir $DISTRIBUTION-$SLURM
     # Building with a tag in order to be able to run it
-    - docker build -t $DISTRIBUTION-$SLURM .
+    - docker build --tag $DISTRIBUTION-$SLURM .
     # Running the build to extract the /dist directory
     - docker run --rm $DISTRIBUTION-$SLURM tar -cC /dist . | tar -xC $DISTRIBUTION-$SLURM/
     # Moving it to get cleaner artifacts
