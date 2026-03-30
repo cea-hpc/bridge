@@ -398,9 +398,6 @@ typedef struct bridge_batch_system {
 		     */
 
   int (*get_batch_id) (char** p_id);
-  int (*get_manager_info) (bridge_manager_info_t * p_info);
-  int (*clean_manager_info) (bridge_manager_info_t * p_info);
-
   /* batch manager related functions */
   int (*init_batch_manager) (bridge_batch_manager_t * p_batch_manager);
   int (*clean_batch_manager) (bridge_batch_manager_t * p_batch_manager);
@@ -676,13 +673,10 @@ typedef struct bridge_rm_system {
 		     */
 
   int (*get_rm_id) (char** p_id);
-  int (*get_manager_info) (bridge_manager_info_t * p_info);
-  int (*clean_manager_info) (bridge_manager_info_t * p_info);
-
   /* rm manager related functions */
   int (*init_rm_manager) (bridge_rm_manager_t * p_rm_manager);
   int (*clean_rm_manager) (bridge_rm_manager_t * p_rm_manager);
-  
+
   /* rm allocations related functions */
   int (*init_rm_allocation) (bridge_rm_manager_t * p_rm_manager,
 			     bridge_rm_allocation_t * p_rm_allocation);
