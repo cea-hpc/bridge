@@ -97,6 +97,7 @@ init_rm_manager(bridge_rm_manager_t* p_manager){
   p_manager->version=NULL;
   p_manager->type=NULL;
   p_manager->description=NULL;
+  p_manager->private=NULL;
 
 #if SLURM_VERSION_NUMBER >= SLURM_VERSION_NUM(23,11,1)
   /* add required slurm_init() since slurm 23.11.1 */
