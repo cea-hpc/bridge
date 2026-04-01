@@ -1,3 +1,21 @@
+* Changes in bridge-1.7.0
+==========================
+
+    -- Features
+       * adds preexec.ad addon to execute a command between mprin ant the
+         application
+       * adds premprun.ad addon to add a command before mprun
+
+    -- Fixes
+       * restores ABI compatibility for bridge_[batch|rm]_system_t
+       * makes sure that bridge_rm_manager_t private field is initialized
+       * corrects typos and parenthesis usage in doc comments
+       * enables the CI to rebuild the build system with autogen.sh script
+       * fixes separators, args and help message for preexec.ad addon
+
+    -- Documentation
+       * improves preload.ad addon help message
+
 * Changes in bridge-1.6.0
 ==========================
 

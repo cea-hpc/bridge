@@ -28,7 +28,7 @@
 
 Summary: Bridge CCC In-House Batch Environment
 Name: bridge
-Version: 1.6.0
+Version: 1.7.0
 Release: 1%{?dist}
 License: GPL License
 Group: System Environment/Base
@@ -209,6 +209,17 @@ Plugin that provides Flux access across the CCC Batch systems Bridge
 %endif
 
 %changelog
+* Wed Apr 01 2026 olivier.delhomme@cea.fr - 1.7.0-1
+- adds preexec.ad addon to execute a command between mprin ant the
+  application
+- adds premprun.ad addon to add a command before mprun
+- restores ABI compatibility for bridge_[batch|rm]_system_t
+- makes sure that bridge_rm_manager_t private field is initialized
+- corrects typos and parenthesis usage in doc comments
+- enables the CI to rebuild the build system with autogen.sh script
+- fixes separators, args and help message for preexec.ad addon
+- improves preload.ad addon help message
+
 * Tue Feb 25 2025 François Diakhaté <francois.diakhate@cea.fr> - 1.6.0-1
 - Bump version to 1.6.0
 
