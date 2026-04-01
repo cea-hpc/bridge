@@ -337,7 +337,9 @@ dist_addonscripts_DATA = array.ad \
                                         mvapich-slurm.ad \
                                         openmpi-slurm.ad \
                                         openmpi-slurm-direct.ad \
+                                        preexec.ad \
                                         preload.ad \
+                                        premprun.ad \
                                         qos.ad \
                                         relax_affinity.ad \
                                         reservation.ad \
